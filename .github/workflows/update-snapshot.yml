@@ -1,0 +1,62 @@
+name: Update snapshot
+
+# 每個交易日台股收盤後，自動抓取臺灣證券交易所公開資料並更新 index.html 的內建快照。
+# 台北時間（UTC+8）15:30 = UTC 07:30，週一至週五。
+on:
+  schedule:
+    - cron: "30 7 * * 1-5"
+  workflow_dispatch:
+
+# 需要寫入權限才能把更新後的 index.html 推回 main。
+permissions:
+  contents: write
+
+# 避免排程與手動觸發同時執行而互相覆蓋。
+concurrency:
+  group: update-snapshot
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 只用標準函式庫，無需 pip install。
+      # 腳本以實際抓到的數字更新快照；任何抓取 / 解析 / 一致性驗證失敗都會
+      # 以非 0 結束且不寫入檔案，因此這個 step 失敗時 index.html 保持原樣。
+      # 腳本結尾輸出 CHANGED=1 / CHANGED=0，代表「資料本身」是否有變更
+      # （時間戳不計入），據以決定是否建立 commit。
+      - name: Update snapshot from TWSE
+        id: upd
+        run: |
+          set -euo pipefail
+          python3 scripts/update_snapshot.py --file index.html | tee /tmp/snapshot.log
+          changed="$(sed -n 's/.*CHANGED=\([01]\).*/\1/p' /tmp/snapshot.log | tail -n1)"
+          echo "changed=${changed:-0}" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push if snapshot changed
+        if: steps.upd.outputs.changed == '1'
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "chore(snapshot): 自動更新 TWSE 快照 ($(TZ=Asia/Taipei date +%Y-%m-%d))"
+          git push
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### TWSE 快照更新"
+            echo ""
+            echo "- 資料變更：\`${{ steps.upd.outputs.changed || 'n/a' }}\`"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"

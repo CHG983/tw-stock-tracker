@@ -23,13 +23,18 @@ https://<你的帳號>.github.io/tw-stock-tracker/
 
 ```
 .
-├── index.html              # 最新版（v5）— GitHub Pages 首頁
+├── index.html              # 最新版（v6）— GitHub Pages 首頁，由 GitHub Actions 每日自動更新
 ├── versions/
 │   ├── v1/index.html       # v1：加權指數概況 + 自選股清單（靜態快照）
 │   ├── v2/index.html       # v2：+ MA5／MA20 均線 + 成交量柱狀圖
 │   ├── v3/index.html       # v3：+ 重新整理／自動更新（前端 fetch TWSE API）
 │   ├── v4/index.html       # v4：+ 漲幅前十名／跌幅前十名／2330 台積電
-│   └── v5/index.html       # v5：+ MA5／MA20 黃金交叉／死亡交叉標示
+│   ├── v5/index.html       # v5：+ MA5／MA20 黃金交叉／死亡交叉標示
+│   └── v6/index.html       # v6：+ 每日自動更新快照（與根目錄 index.html 同內容）
+├── scripts/
+│   └── update_snapshot.py  # 抓取 TWSE 公開資料並重寫 index.html 的內建快照
+├── .github/workflows/
+│   └── update-snapshot.yml # 排程：台北 15:30（週一至週五）自動更新快照
 ├── LICENSE                 # MIT
 ├── .nojekyll               # 停用 Jekyll，確保 GitHub Pages 直接原樣輸出
 └── README.md
@@ -37,6 +42,71 @@ https://<你的帳號>.github.io/tw-stock-tracker/
 
 各版本皆為**完整可獨立開啟的單檔**，方便逐版對照功能演進。
 `versions/vN/index.html` 也可直接以網址瀏覽，例如 `/versions/v5/index.html`。
+
+---
+
+## 🔄 自動更新（GitHub Actions）
+
+`index.html` 的內建快照由 **GitHub Actions 每日自動更新**，不需人工維護。
+
+### 排程時間
+
+| 項目 | 內容 |
+|---|---|
+| Cron | `30 7 * * 1-5` |
+| 台北時間 | **15:30（UTC+8）**，週一至週五 |
+| 說明 | 台股 13:30 收盤後執行，確保當日資料已由證交所端點釋出 |
+
+### 手動觸發
+
+1. 前往 repo 的 **Actions** 頁籤
+2. 左側選擇 **「Update snapshot」**
+3. 點 **「Run workflow」** → 選 `main` 分支 → 執行
+
+也可以用 GitHub CLI：
+
+```bash
+github workflow run update-snapshot.yml --repo <你的帳號>/tw-stock-tracker
+```
+
+### 腳本
+
+`scripts/update_snapshot.py`（**僅使用 Python 標準函式庫**，無需 `pip install`）
+
+```bash
+# 在本機執行，更新 index.html 的內建快照
+python3 scripts/update_snapshot.py --file index.html
+
+# 只檢查、不寫入檔案
+python3 scripts/update_snapshot.py --file index.html --dry-run
+```
+
+| 步驟 | 動作 |
+|---|---|
+| 1 | 抓取 `STOCK_DAY_ALL`（全市場每日收盤行情），以其回傳資料自帶的日期為基準 |
+| 2 | 抓取 `MI_INDEX?type=MS`（成交金額、漲跌家數） |
+| 3 | 抓取 `FMTQIK`（近 14 個月加權指數歷史日資料） |
+| 4 | 抓取 `MI_5MINS_HIST` 並做**一致性驗證**（收盤指數、漲跌點數兩來源比對） |
+| 5 | 計算 MA5／MA20、交叉事件、漲跌幅排行榜與全部圖表座標 |
+| 6 | 只重寫 `<!--SNAP:…-->` 標記之間的區塊，其餘 HTML／CSS／JS 完全不動 |
+
+### 更新範圍
+
+腳本會重寫以下內建快照區塊：加權指數概況、漲跌家數、走勢圖（收盤／MA5／MA20／成交量柱）、MA 交叉事件清單、漲幅前十名／跌幅前十名／2330 台積電排行，以及頁尾資料時間。
+
+### 資料來源
+
+全部取自**臺灣證券交易所（TWSE）公開資料**，與頁面前端使用的端點相同（見下一節）。
+
+### 非交易日與盤中行為
+
+- **`STOCK_DAY_ALL` 會忽略 `date` 參數，永遠回傳「最後交易日」的資料。** 腳本因此不依賴請求參數，而是**以回傳資料自帶的日期欄位為準**，再用該日期去查其他端點，避免兩個端點落在不同交易日的錯配。
+- 排程僅在**週一至週五**執行；遇國定假日時，端點回傳的仍是前一個交易日資料，腳本會據實標註該日期（**不會寫入空白或假資料**）。
+- 因此**週末與假日執行是安全的**：結果要嘛無變化（不建立 commit），要嘛正確標註為前一交易日。
+
+### 失敗處理
+
+任一抓取、解析或一致性驗證失敗，腳本會以**非 0 結束且不寫入任何檔案** —— workflow 隨之失敗（會寄送通知），`index.html` 完整保留原樣，**絕不寫入空值或示意數字**。僅在檔案內容確實改變時才建立 commit（無變化則直接結束）。
 
 ---
 
