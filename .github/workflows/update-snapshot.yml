@@ -17,7 +17,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # 測試必須先通過，才會進行快照更新與 commit。
+  # 測試完全不連網（以 tests/fixtures/ 的真實 TWSE 回應樣本取代所有請求），
+  # 因此不會因證交所端點異常而卡住 CI。
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 只用標準函式庫 unittest，無需 pip install。
+      - name: Run unit tests
+        run: python3 -m unittest discover -s tests -t . -v
+
   update:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

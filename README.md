@@ -33,8 +33,14 @@ https://<你的帳號>.github.io/tw-stock-tracker/
 │   └── v6/index.html       # v6：+ 每日自動更新快照（與根目錄 index.html 同內容）
 ├── scripts/
 │   └── update_snapshot.py  # 抓取 TWSE 公開資料並重寫 index.html 的內建快照
+├── tests/
+│   ├── fixtures/           # 從 TWSE 實際擷取的原始回應樣本（讓測試可離線重播）
+│   ├── capture_fixtures.py # 重新擷取樣本（只連網一次，手動執行）
+│   ├── _harness.py         # FakeAPI 假取樣器 + 逐端點故障注入（測試不連網）
+│   └── test_update_snapshot.py  # 單元／整合測試
 ├── .github/workflows/
-│   └── update-snapshot.yml # 排程：台北 15:30（週一至週五）自動更新快照
+│   ├── update-snapshot.yml # 排程：台北 15:30（週一至週五）自動更新快照（先跑測試）
+│   └── tests.yml           # push／PR 時自動執行測試（Python 3.9 / 3.11 / 3.13）
 ├── LICENSE                 # MIT
 ├── .nojekyll               # 停用 Jekyll，確保 GitHub Pages 直接原樣輸出
 └── README.md
@@ -198,6 +204,44 @@ python3 scripts/update_snapshot.py --file index.html --dry-run
 - **加權指數**：`MI_5MINS_INDEX`（即時）與 `MI_5MINS_HIST`（當日）與 `FMTQIK`（歷史）三來源交叉驗證一致
 - **漲跌家數母體**：以排除規則篩出 1,075 檔，其**上漲 386／下跌 546／持平 140** 與官方股票統計**完全吻合**（差額 9 檔正是官方列為「未成交 6 家」與「無比價 3 家」）
 - **均線與交叉**：MA5／MA20 尾點與快照一致；4 個交叉點座標、三組均線數值與原始 `FMTQIK` 重算結果**零誤差**，且皆通過符號翻轉斷言
+
+---
+
+## 🧪 執行測試
+
+`scripts/update_snapshot.py` 附有單元／整合測試，**測試期間完全不連網**：所有 HTTP
+請求都會被攔截，改以 `tests/fixtures/` 內、從臺灣證券交易所**實際擷取**的原始回應
+樣本重播，並可逐端點注入故障（HTTP 500、timeout、空回應、HTML 錯誤頁、壞 JSON、
+欄位缺失、非交易日、欄位格式異常…）。
+
+```bash
+python3 -m unittest discover -s tests -t . -v      # 全部執行（建議）
+python3 -m unittest tests.test_update_snapshot -v  # 同上，指定模組
+python3 -m unittest tests.test_update_snapshot.TestNoNetwork -v  # 只驗證「不連網」
+```
+
+> 亦可使用 pytest（`pip install pytest && python3 -m pytest tests/ -v`），但
+> **CI 不依賴 pytest**，只使用 Python 標準函式庫的 `unittest`，因此無需 `pip install`。
+
+### 涵蓋範圍
+
+| 情境 | 驗證重點 |
+|---|---|
+| **正常交易日** | 24 組 SNAP 區塊全部由本次資料重建（以哨兵字串證明）、輸出含 `<svg>` wrapper／折線／量柱／交叉標記、數字與樣本逐一相符 |
+| **非交易日／假日** | 資料未變 → `CHANGED=0`、**不寫檔**、檔案位元組不變、時間戳沿用 |
+| **缺資料** | 任一端點空陣列／null／缺欄位／HTTP 500／timeout／空回應／HTML 錯誤頁 → **非 0 結束且原檔位元組完全不變**，且不留暫存檔 |
+| **資料格式異常** | 千分位逗號、空字串、`--`、Unicode 負號、非數字、HTML 標籤、欄位數不足、除以零 → 個股層級「排除」而非崩潰 |
+| **時間戳邏輯** | 資料未變沿用舊時間戳；資料有變改用本次擷取時間（避免新資料配舊時間戳） |
+| **交叉事件計算** | 以可控合成資料驗證 MA5／MA20 黃金／死亡交叉的判定與日期，並確認每一筆都是真實的差值變號 |
+| **不連網保證** | 將 `socket.socket` 換成會拋例外者，完整流程仍須成功 |
+
+### 重新擷取樣本
+
+日後若 TWSE 回應格式變動，可重新擷取（**只有這一步會連網**）：
+
+```bash
+python3 tests/capture_fixtures.py
+```
 
 ---
 

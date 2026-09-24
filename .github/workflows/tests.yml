@@ -1,0 +1,38 @@
+name: Tests
+
+# update_snapshot.py 的單元測試。
+#
+# 測試完全不連網：所有 HTTP 請求都由 tests/_harness.py 的 FakeAPI 攔截，
+# 回傳 tests/fixtures/ 內、由 tests/capture_fixtures.py 從臺灣證券交易所實際
+# 擷取的樣本。因此本 workflow 不受證交所端點狀態影響，也不會真的打 TWSE API。
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.11", "3.13"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # 僅使用標準函式庫，無需 pip install。
+      - name: Run unit tests
+        run: python3 -m unittest discover -s tests -t . -v
+
+      # 確認測試確實沒有打真網路：把所有 socket 全面禁用後必須仍然全部通過。
+      - name: Prove tests are offline
+        run: python3 -m unittest tests.test_update_snapshot.TestNoNetwork -v

@@ -223,6 +223,11 @@ def get_market_stats(ad_date: str) -> dict:
     """MI_INDEX type=MS：成交金額、漲跌家數（整體市場 + 股票）。"""
     j = fetch_json("/rwd/zh/afterTrading/MI_INDEX",
                    {"date": ad_date.replace("/", ""), "type": "MS", "response": "json"})
+    # 非交易日／端點異常時 TWSE 會回傳 stat != "OK"。此類回應不得沿用舊值，
+    # 必須直接失敗（workflow 隨之失敗、原檔保留），以免把非當日數字寫進快照。
+    if "stat" in j and j.get("stat") != "OK":
+        raise RuntimeError(f"MI_INDEX stat={j.get('stat')!r}（非 OK，"
+                           f"可能為非交易日或端點異常）")
     stat = breadth = None
     for t in (j.get("tables") or []):
         if not (t and t.get("data")):

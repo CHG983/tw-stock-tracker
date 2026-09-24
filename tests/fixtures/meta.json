@@ -1,0 +1,159 @@
+{
+  "captured_at_taipei": "2026/09/25 00:47:41",
+  "data_date": "2026/09/24",
+  "files": {
+    "fmtqik/202508.json": {
+      "bytes": 2242,
+      "params": {
+        "date": "20250801",
+        "response": "json"
+      },
+      "path": "/rwd/zh/afterTrading/FMTQIK"
+    },
+    "fmtqik/202509.json": {
+      "bytes": 2242,
+      "params": {
+        "date": "20250901",
+        "response": "json"
+      },
+      "path": "/rwd/zh/afterTrading/FMTQIK"
+    },
+    "fmtqik/202510.json": {
+      "bytes": 2165,
+      "params": {
+        "date": "20251001",
+        "response": "json"
+      },
+      "path": "/rwd/zh/afterTrading/FMTQIK"
+    },
+    "fmtqik/202511.json": {
+      "bytes": 2165,
+      "params": {
+        "date": "20251101",
+        "response": "json"
+      },
+      "path": "/rwd/zh/afterTrading/FMTQIK"
+    },
+    "fmtqik/202512.json": {
+      "bytes": 2324,
+      "params": {
+        "date": "20251201",
+        "response": "json"
+      },
+      "path": "/rwd/zh/afterTrading/FMTQIK"
+    },
+    "fmtqik/202601.json": {
+      "bytes": 2266,
+      "params": {
+        "date": "20260101",
+        "response": "json"
+      },
+      "path": "/rwd/zh/afterTrading/FMTQIK"
+    },
+    "fmtqik/202602.json": {
+      "bytes": 1523,
+      "params": {
+        "date": "20260201",
+        "response": "json"
+      },
+      "path": "/rwd/zh/afterTrading/FMTQIK"
+    },
+    "fmtqik/202603.json": {
+      "bytes": 2366,
+      "params": {
+        "date": "20260301",
+        "response": "json"
+      },
+      "path": "/rwd/zh/afterTrading/FMTQIK"
+    },
+    "fmtqik/202604.json": {
+      "bytes": 2202,
+      "params": {
+        "date": "20260401",
+        "response": "json"
+      },
+      "path": "/rwd/zh/afterTrading/FMTQIK"
+    },
+    "fmtqik/202605.json": {
+      "bytes": 2234,
+      "params": {
+        "date": "20260501",
+        "response": "json"
+      },
+      "path": "/rwd/zh/afterTrading/FMTQIK"
+    },
+    "fmtqik/202606.json": {
+      "bytes": 2327,
+      "params": {
+        "date": "20260601",
+        "response": "json"
+      },
+      "path": "/rwd/zh/afterTrading/FMTQIK"
+    },
+    "fmtqik/202607.json": {
+      "bytes": 2390,
+      "params": {
+        "date": "20260701",
+        "response": "json"
+      },
+      "path": "/rwd/zh/afterTrading/FMTQIK"
+    },
+    "fmtqik/202608.json": {
+      "bytes": 2275,
+      "params": {
+        "date": "20260801",
+        "response": "json"
+      },
+      "path": "/rwd/zh/afterTrading/FMTQIK"
+    },
+    "fmtqik/202609.json": {
+      "bytes": 2019,
+      "params": {
+        "date": "20260901",
+        "response": "json"
+      },
+      "path": "/rwd/zh/afterTrading/FMTQIK"
+    },
+    "mi_5mins_hist.json": {
+      "bytes": 1309,
+      "params": {
+        "response": "json"
+      },
+      "path": "/rwd/zh/TAIEX/MI_5MINS_HIST"
+    },
+    "mi_index_ms.json": {
+      "bytes": 1726,
+      "params": {
+        "date": "20260924",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "stock_day_all.csv": {
+      "bytes": 136800,
+      "params": {
+        "response": "json"
+      },
+      "path": "/rwd/zh/afterTrading/STOCK_DAY_ALL"
+    }
+  },
+  "months": [
+    "202508",
+    "202509",
+    "202510",
+    "202511",
+    "202512",
+    "202601",
+    "202602",
+    "202603",
+    "202604",
+    "202605",
+    "202606",
+    "202607",
+    "202608",
+    "202609"
+  ],
+  "source_base": "https://www.twse.com.tw",
+  "stock_day_all_rows": 1380
+}
