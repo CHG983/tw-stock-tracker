@@ -543,8 +543,12 @@ def svg_region(win, win_ma5, win_ma20, win_prev, crosses, ax, vl, rows) -> str:
     A("        <!-- ===== 起點與終點標註 ===== -->")
     A(f'        <circle cx="{yn(xs[0])}" cy="{yn(ys_c[0])}" r="3.4" fill="#2b6094"/>')
     A(f'        <circle class="last-d" cx="{yn(xs[-1])}" cy="{yn(ys_c[-1])}" r="4.6"/>')
-    top = min(ys_c[-1], ys_5[-1], ys_20[-1])
-    A(f'        <text class="axis-t" x="978.0" y="{yn(max(14.0, top - 43.2))}" '
+    # 終點標註：放在折線終點「下方」的空白處。
+    # 原本放在 top-43.2（圖頂），會與下方的交叉日期標籤在水平方向重疊（實測
+    # 2026/09/21 的標籤與本數值框 overlap 38x9 px）。移到終點下方可完全避開，
+    # 且仍緊鄰折線終點、易於對照。
+    badge_y = min(240.0, ys_c[-1] + 21.0)
+    A(f'        <text class="axis-t" x="978.0" y="{yn(badge_y)}" '
       f'text-anchor="end" style="font-weight:700;fill:#14304f">{f2(win[-1]["close"])}</text>')
 
     A("")
