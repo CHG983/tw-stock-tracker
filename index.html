@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!--SNAP:TITLE--><title>台股追蹤・加權指數與當日漲跌幅排行（2026/09/24）</title><!--/SNAP:TITLE-->
+<title>台股追蹤・加權指數與當日漲跌幅排行（2026/09/24）</title>
 <meta name="description" content="台灣證券交易所公開資料的收盤概況：加權指數、成交金額、漲跌家數、當日漲幅前十名、跌幅前十名、2330 台積電，以及 MA5／MA20 均線、黃金／死亡交叉標示與成交量走勢圖。">
 <meta name="theme-color" content="#14304f">
 <style>
@@ -575,28 +575,28 @@
 
   <div class="status" id="status" role="status" aria-live="polite">
     <span class="si" aria-hidden="true"></span>
-    <!--SNAP:HTML_STATUS--><span id="status-text">目前顯示 <b>靜態快照</b>（內建，2026/09/24 13:30 收盤）— 點右上角「重新整理」取得最新報價</span><!--/SNAP:HTML_STATUS-->
+    <span id="status-text">目前顯示 <b>靜態快照</b>（內建，2026/09/24 13:30 收盤）— 點右上角「重新整理」取得最新報價</span>
     <span class="sep">|</span>
-    <span>最後更新 <!--SNAP:HTML_LASTUPD--><b class="upd" id="last-updated">2026/09/24 23:47:43</b><!--/SNAP:HTML_LASTUPD--></span>
+    <span>最後更新 <b class="upd" id="last-updated">2026/09/24 20:20:00</b></span>
   </div>
 
   <!-- ================= HERO：大盤概況 ================= -->
   <section class="hero" aria-labelledby="hero-t">
     <div class="hero-head">
       <h1 id="hero-t">發行量加權股價指數</h1>
-      <!--SNAP:HEROTAG--><span class="tag" id="hero-tag">集中市場・收盤</span><!--/SNAP:HEROTAG-->
+      <span class="tag" id="hero-tag">集中市場・收盤</span>
     </div>
 
-    <!--SNAP:IDXROW-->    <div class="idx-row">
+    <div class="idx-row">
       <div class="idx-val num is-down" id="idx-val">48,024.60</div>
       <div class="idx-delta">
         <span class="d1 num is-down" id="idx-delta">−132.69　−0.28%</span>
         <span class="d2" id="idx-prev">較前一交易日（09/23 收 48,157.29）</span>
       </div>
     </div>
-    <p class="hero-note" id="idx-note">當日振幅 362.82 點　|　開盤 48,075.39　最高 48,117.54　最低 47,754.72</p><!--/SNAP:IDXROW-->
+    <p class="hero-note" id="idx-note">當日振幅 362.82 點　|　開盤 48,075.39　最高 48,117.54　最低 47,754.72</p>
 
-    <!--SNAP:KPIS-->    <dl class="kpis">
+    <dl class="kpis">
       <div class="kpi">
         <dt>成交金額（集中市場總計）</dt>
         <dd class="num" id="kpi-amt">7,755.91<small>億元</small></dd>
@@ -613,14 +613,14 @@
         <dt>下跌家數（上市股票）</dt>
         <dd class="num is-down" id="kpi-down">546<small>家</small></dd>
       </div>
-    </dl><!--/SNAP:KPIS-->
+    </dl>
   </section>
 
   <!-- ================= 漲跌家數 ================= -->
   <section class="card" aria-labelledby="br-t">
     <div class="card-head">
       <h2 id="br-t">市場漲跌家數</h2>
-      <!--SNAP:BRDATE--><span class="sub" id="br-date">上市股票・2026/09/24</span><!--/SNAP:BRDATE-->
+      <span class="sub" id="br-date">上市股票・2026/09/24</span>
       <span class="legend">
         <i><span class="sw" style="background:#d62b1c"></span>上漲</i>
         <i><span class="sw" style="background:#0b8f4c"></span>下跌</i>
@@ -628,7 +628,7 @@
       </span>
     </div>
 
-    <!--SNAP:BREADTH-->    <div class="breadth-top">
+    <div class="breadth-top">
       <div class="bstat">
         <span class="lb">上漲</span>
         <span class="vv num up" id="br-up">386</span>
@@ -655,14 +655,14 @@
 
     <p class="bfoot" id="br-market">
       <b>整體市場</b>（含 ETF、權證、ETN、受益證券等全部上市有價證券）：上漲 <b class="num is-up">4,581</b> 家（漲停 67）、下跌 <b class="num is-down">8,065</b> 家（跌停 62）、持平 <b class="num">1,107</b> 家。
-    </p><!--/SNAP:BREADTH-->
+    </p>
   </section>
 
   <!-- ================= 走勢圖 ================= -->
   <section class="card" aria-labelledby="ch-t">
     <div class="card-head">
       <h2 id="ch-t">加權指數走勢</h2>
-      <!--SNAP:CHARTSUB--><span class="sub">近 60 個交易日收盤（2026/07/02 – 2026/09/24）・區間內 4 次均線交叉</span><!--/SNAP:CHARTSUB-->
+      <span class="sub">近 60 個交易日收盤（2026/07/02 – 2026/09/24）・區間內 4 次均線交叉</span>
       <span class="legend">
         <i><span class="sw" style="background:#2b6094"></span>收盤指數</i>
         <i><span class="sw" style="background:#c2760b"></span>MA5</i>
@@ -673,94 +673,93 @@
     </div>
 
     <div class="chart-box">
-      <!--SNAP:SVG-->        <!-- ===== 主圖：水平格線與 Y 軸標籤（指數點） ===== -->
-        <line class="grid-l" x1="62" y1="57.7" x2="984" y2="57.7"/>
-        <line class="grid-l" x1="62" y1="88.2" x2="984" y2="88.2"/>
-        <line class="grid-l" x1="62" y1="118.7" x2="984" y2="118.7"/>
-        <line class="grid-l" x1="62" y1="149.2" x2="984" y2="149.2"/>
-        <line class="grid-l" x1="62" y1="179.8" x2="984" y2="179.8"/>
-        <line class="grid-l" x1="62" y1="210.3" x2="984" y2="210.3"/>
-        <line class="grid-l" x1="62" y1="240.8" x2="984" y2="240.8"/>
-        <text class="axis-t" x="54" y="61.7" text-anchor="end">50,000</text>
-        <text class="axis-t" x="54" y="92.2" text-anchor="end">48,000</text>
-        <text class="axis-t" x="54" y="122.7" text-anchor="end">46,000</text>
-        <text class="axis-t" x="54" y="153.2" text-anchor="end">44,000</text>
-        <text class="axis-t" x="54" y="183.8" text-anchor="end">42,000</text>
-        <text class="axis-t" x="54" y="214.3" text-anchor="end">40,000</text>
-        <text class="axis-t" x="54" y="244.8" text-anchor="end">38,000</text>
+      <svg viewBox="0 0 1000 420" role="img" aria-label="加權指數近 60 個交易日（2026/07/02 至 2026/09/24）收盤走勢、MA5／MA20 均線與成交量圖。最新收盤 48,024.60 點，MA5 47,776.33 點、MA20 46,755.77 點，收盤指數站上兩條均線。期間最低 39,933.30 點（7 月底回檔）、最高 48,157.29 點。下方柱狀圖為每日成交金額，最高 13,332 億元，紅柱代表收盤較前一日上漲、綠柱代表下跌，31 天上漲、29 天下跌。圖上另以垂直虛線與圓點標示區間內 4 次均線交叉：2026/07/13 死亡交叉、2026/08/06 黃金交叉、2026/09/16 死亡交叉、2026/09/21 黃金交叉，日期標籤採交錯高度以避免重疊。">
+        <title>加權指數近 60 個交易日收盤走勢、MA5／MA20 均線、均線交叉標示與成交量（成交金額）</title>
 
-        <!-- ===== 均線交叉垂直導引線（區間內 4 次） ===== -->
+        <!-- ===== 主圖：水平格線與 Y 軸標籤（指數點） ===== -->
+        <line class="grid-l" x1="62" y1="240.8" x2="984" y2="240.8"/>
+        <line class="grid-l" x1="62" y1="195.1" x2="984" y2="195.1"/>
+        <line class="grid-l" x1="62" y1="149.3" x2="984" y2="149.3"/>
+        <line class="grid-l" x1="62" y1="103.5" x2="984" y2="103.5"/>
+        <line class="grid-l" x1="62" y1="57.7" x2="984" y2="57.7"/>
+        <text class="axis-t" x="54" y="244.8" text-anchor="end">40,000</text>
+        <text class="axis-t" x="54" y="199.1" text-anchor="end">42,000</text>
+        <text class="axis-t" x="54" y="153.3" text-anchor="end">44,000</text>
+        <text class="axis-t" x="54" y="107.5" text-anchor="end">46,000</text>
+        <text class="axis-t" x="54" y="61.7" text-anchor="end">48,000</text>
+
+        <!-- ===== 均線交叉垂直導引線（4 次交叉；上排為 08/06、09/16，下排為 07/13、09/21） ===== -->
         <g class="cx-guides" aria-hidden="true">
-          <line class="cx-guide is-death" x1="155.8" y1="34.0" x2="155.8" y2="238"/>
-          <line class="cx-guide is-golden" x1="437.1" y1="34.0" x2="437.1" y2="238"/>
-          <line class="cx-guide is-death" x1="890.2" y1="34.0" x2="890.2" y2="238"/>
-          <line class="cx-guide is-golden" x1="937.1" y1="54.0" x2="937.1" y2="238"/>
+          <line class="cx-guide is-death" x1="144.6" y1="54" x2="144.6" y2="238"/>
+          <line class="cx-guide is-death" x1="889.1" y1="34" x2="889.1" y2="238"/>
+          <line class="cx-guide is-golden" x1="435.5" y1="34" x2="435.5" y2="238"/>
+          <line class="cx-guide is-golden" x1="929.8" y1="54" x2="929.8" y2="238"/>
         </g>
 
-        <!-- ===== 收盤指數：面積與折線 =====
-        <path class="area-f" d="M 62.0,250.0 L 62.0,107.4 77.6,106.8 93.3,110.2 108.9,126.7 124.5,122.8 140.1,128.6 155.8,128.2 171.4,138.0 187.0,124.4 202.6,124.5 218.3,169.5 233.9,172.9 249.5,145.7 265.2,136.6 280.8,136.3 296.4,154.5 312.0,154.8 327.7,185.8 343.3,209.7 358.9,211.3 374.5,162.7 390.2,158.6 405.8,159.0 421.4,139.9 437.1,143.2 452.7,145.8 468.3,135.1 483.9,132.1 499.6,126.1 515.2,118.4 530.8,121.6 546.4,120.9 562.1,129.3 577.7,138.3 593.3,135.0 608.9,130.6 624.6,137.6 640.2,131.4 655.8,121.3 671.5,119.1 687.1,113.7 702.7,116.8 718.3,104.3 734.0,116.2 749.6,120.9 765.2,110.3 780.8,98.5 796.5,101.9 812.1,100.7 827.7,104.4 843.4,115.9 859.0,120.8 874.6,126.2 890.2,121.0 905.9,114.3 921.5,100.7 937.1,92.5 952.7,91.3 968.4,85.8 984.0,87.8 L 984.0,250.0 Z"/>
-        <polyline class="line-p" points="62.0,107.4 77.6,106.8 93.3,110.2 108.9,126.7 124.5,122.8 140.1,128.6 155.8,128.2 171.4,138.0 187.0,124.4 202.6,124.5 218.3,169.5 233.9,172.9 249.5,145.7 265.2,136.6 280.8,136.3 296.4,154.5 312.0,154.8 327.7,185.8 343.3,209.7 358.9,211.3 374.5,162.7 390.2,158.6 405.8,159.0 421.4,139.9 437.1,143.2 452.7,145.8 468.3,135.1 483.9,132.1 499.6,126.1 515.2,118.4 530.8,121.6 546.4,120.9 562.1,129.3 577.7,138.3 593.3,135.0 608.9,130.6 624.6,137.6 640.2,131.4 655.8,121.3 671.5,119.1 687.1,113.7 702.7,116.8 718.3,104.3 734.0,116.2 749.6,120.9 765.2,110.3 780.8,98.5 796.5,101.9 812.1,100.7 827.7,104.4 843.4,115.9 859.0,120.8 874.6,126.2 890.2,121.0 905.9,114.3 921.5,100.7 937.1,92.5 952.7,91.3 968.4,85.8 984.0,87.8"/>
+        <!-- ===== 收盤指數：面積與折線 ===== -->
+        <path class="area-f" d="M 62.0,250.0 L 62.0,86.5 77.6,85.6 93.3,90.8 108.9,115.4 124.5,109.6 140.1,118.3 155.8,117.7 171.4,132.4 187.0,111.9 202.6,112.1 218.3,179.7 233.9,184.8 249.5,144.0 265.2,130.4 280.8,129.8 296.4,157.2 312.0,157.7 327.7,204.1 343.3,239.9 358.9,242.4 374.5,169.4 390.2,163.3 405.8,163.9 421.4,135.3 437.1,140.2 452.7,144.1 468.3,128.0 483.9,123.6 499.6,114.5 515.2,103.0 530.8,107.8 546.4,106.8 562.1,119.3 577.7,132.8 593.3,127.9 608.9,121.3 624.6,131.8 640.2,122.5 655.8,107.3 671.5,104.1 687.1,95.9 702.7,100.6 718.3,81.8 734.0,99.7 749.6,106.8 765.2,90.9 780.8,73.2 796.5,78.2 812.1,76.4 827.7,82.0 843.4,99.3 859.0,106.7 874.6,114.7 890.2,107.0 905.9,96.9 921.5,76.5 937.1,64.2 952.7,62.3 968.4,54.1 984.0,57.2 L 984.0,250.0 Z"/>
+        <polyline class="line-p" points="62.0,86.5 77.6,85.6 93.3,90.8 108.9,115.4 124.5,109.6 140.1,118.3 155.8,117.7 171.4,132.4 187.0,111.9 202.6,112.1 218.3,179.7 233.9,184.8 249.5,144.0 265.2,130.4 280.8,129.8 296.4,157.2 312.0,157.7 327.7,204.1 343.3,239.9 358.9,242.4 374.5,169.4 390.2,163.3 405.8,163.9 421.4,135.3 437.1,140.2 452.7,144.1 468.3,128.0 483.9,123.6 499.6,114.5 515.2,103.0 530.8,107.8 546.4,106.8 562.1,119.3 577.7,132.8 593.3,127.9 608.9,121.3 624.6,131.8 640.2,122.5 655.8,107.3 671.5,104.1 687.1,95.9 702.7,100.6 718.3,81.8 734.0,99.7 749.6,106.8 765.2,90.9 780.8,73.2 796.5,78.2 812.1,76.4 827.7,82.0 843.4,99.3 859.0,106.7 874.6,114.7 890.2,107.0 905.9,96.9 921.5,76.5 937.1,64.2 952.7,62.3 968.4,54.1 984.0,57.2"/>
 
         <!-- ===== MA20（長均線，底層） ===== -->
-        <polyline class="line-ma20" points="62.0,126.6 77.6,125.8 93.3,124.7 108.9,123.1 124.5,122.4 140.1,120.7 155.8,119.0 171.4,118.6 187.0,118.4 202.6,118.6 218.3,121.0 233.9,124.1 249.5,126.7 265.2,128.5 280.8,129.4 296.4,131.4 312.0,132.1 327.7,134.7 343.3,139.3 358.9,144.7 374.5,147.5 390.2,150.1 405.8,152.5 421.4,153.2 437.1,154.2 452.7,155.1 468.3,155.4 483.9,155.1 499.6,155.2 515.2,154.9 530.8,152.5 546.4,149.9 562.1,149.1 577.7,149.2 593.3,149.1 608.9,147.9 624.6,147.1 640.2,144.3 655.8,139.9 671.5,135.3 687.1,132.9 702.7,130.8 718.3,128.0 734.0,126.8 749.6,125.7 765.2,123.9 780.8,122.1 796.5,120.6 812.1,119.3 827.7,118.6 843.4,118.3 859.0,118.3 874.6,118.2 890.2,117.3 905.9,116.3 921.5,114.8 937.1,112.5 952.7,110.5 968.4,108.8 984.0,107.2"/>
-        <circle class="dot-ma20" cx="984.0" cy="107.2" r="3.6"/>
+        <polyline class="line-ma20" points="62.0,115.4 77.6,114.1 93.3,112.4 108.9,110.1 124.5,109.0 140.1,106.5 155.8,104.0 171.4,103.3 187.0,103.0 202.6,103.3 218.3,106.9 233.9,111.5 249.5,115.5 265.2,118.1 280.8,119.5 296.4,122.5 312.0,123.6 327.7,127.4 343.3,134.4 358.9,142.5 374.5,146.7 390.2,150.5 405.8,154.2 421.4,155.2 437.1,156.7 452.7,158.0 468.3,158.5 483.9,158.1 499.6,158.2 515.2,157.8 530.8,154.2 546.4,150.3 562.1,149.1 577.7,149.2 593.3,149.1 608.9,147.3 624.6,146.0 640.2,141.9 655.8,135.3 671.5,128.4 687.1,124.7 702.7,121.6 718.3,117.4 734.0,115.7 749.6,114.0 765.2,111.3 780.8,108.6 796.5,106.3 812.1,104.4 827.7,103.4 843.4,102.9 859.0,102.9 874.6,102.7 890.2,101.4 905.9,99.9 921.5,97.6 937.1,94.2 952.7,91.2 968.4,88.6 984.0,86.2"/>
+        <circle class="dot-ma20" cx="984.0" cy="86.2" r="3.6"/>
 
         <!-- ===== MA5（短均線，上層） ===== -->
-        <polyline class="line-ma5" points="62.0,120.4 77.6,113.6 93.3,108.9 108.9,110.9 124.5,114.8 140.1,119.0 155.8,123.3 171.4,128.8 187.0,128.4 202.6,128.7 218.3,136.9 233.9,145.8 249.5,147.4 265.2,149.8 280.8,152.2 296.4,149.2 312.0,145.6 327.7,153.6 343.3,168.2 358.9,183.2 374.5,184.9 390.2,185.6 405.8,180.3 421.4,166.3 437.1,152.7 452.7,149.3 468.3,144.6 483.9,139.2 499.6,136.5 515.2,131.5 530.8,126.7 546.4,123.8 562.1,123.3 577.7,125.7 593.3,129.0 608.9,130.8 624.6,134.1 640.2,134.6 655.8,131.2 671.5,128.0 687.1,124.6 702.7,120.5 718.3,115.0 734.0,114.0 749.6,114.4 765.2,113.7 780.8,110.0 796.5,109.6 812.1,106.5 827.7,103.1 843.4,104.3 859.0,108.7 874.6,113.6 890.2,117.7 905.9,119.7 921.5,116.6 937.1,111.0 952.7,104.0 968.4,96.9 984.0,91.6"/>
-        <circle class="dot-ma5" cx="984.0" cy="91.6" r="3.6"/>
+        <polyline class="line-ma5" points="62.0,106.0 77.6,95.9 93.3,88.7 108.9,91.7 124.5,97.6 140.1,103.9 155.8,110.4 171.4,118.7 187.0,118.0 202.6,118.5 218.3,130.8 233.9,144.2 249.5,146.5 265.2,150.2 280.8,153.7 296.4,149.2 312.0,143.8 327.7,155.8 343.3,177.8 358.9,200.3 374.5,202.7 390.2,203.8 405.8,195.8 421.4,174.9 437.1,154.4 452.7,149.4 468.3,142.3 483.9,134.3 499.6,130.1 515.2,122.7 530.8,115.4 546.4,111.2 562.1,110.3 577.7,114.0 593.3,118.9 608.9,121.6 624.6,126.6 640.2,127.3 655.8,122.2 671.5,117.4 687.1,112.3 702.7,106.1 718.3,97.9 734.0,96.4 749.6,97.0 765.2,96.0 780.8,90.5 796.5,89.8 812.1,85.1 827.7,80.1 843.4,81.8 859.0,88.5 874.6,95.8 890.2,101.9 905.9,104.9 921.5,100.3 937.1,91.8 952.7,81.4 968.4,70.8 984.0,62.9"/>
+        <circle class="dot-ma5" cx="984.0" cy="62.9" r="3.6"/>
 
         <!-- ===== 均線交叉點標記與日期標籤（交錯高度避免重疊） ===== -->
         <g class="cx-marks">
           <g class="cx-mark">
             <title>2026/07/13 死亡交叉，當日收盤 45,380.52 點，MA5 45,701.01 點、MA20 45,980.26 點</title>
-            <circle class="cx-dot" cx="155.8" cy="128.2" r="5.4" fill="#0b6b7e"/>
+            <circle class="cx-dot" cx="144.6" cy="105.8" r="5.4" fill="#0b6b7e"/>
           </g>
           <g class="cx-mark">
             <title>2026/08/06 黃金交叉，當日收盤 44,396.70 點，MA5 43,775.02 點、MA20 43,675.00 點</title>
-            <circle class="cx-dot" cx="437.1" cy="143.2" r="5.4" fill="#a35f05"/>
+            <circle class="cx-dot" cx="435.5" cy="156.5" r="5.4" fill="#a35f05"/>
           </g>
           <g class="cx-mark">
             <title>2026/09/16 死亡交叉，當日收盤 45,848.90 點，MA5 46,069.65 點、MA20 46,092.17 點</title>
-            <circle class="cx-dot" cx="890.2" cy="121.0" r="5.4" fill="#0b6b7e"/>
+            <circle class="cx-dot" cx="889.1" cy="101.5" r="5.4" fill="#0b6b7e"/>
           </g>
           <g class="cx-mark">
-            <title>2026/09/21 黃金交叉，當日收盤 47,718.84 點，MA5 46,509.60 點、MA20 46,405.53 點</title>
-            <circle class="cx-dot" cx="937.1" cy="92.5" r="5.4" fill="#a35f05"/>
+            <title>2026/09/21 黃金交叉，當日收盤 47,718.84 點，MA5 46,509.60 點、MA20 46,405.54 點</title>
+            <circle class="cx-dot" cx="929.8" cy="95.8" r="5.4" fill="#a35f05"/>
           </g>
         </g>
         <g class="cx-labels">
-          <g class="cx-lb is-death">
-            <rect class="cx-pill" x="126.8" y="18.0" width="58" height="16" rx="4" style="stroke:#0b6b7e"/>
-            <text class="cx-pill-t" x="155.8" y="29.4" text-anchor="middle" style="fill:#0a5f70">2026/07/13</text>
-          </g>
           <g class="cx-lb is-golden">
-            <rect class="cx-pill" x="408.1" y="18.0" width="58" height="16" rx="4" style="stroke:#a35f05"/>
-            <text class="cx-pill-t" x="437.1" y="29.4" text-anchor="middle" style="fill:#8a4f04">2026/08/06</text>
+            <rect class="cx-pill" x="406.5" y="18" width="58" height="16" rx="4" style="stroke:#a35f05"/>
+            <text class="cx-pill-t" x="435.5" y="29.4" text-anchor="middle" style="fill:#8a4f04">2026/08/06</text>
           </g>
           <g class="cx-lb is-death">
-            <rect class="cx-pill" x="861.2" y="18.0" width="58" height="16" rx="4" style="stroke:#0b6b7e"/>
-            <text class="cx-pill-t" x="890.2" y="29.4" text-anchor="middle" style="fill:#0a5f70">2026/09/16</text>
+            <rect class="cx-pill" x="860.1" y="18" width="58" height="16" rx="4" style="stroke:#0b6b7e"/>
+            <text class="cx-pill-t" x="889.1" y="29.4" text-anchor="middle" style="fill:#0a5f70">2026/09/16</text>
+          </g>
+          <g class="cx-lb is-death">
+            <rect class="cx-pill" x="115.6" y="38" width="58" height="16" rx="4" style="stroke:#0b6b7e"/>
+            <text class="cx-pill-t" x="144.6" y="49.4" text-anchor="middle" style="fill:#0a5f70">2026/07/13</text>
           </g>
           <g class="cx-lb is-golden">
-            <rect class="cx-pill" x="908.1" y="38.0" width="58" height="16" rx="4" style="stroke:#a35f05"/>
-            <text class="cx-pill-t" x="937.1" y="49.4" text-anchor="middle" style="fill:#8a4f04">2026/09/21</text>
+            <rect class="cx-pill" x="900.8" y="38" width="58" height="16" rx="4" style="stroke:#a35f05"/>
+            <text class="cx-pill-t" x="929.8" y="49.4" text-anchor="middle" style="fill:#8a4f04">2026/09/21</text>
           </g>
         </g>
 
         <!-- ===== 起點與終點標註 ===== -->
-        <circle cx="62.0" cy="107.4" r="3.4" fill="#2b6094"/>
-        <circle class="last-d" cx="984.0" cy="87.8" r="4.6"/>
-        <text class="axis-t" x="978.0" y="44.6" text-anchor="end" style="font-weight:700;fill:#14304f">48,024.60</text>
+        <circle cx="62.0" cy="86.5" r="3.4" fill="#2b6094"/>
+        <circle class="last-d" cx="984.0" cy="57.2" r="4.6"/>
+        <text class="axis-t" x="978.0" y="14" text-anchor="end" style="font-weight:700;fill:#14304f">48,024.60</text>
 
         <!-- ===== 副圖：成交量（成交金額，億元） ===== -->
         <text class="axis-t sub-chart-t" x="62" y="273.0">成交量（成交金額，億元）</text>
         <line class="vol-base" x1="62" y1="380.0" x2="984" y2="380.0"/>
-        <line class="grid-l" x1="62" y1="286.0" x2="984" y2="286.0"/>
-        <line class="grid-l" x1="62" y1="317.3" x2="984" y2="317.3"/>
         <line class="grid-l" x1="62" y1="348.7" x2="984" y2="348.7"/>
-        <text class="axis-t" x="54" y="290.0" text-anchor="end">15,000</text>
-        <text class="axis-t" x="54" y="321.3" text-anchor="end">10,000</text>
+        <line class="grid-l" x1="62" y1="317.3" x2="984" y2="317.3"/>
+        <line class="grid-l" x1="62" y1="286.0" x2="984" y2="286.0"/>
         <text class="axis-t" x="54" y="352.7" text-anchor="end">5,000</text>
+        <text class="axis-t" x="54" y="321.3" text-anchor="end">10,000</text>
+        <text class="axis-t" x="54" y="290.0" text-anchor="end">15,000</text>
         <rect class="v-down" x="57.3" y="312.1" width="9.4" height="67.9"><title>2026-07-02 成交金額 10,835.83 億元</title></rect>
         <rect class="v-up" x="72.9" y="312.4" width="9.4" height="67.6"><title>2026-07-03 成交金額 10,780.28 億元</title></rect>
         <rect class="v-down" x="88.6" y="313.3" width="9.4" height="66.7"><title>2026-07-06 成交金額 10,644.32 億元</title></rect>
@@ -770,7 +769,7 @@
         <rect class="v-up" x="151.1" y="313.1" width="9.4" height="66.9"><title>2026-07-13 成交金額 10,676.62 億元</title></rect>
         <rect class="v-down" x="166.7" y="302.0" width="9.4" height="78.0"><title>2026-07-14 成交金額 12,452.07 億元</title></rect>
         <rect class="v-up" x="182.3" y="315.8" width="9.4" height="64.2"><title>2026-07-15 成交金額 10,243.86 億元</title></rect>
-        <rect class="v-down" x="197.9" y="321.5" width="9.4" height="58.5"><title>2026-07-16 成交金額 9,331.81 億元</title></rect>
+        <rect class="v-down" x="198.0" y="321.5" width="9.4" height="58.5"><title>2026-07-16 成交金額 9,331.81 億元</title></rect>
         <rect class="v-down" x="213.6" y="296.5" width="9.4" height="83.5"><title>2026-07-17 成交金額 13,331.57 億元</title></rect>
         <rect class="v-down" x="229.2" y="314.7" width="9.4" height="65.3"><title>2026-07-20 成交金額 10,414.57 億元</title></rect>
         <rect class="v-up" x="244.8" y="325.7" width="9.4" height="54.3"><title>2026-07-21 成交金額 8,662.52 億元</title></rect>
@@ -781,7 +780,7 @@
         <rect class="v-down" x="323.0" y="325.3" width="9.4" height="54.7"><title>2026-07-28 成交金額 8,725.75 億元</title></rect>
         <rect class="v-down" x="338.6" y="308.0" width="9.4" height="72.0"><title>2026-07-29 成交金額 11,491.85 億元</title></rect>
         <rect class="v-down" x="354.2" y="308.1" width="9.4" height="71.9"><title>2026-07-30 成交金額 11,469.38 億元</title></rect>
-        <rect class="v-up" x="369.8" y="324.4" width="9.4" height="55.6"><title>2026-07-31 成交金額 8,877.32 億元</title></rect>
+        <rect class="v-up" x="369.9" y="324.4" width="9.4" height="55.6"><title>2026-07-31 成交金額 8,877.32 億元</title></rect>
         <rect class="v-up" x="385.5" y="324.5" width="9.4" height="55.5"><title>2026-08-03 成交金額 8,855.06 億元</title></rect>
         <rect class="v-down" x="401.1" y="311.9" width="9.4" height="68.1"><title>2026-08-04 成交金額 10,870.46 億元</title></rect>
         <rect class="v-up" x="416.7" y="304.8" width="9.4" height="75.2"><title>2026-08-05 成交金額 12,002.13 億元</title></rect>
@@ -792,22 +791,22 @@
         <rect class="v-up" x="494.9" y="324.1" width="9.4" height="55.9"><title>2026-08-12 成交金額 8,926.60 億元</title></rect>
         <rect class="v-up" x="510.5" y="310.8" width="9.4" height="69.2"><title>2026-08-13 成交金額 11,040.25 億元</title></rect>
         <rect class="v-down" x="526.1" y="310.5" width="9.4" height="69.5"><title>2026-08-14 成交金額 11,097.47 億元</title></rect>
-        <rect class="v-up" x="541.7" y="318.5" width="9.4" height="61.5"><title>2026-08-17 成交金額 9,810.55 億元</title></rect>
+        <rect class="v-up" x="541.8" y="318.5" width="9.4" height="61.5"><title>2026-08-17 成交金額 9,810.55 億元</title></rect>
         <rect class="v-down" x="557.4" y="316.8" width="9.4" height="63.2"><title>2026-08-18 成交金額 10,078.82 億元</title></rect>
         <rect class="v-down" x="573.0" y="324.2" width="9.4" height="55.8"><title>2026-08-19 成交金額 8,902.70 億元</title></rect>
         <rect class="v-up" x="588.6" y="327.7" width="9.4" height="52.3"><title>2026-08-20 成交金額 8,344.13 億元</title></rect>
-        <rect class="v-up" x="604.2" y="332.7" width="9.4" height="47.3"><title>2026-08-21 成交金額 7,549.05 億元</title></rect>
+        <rect class="v-up" x="604.3" y="332.7" width="9.4" height="47.3"><title>2026-08-21 成交金額 7,549.05 億元</title></rect>
         <rect class="v-down" x="619.9" y="338.9" width="9.4" height="41.1"><title>2026-08-24 成交金額 6,562.81 億元</title></rect>
         <rect class="v-up" x="635.5" y="334.6" width="9.4" height="45.4"><title>2026-08-25 成交金額 7,242.58 億元</title></rect>
         <rect class="v-up" x="651.1" y="327.2" width="9.4" height="52.8"><title>2026-08-26 成交金額 8,430.92 億元</title></rect>
         <rect class="v-up" x="666.8" y="319.4" width="9.4" height="60.6"><title>2026-08-27 成交金額 9,674.66 億元</title></rect>
         <rect class="v-up" x="682.4" y="313.0" width="9.4" height="67.0"><title>2026-08-28 成交金額 10,689.85 億元</title></rect>
         <rect class="v-down" x="698.0" y="299.2" width="9.4" height="80.8"><title>2026-08-31 成交金額 12,892.28 億元</title></rect>
-        <rect class="v-up" x="713.6" y="305.6" width="9.4" height="74.4"><title>2026-09-01 成交金額 11,875.72 億元</title></rect>
+        <rect class="v-up" x="713.7" y="305.6" width="9.4" height="74.4"><title>2026-09-01 成交金額 11,875.72 億元</title></rect>
         <rect class="v-down" x="729.3" y="318.8" width="9.4" height="61.2"><title>2026-09-02 成交金額 9,765.00 億元</title></rect>
         <rect class="v-down" x="744.9" y="317.8" width="9.4" height="62.2"><title>2026-09-03 成交金額 9,932.62 億元</title></rect>
         <rect class="v-up" x="760.5" y="326.2" width="9.4" height="53.8"><title>2026-09-04 成交金額 8,582.45 億元</title></rect>
-        <rect class="v-up" x="776.1" y="317.5" width="9.4" height="62.5"><title>2026-09-07 成交金額 9,979.45 億元</title></rect>
+        <rect class="v-up" x="776.2" y="317.5" width="9.4" height="62.5"><title>2026-09-07 成交金額 9,979.45 億元</title></rect>
         <rect class="v-down" x="791.8" y="322.2" width="9.4" height="57.8"><title>2026-09-08 成交金額 9,226.58 億元</title></rect>
         <rect class="v-up" x="807.4" y="328.9" width="9.4" height="51.1"><title>2026-09-09 成交金額 8,159.77 億元</title></rect>
         <rect class="v-down" x="823.0" y="333.0" width="9.4" height="47.0"><title>2026-09-10 成交金額 7,507.43 億元</title></rect>
@@ -818,7 +817,7 @@
         <rect class="v-up" x="901.2" y="325.7" width="9.4" height="54.3"><title>2026-09-17 成交金額 8,666.19 億元</title></rect>
         <rect class="v-up" x="916.8" y="308.4" width="9.4" height="71.6"><title>2026-09-18 成交金額 11,423.22 億元</title></rect>
         <rect class="v-up" x="932.4" y="325.7" width="9.4" height="54.3"><title>2026-09-21 成交金額 8,668.18 億元</title></rect>
-        <rect class="v-up" x="948.0" y="312.4" width="9.4" height="67.6"><title>2026-09-22 成交金額 10,787.76 億元</title></rect>
+        <rect class="v-up" x="948.1" y="312.4" width="9.4" height="67.6"><title>2026-09-22 成交金額 10,787.76 億元</title></rect>
         <rect class="v-up" x="963.7" y="323.9" width="9.4" height="56.1"><title>2026-09-23 成交金額 8,946.51 億元</title></rect>
         <rect class="v-down" x="979.3" y="331.4" width="9.4" height="48.6"><title>2026-09-24 成交金額 7,755.91 億元</title></rect>
 
@@ -828,23 +827,24 @@
         <text class="axis-t" x="437.1" y="404.0" text-anchor="middle">08/06</text>
         <text class="axis-t" x="624.6" y="404.0" text-anchor="middle">08/24</text>
         <text class="axis-t" x="812.1" y="404.0" text-anchor="middle">09/09</text>
-        <text class="axis-t" x="984.0" y="404.0" text-anchor="end">09/24</text><!--/SNAP:SVG-->
+        <text class="axis-t" x="984.0" y="404.0" text-anchor="end">09/24</text>
+      </svg>
     </div>
 
-    <!--SNAP:CXMKEY-->    <p class="cx-mkey" aria-label="圖上標示的 4 次均線交叉日期，由左至右">圖上 4 次交叉（由左至右）：
+    <p class="cx-mkey" aria-label="圖上標示的 4 次均線交叉日期，由左至右">圖上 4 次交叉（由左至右）：
       <span class="k d"><i aria-hidden="true"></i>07/13 死亡</span>
       <span class="k g"><i aria-hidden="true"></i>08/06 黃金</span>
       <span class="k d"><i aria-hidden="true"></i>09/16 死亡</span>
       <span class="k g"><i aria-hidden="true"></i>09/21 黃金</span>
-    </p><!--/SNAP:CXMKEY-->
+    </p>
 
-    <!--SNAP:MASTRIP-->    <div class="ma-strip">
+    <div class="ma-strip">
       <span><i class="sw" style="background:#2b6094"></i>最新收盤 <b class="num">48,024.60</b></span>
       <span><i class="sw" style="background:#c2760b"></i>MA5 <b class="num">47,776.33</b></span>
       <span><i class="sw" style="background:#0f7f8b"></i>MA20 <b class="num">46,755.77</b></span>
       <span class="pos">收盤 &gt; MA5 &gt; MA20（多頭排列）</span>
       <span class="cx-recent"><i class="sw" style="background:#a35f05"></i>最近一次交叉 <b>2026/09/21 黃金交叉</b>（2026/07/02–2026/09/24 區間內共 4 次）</span>
-    </div><!--/SNAP:MASTRIP-->
+    </div>
   </section>
 
   <!-- ================= MA5／MA20 交叉事件 ================= -->
@@ -863,7 +863,7 @@
       <i><span class="mk d" aria-hidden="true"></span>死亡交叉：MA5 由上往下穿越 MA20</i>
     </div>
 
-    <!--SNAP:CXLIST-->    <div class="cx-list" role="group" aria-label="MA5 與 MA20 交叉事件清單，共 14 筆，其中 4 筆落在走勢圖區間內">
+    <div class="cx-list" role="group" aria-label="MA5 與 MA20 交叉事件清單，共 12 筆，其中 4 筆落在走勢圖區間內">
       <div class="cx-row hd">
         <span>交叉日期</span>
         <span>類型</span>
@@ -875,7 +875,7 @@
         <span class="cx-dt">2026/09/21</span>
         <span class="cx-type g"><span class="dot" aria-hidden="true"></span>黃金交叉</span>
         <span class="cx-close">47,718.84</span>
-        <span class="cx-ma">MA5 46,509.60 · MA20 46,405.53</span>
+        <span class="cx-ma">MA5 46,509.60 · MA20 46,405.54</span>
         <span class="cx-flag on">已標示</span>
       </div>
       <div class="cx-row win">
@@ -955,29 +955,14 @@
         <span class="cx-ma">MA5 27,784.48 · MA20 27,788.66</span>
         <span class="cx-flag">區間外</span>
       </div>
-      <div class="cx-row">
-        <span class="cx-dt">2025/09/08</span>
-        <span class="cx-type g"><span class="dot" aria-hidden="true"></span>黃金交叉</span>
-        <span class="cx-close">24,547.38</span>
-        <span class="cx-ma">MA5 24,267.78 · MA20 24,213.58</span>
-        <span class="cx-flag">區間外</span>
-      </div>
-      <div class="cx-row">
-        <span class="cx-dt">2025/09/03</span>
-        <span class="cx-type d"><span class="dot" aria-hidden="true"></span>死亡交叉</span>
-        <span class="cx-close">24,100.30</span>
-        <span class="cx-ma">MA5 24,131.67 · MA20 24,160.51</span>
-        <span class="cx-flag">區間外</span>
-      </div>
-    </div><!--/SNAP:CXLIST-->
+    </div>
 
-    <!--SNAP:CXNOTE-->      <div class="cx-note">
+    <div class="cx-note">
       <p><b>交叉如何判定：</b>以加權指數<b>每日收盤值</b>計算 MA5（5 日簡單移動平均）與 MA20（20 日簡單移動平均），逐日比較兩者差值。差值<b>由負轉正</b>（MA5 由下往上穿越 MA20）記為<b class="tg">黃金交叉</b>——短期均線轉強、上漲動能增強，市場多解讀為偏多訊號；差值<b>由正轉負</b>（MA5 由上往下穿越 MA20）記為<b class="td">死亡交叉</b>——短期均線轉弱、下跌動能增強，市場多解讀為偏空訊號。</p>
-      <p><b>重要提醒：</b>MA5／MA20 皆為<b>落後指標</b>，訊號必然出現在趨勢形成之後，且短均線與長均線在盤整區間容易反覆交叉，產生假訊號。均線交叉僅供參考，不宜單獨作為買賣依據。</p>
-      <p><b>資料來源與計算區間：</b>臺灣證券交易所 <code>exchangeReport/FMTQIK</code> 加權指數歷史日資料 <b>281 個交易日</b>（2025/08/01 – 2026/09/24）。MA5／MA20 以全部 281 日計算後，於走勢圖呈現 2026/07/02 – 2026/09/24 區間。上表列出該 281 日內的<b>全部 14 筆</b>交叉事件（黃金交叉 7 筆、死亡交叉 7 筆），其中 <b>4 筆</b>落在走勢圖區間內並於圖上標示（標籤採交錯高度避免重疊）；其餘 10 筆以「區間外」標註，未畫在圖上。</p>
-      <p><b>自動更新：</b>本區塊由 <code>scripts/update_snapshot.py</code> 於 GitHub Actions 排程執行時，以證交所實際資料重新計算並寫回，非人工輸入。</p>
+      <p><b>重要提醒：</b>MA5／MA20 皆為<b>落後指標</b>，訊號必然出現在趨勢形成之後，且短均線與長均線在盤整區間容易反覆交叉（如上表 2026/03/17 與 03/18 連兩日反轉、2025/12 連續三次交叉），產生假訊號。均線交叉僅供參考，不宜單獨作為買賣依據。</p>
+      <p><b>資料來源與計算區間：</b>臺灣證券交易所 <code>exchangeReport/FMTQIK</code> 加權指數歷史日資料 <b>260 個交易日</b>（2025/09/01 – 2026/09/24）。MA5／MA20 以全部 260 日計算後，於走勢圖呈現 2026/07/02 – 2026/09/24 區間。上表列出該 260 日內的<b>全部 12 筆</b>交叉事件，其中 <b>4 筆</b>落在走勢圖區間內並於圖上標示（標籤採交錯高度避免重疊）；其餘 8 筆以「區間外」標註，未畫在圖上。</p>
       <p><b>關於走勢圖：</b>圖上的日期標籤為 SVG 內部座標，會隨圖表等比縮放；視窗寬度小於 <b>1180px</b> 時字級會小於約 9.4px 而難以閱讀，因此於該寬度以下<b>隱藏圖上標籤</b>，改以圖表下方的交叉摘要（彩色點＋日期＋類型）與上方清單閱讀交叉日期與數值。視窗寬度足夠時則直接於圖上顯示日期標籤。</p>
-    </div><!--/SNAP:CXNOTE-->
+    </div>
   </section>
 
   <!-- ================= 當日漲跌幅排行 ================= -->
@@ -992,14 +977,13 @@
       </span>
     </div>
 
-    <!--SNAP:RANKNOTE-->    <p class="note-src">排名依據：臺灣證券交易所「每日收盤行情」之個股<b>收盤價</b>與<b>漲跌價差</b>，以<b>漲跌幅百分比</b>由高至低（漲幅）／由低至高（跌幅）排序。母體為<b>上市普通股</b>，排除 ETF、ETN、受益證券與 TDR，並排除<b>無成交、無收盤價或無漲跌價差</b>之個股，共 <b id="uni-n">1,075</b> 檔。資料日期 <b id="uni-d">2026/09/24</b>。本區塊由 GitHub Actions 每日自動以證交所資料重新抓取與排序。</p><!--/SNAP:RANKNOTE-->
+    <p class="note-src">排名依據：臺灣證券交易所「每日收盤行情」之個股<b>收盤價</b>與<b>漲跌價差</b>，以<b>漲跌幅百分比</b>由高至低（漲幅）／由低至高（跌幅）排序。母體為<b>上市普通股</b>，排除 ETF、ETN、受益證券與 TDR，並排除<b>無成交、無收盤價或無漲跌價差</b>之個股，共 <b id="uni-n">1,075</b> 檔。資料日期 <b id="uni-d">2026/09/24</b>。</p>
 
     <div class="rl-block">
       <div class="rl-head">
         <span class="rl-hl"><span class="dot-up" aria-hidden="true"></span>漲幅前十名</span>
         <span class="rl-hx">依漲跌幅由高至低</span>
       </div>
-      <!--SNAP:LISTGAIN-->
       <div class="rl-list" id="list-gain" aria-label="當日漲幅前十名">
       <div class="rl-row" data-code="3021" data-pct="10.00"><span class="rl-no num">1</span><span class="rl-id"><span class="num">3021</span><b>鴻名</b></span><span class="rl-px num up">26.95</span><span class="rl-dl num up">+2.45</span><span class="rl-pc"><span class="chip up num">+10.00%</span></span><span class="rl-bar" aria-hidden="true"><i class="up" style="width:100.0%"></i></span></div>
       <div class="rl-row" data-code="6933" data-pct="10.00"><span class="rl-no num">2</span><span class="rl-id"><span class="num">6933</span><b>AMAX-KY</b></span><span class="rl-px num up">385.00</span><span class="rl-dl num up">+35.00</span><span class="rl-pc"><span class="chip up num">+10.00%</span></span><span class="rl-bar" aria-hidden="true"><i class="up" style="width:100.0%"></i></span></div>
@@ -1011,7 +995,7 @@
       <div class="rl-row" data-code="6672" data-pct="9.93"><span class="rl-no num">8</span><span class="rl-id"><span class="num">6672</span><b>騰輝電子-KY</b></span><span class="rl-px num up">337.50</span><span class="rl-dl num up">+30.50</span><span class="rl-pc"><span class="chip up num">+9.93%</span></span><span class="rl-bar" aria-hidden="true"><i class="up" style="width:99.3%"></i></span></div>
       <div class="rl-row" data-code="4195" data-pct="9.92"><span class="rl-no num">9</span><span class="rl-id"><span class="num">4195</span><b>基米-創</b></span><span class="rl-px num up">14.40</span><span class="rl-dl num up">+1.30</span><span class="rl-pc"><span class="chip up num">+9.92%</span></span><span class="rl-bar" aria-hidden="true"><i class="up" style="width:99.2%"></i></span></div>
       <div class="rl-row" data-code="8201" data-pct="9.92"><span class="rl-no num">10</span><span class="rl-id"><span class="num">8201</span><b>無敵</b></span><span class="rl-px num up">13.30</span><span class="rl-dl num up">+1.20</span><span class="rl-pc"><span class="chip up num">+9.92%</span></span><span class="rl-bar" aria-hidden="true"><i class="up" style="width:99.2%"></i></span></div>
-      </div><!--/SNAP:LISTGAIN-->
+      </div>
     </div>
 
     <div class="rl-block">
@@ -1019,7 +1003,6 @@
         <span class="rl-hl"><span class="dot-down" aria-hidden="true"></span>跌幅前十名</span>
         <span class="rl-hx">依漲跌幅由低至高</span>
       </div>
-      <!--SNAP:LISTLOSE-->
       <div class="rl-list" id="list-lose" aria-label="當日跌幅前十名">
       <div class="rl-row" data-code="1709" data-pct="-9.94"><span class="rl-no num">1</span><span class="rl-id"><span class="num">1709</span><b>和益</b></span><span class="rl-px num down">43.50</span><span class="rl-dl num down">−4.80</span><span class="rl-pc"><span class="chip down num">−9.94%</span></span><span class="rl-bar" aria-hidden="true"><i class="down" style="width:99.4%"></i></span></div>
       <div class="rl-row" data-code="7799" data-pct="-6.21"><span class="rl-no num">2</span><span class="rl-id"><span class="num">7799</span><b>禾榮科</b></span><span class="rl-px num down">498.00</span><span class="rl-dl num down">−33.00</span><span class="rl-pc"><span class="chip down num">−6.21%</span></span><span class="rl-bar" aria-hidden="true"><i class="down" style="width:62.1%"></i></span></div>
@@ -1031,7 +1014,7 @@
       <div class="rl-row" data-code="2104" data-pct="-4.29"><span class="rl-no num">8</span><span class="rl-id"><span class="num">2104</span><b>國際中橡</b></span><span class="rl-px num down">11.15</span><span class="rl-dl num down">−0.50</span><span class="rl-pc"><span class="chip down num">−4.29%</span></span><span class="rl-bar" aria-hidden="true"><i class="down" style="width:42.9%"></i></span></div>
       <div class="rl-row" data-code="6243" data-pct="-4.24"><span class="rl-no num">9</span><span class="rl-id"><span class="num">6243</span><b>迅杰</b></span><span class="rl-px num down">39.50</span><span class="rl-dl num down">−1.75</span><span class="rl-pc"><span class="chip down num">−4.24%</span></span><span class="rl-bar" aria-hidden="true"><i class="down" style="width:42.4%"></i></span></div>
       <div class="rl-row" data-code="2303" data-pct="-3.75"><span class="rl-no num">10</span><span class="rl-id"><span class="num">2303</span><b>聯電</b></span><span class="rl-px num down">154.00</span><span class="rl-dl num down">−6.00</span><span class="rl-pc"><span class="chip down num">−3.75%</span></span><span class="rl-bar" aria-hidden="true"><i class="down" style="width:37.5%"></i></span></div>
-      </div><!--/SNAP:LISTLOSE-->
+      </div>
     </div>
 
     <div class="rl-block">
@@ -1039,9 +1022,8 @@
         <span class="rl-hl"><span class="dot-ts" aria-hidden="true"></span>2330 台積電</span>
         <span class="rl-hx">固定顯示・不因排名變動</span>
       </div>
-      <!--SNAP:LISTTSMC-->
       <div class="wl" id="list-tsmc">
-      <div class="wl-head" aria-hidden="true">
+        <div class="wl-head" aria-hidden="true">
           <span>代號</span><span>名稱 / 產業</span>
           <span class="r">收盤價</span><span class="r">漲跌</span><span class="r">漲跌幅</span>
           <span class="r">成交量</span><span class="r amt">成交金額</span>
@@ -1057,7 +1039,7 @@
       </div><div class="stock-sub"><span>開 <b>2,480.00</b></span><span>高 <b>2,490.00</b></span><span>低 <b>2,470.00</b></span><span>昨收 <b>2,500.00</b></span><span>成交金額 <b>361.07 億</b></span></div>
       <div class="rbar" aria-hidden="true"><i class="down" style="width:5.00%"></i></div></div>
 
-      </div><!--/SNAP:LISTTSMC-->
+      </div>
     </div>
   </section>
 
@@ -1072,8 +1054,7 @@
       </span>
     </div>
 
-    <!--SNAP:RANKBAR-->
-      <div class="rank">
+    <div class="rank">
       <div class="rk" data-code="3021" data-pct="10.00"><span class="rk-id"><span>3021</span>鴻名</span>
         <span class="rk-track"><i class="up" style="width:50.00%"></i></span>
         <span class="rk-v num up">+10.00%</span></div>
@@ -1137,20 +1118,21 @@
       <div class="rk" data-code="1709" data-pct="-9.94"><span class="rk-id"><span>1709</span>和益</span>
         <span class="rk-track"><i class="down" style="width:49.69%"></i></span>
         <span class="rk-v num down">−9.94%</span></div>
-    </div><!--/SNAP:RANKBAR-->
+
+    </div>
   </section>
 
   <!-- ================= FOOTER ================= -->
   <footer class="site">
     <div class="fgrid">
       <div class="fbox">
-        <!--SNAP:FOOTA-->        <h3>資料時間</h3>
+        <h3>資料時間</h3>
         <p>2026/09/24（星期四）13:30 收盤</p>
-        <p>資料擷取時間：2026/09/24 23:47:43（UTC+8）</p>
+        <p>資料擷取時間：2026/09/24 20:20（UTC+8）</p>
         <p>前一交易日：2026/09/23</p>
         <p>走勢圖區間：2026/07/02 – 2026/09/24（60 個交易日）</p>
-        <p>MA 交叉計算區間：2025/08/01 – 2026/09/24（281 個交易日）</p>
-      </div><!--/SNAP:FOOTA-->
+        <p>MA 交叉計算區間：2025/09/01 – 2026/09/24（260 個交易日）</p>
+      </div>
       <div class="fbox">
         <h3>資料來源（臺灣證券交易所）</h3>
         <p><code>openapi.twse.com.tw</code> ／ STOCK_DAY_ALL（上市個股每日收盤行情）</p>
@@ -1163,19 +1145,19 @@
         <p><code>www.twse.com.tw</code> ／ STOCK_DAY_ALL（每日收盤行情・全市場 1,380 檔）<b>— 即時更新與漲跌幅排行採用</b></p>
       </div>
       <div class="fbox">
-        <!--SNAP:FOOTB-->        <h3>資料處理說明</h3>
-        <p><b>漲跌幅排行</b>取 <b>STOCK_DAY_ALL</b>（每日收盤行情），以個股<b>收盤價</b>與<b>漲跌價差</b>換算漲跌幅百分比後排序。母體為<b>上市普通股</b>，排除 ETF／ETN／受益證券與 TDR，並排除無成交、無收盤價、無漲跌價差者，共 <b>1,075</b> 檔；排序為漲幅由高至低、跌幅由低至高，同名次以股票代號升冪為次要鍵。</p>
+        <h3>資料處理說明</h3>
+        <p><b>漲跌幅排行</b>取 <b>STOCK_DAY_ALL</b>（每日收盤行情），以個股<b>收盤價</b>與<b>漲跌價差</b>換算漲跌幅百分比後排序。母體為<b>上市普通股</b>，排除 ETF／ETN／受益證券與 TDR，並排除無成交、無收盤價、無漲跌價差者，共 <b>1,075</b> 檔；當日另以 <b>MI_INDEX type=ALL</b> 全表（35,605 筆）逐檔交叉驗證，<b>全市場收盤價 0 筆不符</b>，母體總數亦與官方「股票」統計 1,081 檔一致（差額 6 檔為官方列為「未成交」或「無比價」者）。</p>
         <p>成交量為「成交股數 ÷ 1,000」換算為張；成交金額為「成交金額 ÷ 10<sup>8</sup>」換算為億元。</p>
-        <p>走勢圖取 <b>近 60 個交易日</b>（2026/07/02–2026/09/24）之收盤指數與成交金額，來源為 <b>FMTQIK</b>；收盤指數並與 <b>MI_5MINS_HIST</b> 逐日交叉驗證。</p>
-        <p><b>MA5／MA20</b> 為簡單移動平均，以完整歷史（281 個交易日，2025/08/01–2026/09/24）計算後取最近 60 日呈現，因此區間內每一點都有值，無起點斷線。均線單位為指數點。</p>
-        <p><b>MA 交叉事件</b>同樣由上述 281 日歷史計算：以每日收盤值求 MA5 與 MA20，逐日比較其差值，差值由負轉正（MA5 上穿 MA20）記為<b>黃金交叉</b>、由正轉負（MA5 下穿 MA20）記為<b>死亡交叉</b>，共 <b>14 筆</b>，全數由實際收盤資料算出，未經人工指定；其中 4 筆落在走勢圖的 60 日區間內並於圖上以垂直虛線、圓點與日期標籤標示。</p>
-        <p>成交量副圖採<b>成交金額（億元）</b>作為量能指標，柱色依<b>當日收盤相對前一交易日</b>漲跌著色（紅漲、綠跌，台股慣例）；本區間 31 天上漲、29 天下跌。</p>
+        <p>走勢圖取 <b>近 60 個交易日</b>（2026/07/02–2026/09/24）之收盤指數與成交金額，來源為 <b>FMTQIK</b>；收盤指數並與 <b>MI_5MINS_HIST</b> 逐日交叉驗證，60 日全數一致。</p>
+        <p><b>MA5／MA20</b> 為簡單移動平均，以完整歷史（260 個交易日，2025/09/01–2026/09/24）計算後取最近 60 日呈現，因此區間內每一點都有值，無起點斷線。均線單位為指數點。</p>
+        <p><b>MA 交叉事件</b>同樣由上述 260 日歷史計算：以每日收盤值求 MA5 與 MA20，逐日比較其差值，差值由負轉正（MA5 上穿 MA20）記為<b>黃金交叉</b>、由正轉負（MA5 下穿 MA20）記為<b>死亡交叉</b>，共 <b>12 筆</b>，全數由實際收盤資料算出，未經人工指定；其中 4 筆落在走勢圖的 60 日區間內並於圖上以垂直虛線、圓點與日期標籤標示。</p>
+        <p>成交量副圖採<b>成交金額（億元）</b>作為量能指標，柱色依<b>當日收盤相對前一交易日</b>漲跌著色（紅漲、綠跌）。</p>
         <p><b>即時更新：</b>點「重新整理」後，前端以 <code>fetch</code> 直接呼叫上列 <code>www.twse.com.tw</code> 端點。實測 <code>mis.twse.com.tw</code>（getStockInfo.jsp）未回傳 <code>Access-Control-Allow-Origin</code>，瀏覽器跨來源 <code>fetch</code> 會被 CORS 阻擋，且該端點不支援 JSONP callback（回傳內容不會包成 callback(...)），故<b>不採用</b>；本頁改用同樣由證交所提供、且具 CORS 標頭的 <code>www.twse.com.tw</code> 端點。盤中為<b>延遲約 5 秒至 1 分鐘</b>之資料，非逐筆即時報價。</p>
         <p><b>大盤即時</b>採 MI_5MINS_INDEX 期間最後一筆之發行量加權股價指數；<b>個股即時</b>採 STOCK_DAY_ALL 之收盤價、漲跌價差、成交股數與成交金額（換算為張與億元），並<b>重新計算漲跌幅排行</b>；漲跌家數與成交金額採 MI_INDEX type=MS。</p>
         <p><b>排行排除規則：</b>非 4 碼代號（ETF／ETN／受益證券）、<code>0xxx</code> ETF、名稱結尾 <code>-DR</code> 之 TDR、成交股數為 0 或空白、收盤價空白（官方列為「未成交」或「無比價」），以及漲跌價差無法解析者，一律不納入排行。</p>
-        <p><b>MA5／MA20 均線與成交量副圖仍為內建快照</b>，不隨「重新整理」變動（歷史日資料端點於盤後更新，非盤中即時）；但會由 GitHub Actions 每日排程自動更新，因此重新載入頁面即可看到最新收盤的均線與成交量。</p>
+        <p><b>MA5／MA20 均線與成交量副圖仍為內建快照</b>，不隨「重新整理」變動（歷史日資料端點於盤後更新，非盤中即時）。</p>
         <p>若 API 無法連線（離線、證交所端點異常或 CORS 變更），頁面會自動<b>退回內建快照</b>並以紅色提示標示，不會顯示空白或錯誤數字。</p>
-      </div><!--/SNAP:FOOTB-->
+      </div>
     </div>
 
     <p class="disc">
@@ -1183,7 +1165,7 @@
       As an AI Agent, I cannot provide legally protected, personalized investment advice. This analysis is for informational purposes only and does not constitute investment advice or recommendations. Consult a licensed financial advisor before making investment decisions.
     </p>
 
-    <!--SNAP:FOOTCOPY-->    <p class="copy">台股追蹤｜加權指數＆自選股概況（即時更新）　·　資料來源：臺灣證券交易所（TWSE）公開資料　·　內建快照最後更新：2026/09/24 23:47:43（由 GitHub Actions 每日自動更新）</p><!--/SNAP:FOOTCOPY-->
+    <p class="copy">台股追蹤｜加權指數＆自選股概況（即時更新）　·　資料來源：臺灣證券交易所（TWSE）公開資料</p>
   </footer>
 
 <script>
@@ -1196,7 +1178,7 @@
 (function(){
   'use strict';
 
-  <!--SNAP:JS_SNAPAT-->var SNAPSHOT_AT = '2026/09/24 23:47:43';<!--/SNAP:JS_SNAPAT-->
+  var SNAPSHOT_AT = '2026/09/24 20:20:00';
   var AUTO_MS     = 60000;
   var TIMEOUT_MS  = 15000;
   var B = 'https://www.twse.com.tw';
@@ -1647,7 +1629,7 @@
   });
 
   setBadge();
-  <!--SNAP:JS_STATINIT-->setStatus('', '<span id="status-text">目前顯示 <b>靜態快照</b>（內建，2026/09/24 13:30 收盤）— 點右上角「重新整理」取得最新報價</span>');<!--/SNAP:JS_STATINIT-->
+  setStatus('', '\u76ee\u524d\u986f\u793a <b>\u975c\u614b\u5feb\u7167</b>\uff08\u5167\u5efa\uff0c2026/09/24 13:30 \u6536\u76e4\uff09\u2014 \u9ede\u53f3\u4e0a\u89d2\u300c\u91cd\u65b0\u6574\u7406\u300d\u53d6\u5f97\u6700\u65b0\u5831\u50f9');
 
   setTimeout(function(){ refresh(); }, 1200);
 })();
