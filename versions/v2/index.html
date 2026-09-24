@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>台股追蹤・加權指數與自選股收盤概況（2026/09/24）</title>
+<meta name="description" content="台灣證券交易所公開資料的收盤概況：加權指數、成交金額、漲跌家數、10 檔自選股報價與漲跌幅視覺化。">
+<meta name="theme-color" content="#14304f">
+<style>
+  :root{
+    --bg:#eef1f5;
+    --surface:#ffffff;
+    --surface-2:#f7f9fb;
+    --ink:#0f141a;
+    --ink-2:#4b5764;
+    --ink-3:#7d8996;
+    --line:#e0e5ea;
+    --line-2:#eef1f4;
+    --navy:#14304f;
+    --navy-2:#1e4a7a;
+    --navy-3:#2b6094;
+    --up:#d62b1c;
+    --up-bg:#fdeeec;
+    --up-bd:#f6cfc9;
+    --down:#0b8f4c;
+    --down-bg:#e8f6ee;
+    --down-bd:#c2e5d2;
+    --flat:#6e7a86;
+    --flat-bg:#f0f2f5;
+    --up-dk:#ff7a6b;
+    --down-dk:#3ed489;
+    --radius:14px;
+    --radius-s:9px;
+    --shadow:0 1px 2px rgba(16,24,40,.04), 0 8px 24px -12px rgba(16,24,40,.14);
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Hiragino Sans TC","Microsoft JhengHei",sans-serif;
+    font-size:15px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
+
+  /* ---------- layout ---------- */
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px;}
+  header.top{
+    position:sticky;top:0;z-index:30;
+    background:rgba(20,48,79,.97);
+    backdrop-filter:saturate(150%) blur(8px);
+    -webkit-backdrop-filter:saturate(150%) blur(8px);
+    border-bottom:1px solid rgba(255,255,255,.10);
+  }
+  .top-in{
+    max-width:1120px;margin:0 auto;padding:11px 20px;
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:center;gap:10px;min-width:0;}
+  .brand .mark{
+    width:30px;height:30px;border-radius:8px;flex:0 0 auto;
+    background:linear-gradient(160deg,var(--navy-3),var(--navy-2));
+    display:grid;place-items:center;
+  }
+  .brand .mark svg{width:17px;height:17px;display:block;}
+  .brand b{color:#fff;font-size:15.5px;letter-spacing:.2px;white-space:nowrap;}
+  .brand span{color:#a9c2da;font-size:12.5px;white-space:nowrap;}
+  .top-meta{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .pill{
+    display:inline-flex;align-items:center;gap:7px;
+    background:rgba(255,255,255,.10);
+    border:1px solid rgba(255,255,255,.16);
+    color:#dce8f4;font-size:12.5px;line-height:1;
+    padding:6px 11px;border-radius:999px;white-space:nowrap;
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--down-dk);flex:0 0 auto;}
+
+  main{padding:26px 0 8px;}
+
+  /* ---------- hero ---------- */
+  .hero{
+    background:var(--navy);
+    border-radius:var(--radius);
+    color:#fff;
+    padding:26px 26px 22px;
+    box-shadow:var(--shadow);
+    position:relative;overflow:hidden;
+  }
+  .hero::after{
+    content:"";position:absolute;right:-90px;top:-90px;width:280px;height:280px;
+    border-radius:50%;background:rgba(255,255,255,.045);pointer-events:none;
+  }
+  .hero-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;position:relative;z-index:1;}
+  .hero-head h1{margin:0;font-size:15px;font-weight:600;color:#c6d8e9;letter-spacing:.4px;}
+  .hero-head .tag{
+    font-size:11.5px;color:#9fb8d1;border:1px solid rgba(255,255,255,.18);
+    padding:3px 8px;border-radius:999px;
+  }
+  .idx-row{
+    display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;
+    margin:10px 0 4px;position:relative;z-index:1;
+  }
+  .idx-val{font-size:clamp(38px,7vw,56px);font-weight:700;letter-spacing:-1.2px;line-height:1.02;}
+  .idx-delta{display:flex;flex-direction:column;gap:2px;padding-bottom:7px;}
+  .idx-delta .d1{font-size:19px;font-weight:650;line-height:1.2;}
+  .idx-delta .d2{font-size:13px;color:#9fb8d1;}
+  .is-up{color:var(--up-dk);}
+  .is-down{color:var(--down-dk);}
+  .is-flat{color:#c6d8e9;}
+  .hero-note{
+    position:relative;z-index:1;
+    font-size:12.5px;color:#9fb8d1;margin:2px 0 18px;
+  }
+  .kpis{
+    display:grid;gap:1px;position:relative;z-index:1;
+    grid-template-columns:repeat(4,1fr);
+    background:rgba(255,255,255,.13);
+    border:1px solid rgba(255,255,255,.13);
+    border-radius:var(--radius-s);overflow:hidden;
+  }
+  .kpi{background:var(--navy);padding:12px 14px;}
+  .kpi dt{font-size:11.5px;color:#9fb8d1;margin:0 0 5px;letter-spacing:.3px;}
+  .kpi dd{margin:0;font-size:16.5px;font-weight:650;letter-spacing:-.2px;}
+  .kpi dd small{font-size:11.5px;font-weight:500;color:#9fb8d1;margin-left:3px;}
+
+  /* ---------- cards ---------- */
+  .card{
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:20px 22px;margin-top:18px;
+  }
+  .card-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px;}
+  .card-head h2{margin:0;font-size:16.5px;font-weight:680;letter-spacing:-.1px;}
+  .card-head .sub{font-size:12.5px;color:var(--ink-3);}
+  .legend{
+    margin-left:auto;display:flex;align-items:center;gap:12px;
+    font-size:12px;color:var(--ink-3);flex-wrap:wrap;
+  }
+  .legend i{display:inline-flex;align-items:center;gap:5px;font-style:normal;}
+  .legend .sw{width:9px;height:9px;border-radius:2px;display:block;}
+
+  /* ---------- breadth ---------- */
+  .breadth-top{display:flex;gap:20px;flex-wrap:wrap;margin:14px 0 12px;}
+  .bstat{display:flex;flex-direction:column;gap:1px;min-width:78px;}
+  .bstat .lb{font-size:12px;color:var(--ink-3);}
+  .bstat .vv{font-size:22px;font-weight:680;letter-spacing:-.4px;line-height:1.25;}
+  .bstat .xs{font-size:11.5px;color:var(--ink-3);}
+  .bbar{
+    display:flex;height:34px;border-radius:var(--radius-s);overflow:hidden;
+    border:1px solid var(--line);background:var(--surface-2);
+  }
+  .bbar div{
+    display:flex;align-items:center;justify-content:center;
+    font-size:12.5px;font-weight:620;color:#fff;white-space:nowrap;
+    min-width:0;overflow:hidden;
+  }
+  .bbar .b-up{background:#d62b1c;}
+  .bbar .b-down{background:#0b8f4c;}
+  .bbar .b-flat{background:#aab3bd;}
+  .bscale{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-3);margin-top:6px;}
+  .bfoot{margin-top:12px;font-size:12.5px;color:var(--ink-2);background:var(--surface-2);
+    border:1px solid var(--line-2);border-radius:var(--radius-s);padding:9px 12px;}
+
+  /* ---------- chart ---------- */
+  .chart-box{margin-top:12px;}
+  .chart-box svg{width:100%;height:auto;display:block;}
+  .axis-t{font-size:11px;fill:var(--ink-3);font-family:inherit;}
+  .grid-l{stroke:var(--line);stroke-width:1;}
+  .area-f{fill:rgba(43,96,148,.09);}
+  .line-p{fill:none;stroke:var(--navy-3);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round;}
+  .line-ma5{fill:none;stroke:#c2760b;stroke-width:2;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:7 4;}
+  .line-ma20{fill:none;stroke:#0f7f8b;stroke-width:2;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:2 3.4;}
+  .dot-ma5{fill:#c2760b;stroke:#fff;stroke-width:2;}
+  .dot-ma20{fill:#0f7f8b;stroke:#fff;stroke-width:2;}
+  .last-d{fill:var(--navy-3);stroke:#fff;stroke-width:2.4;}
+  .vol-base{stroke:var(--line);stroke-width:1.2;}
+  .v-up{fill:#d62b1c;fill-opacity:.88;}
+  .v-down{fill:#0b8f4c;fill-opacity:.88;}
+  .sub-chart-t{font-weight:600;fill:var(--ink-2);}
+
+  /* ---------- chart value strip ---------- */
+  .ma-strip{
+    display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;
+    margin-top:12px;padding:10px 13px;font-size:12.5px;color:var(--ink-2);
+    background:var(--surface-2);border:1px solid var(--line-2);border-radius:var(--radius-s);
+  }
+  .ma-strip span{display:inline-flex;align-items:center;gap:6px;}
+  .ma-strip i.sw{width:16px;height:3px;border-radius:2px;display:block;flex:0 0 auto;}
+  .ma-strip b{color:var(--ink);font-weight:680;}
+  .ma-strip .pos{margin-left:auto;color:var(--up);font-weight:620;}
+
+  /* ---------- watchlist ---------- */
+  .wl{margin-top:14px;border:1px solid var(--line);border-radius:var(--radius-s);overflow:hidden;}
+  .wl-head,.stock-main{
+    display:grid;
+    grid-template-columns:82px minmax(150px,1fr) 116px 100px 108px 118px 126px;
+    grid-template-areas:"code name price delta pct vol amt";
+    align-items:center;
+    gap:0 10px;
+  }
+  .wl-head{
+    background:var(--surface-2);border-bottom:1px solid var(--line);
+    padding:9px 14px;font-size:11.5px;color:var(--ink-3);font-weight:600;letter-spacing:.3px;
+  }
+  .wl-head .r{text-align:right;}
+  .stock{border-bottom:1px solid var(--line-2);padding:11px 14px 9px;transition:background .14s ease;}
+  .stock:last-child{border-bottom:0;}
+  .stock:hover{background:var(--surface-2);}
+  .s-code{grid-area:code;font-family:var(--mono);font-size:12.5px;color:var(--ink-3);letter-spacing:.2px;}
+  .s-name{grid-area:name;min-width:0;}
+  .s-name b{font-size:15px;font-weight:650;letter-spacing:-.1px;}
+  .s-name em{
+    font-style:normal;font-size:11px;color:var(--ink-3);
+    border:1px solid var(--line);background:var(--surface-2);
+    padding:1px 6px;border-radius:999px;margin-left:7px;white-space:nowrap;
+  }
+  .s-price{grid-area:price;text-align:right;font-size:16.5px;font-weight:680;letter-spacing:-.3px;}
+  .s-delta{grid-area:delta;text-align:right;font-size:14px;font-weight:620;}
+  .s-pct{grid-area:pct;text-align:right;}
+  .chip{
+    display:inline-block;min-width:70px;text-align:center;
+    font-size:13px;font-weight:660;padding:3px 8px;border-radius:7px;letter-spacing:-.1px;
+  }
+  .s-vol,.s-amt{text-align:right;color:var(--ink-2);font-size:13.5px;font-weight:560;}
+  .s-vol{grid-area:vol;} .s-amt{grid-area:amt;}
+  .s-vol small,.s-amt small{font-size:11px;color:var(--ink-3);margin-left:2px;font-weight:500;}
+  .up{color:var(--up);} .down{color:var(--down);} .flat{color:var(--flat);}
+  .chip.up{background:var(--up-bg);border:1px solid var(--up-bd);}
+  .chip.down{background:var(--down-bg);border:1px solid var(--down-bd);}
+  .chip.flat{background:var(--flat-bg);border:1px solid var(--line);}
+  .stock-sub{
+    margin-top:7px;font-size:11.5px;color:var(--ink-3);
+    display:flex;gap:14px;flex-wrap:wrap;
+  }
+  .stock-sub b{font-weight:600;color:var(--ink-2);font-variant-numeric:tabular-nums;}
+  .rbar{margin-top:8px;height:5px;border-radius:3px;background:var(--surface-2);position:relative;overflow:hidden;}
+  .rbar::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line);}
+  .rbar i{position:absolute;top:0;bottom:0;border-radius:3px;display:block;}
+  .rbar i.up{left:50%;background:var(--up);}
+  .rbar i.down{right:50%;background:var(--down);}
+
+  /* ---------- ranking ---------- */
+  .rank{margin-top:14px;display:flex;flex-direction:column;gap:9px;}
+  .rk{display:grid;grid-template-columns:150px 1fr 74px;align-items:center;gap:12px;}
+  .rk-id{font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .rk-id span{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);margin-right:6px;}
+  .rk-track{height:20px;border-radius:5px;background:var(--surface-2);position:relative;overflow:hidden;}
+  .rk-track::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line);z-index:2;}
+  .rk-track i{position:absolute;top:0;bottom:0;display:block;}
+  .rk-track i.up{left:50%;background:var(--up);border-radius:0 4px 4px 0;}
+  .rk-track i.down{right:50%;background:var(--down);border-radius:4px 0 0 4px;}
+  .rk-v{text-align:right;font-size:13px;font-weight:660;}
+
+  /* ---------- footer ---------- */
+  footer.site{margin-top:26px;padding:22px 0 34px;border-top:1px solid var(--line);}
+  .fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;}
+  .fbox h3{margin:0 0 7px;font-size:12.5px;color:var(--ink-3);font-weight:620;letter-spacing:.4px;}
+  .fbox p{margin:0 0 5px;font-size:12.5px;color:var(--ink-2);}
+  .fbox code{
+    font-family:var(--mono);font-size:11.5px;background:var(--surface-2);
+    border:1px solid var(--line-2);border-radius:5px;padding:1px 5px;color:var(--ink-2);
+  }
+  .disc{
+    margin-top:18px;background:var(--surface);border:1px solid var(--line);
+    border-left:3px solid var(--navy-3);border-radius:var(--radius-s);
+    padding:12px 15px;font-size:12.5px;color:var(--ink-2);
+  }
+  .disc b{color:var(--ink);}
+  .copy{margin-top:16px;font-size:11.5px;color:var(--ink-3);}
+
+  a{color:var(--navy-2);}
+  :focus-visible{outline:2px solid var(--navy-3);outline-offset:2px;border-radius:4px;}
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important;animation:none !important;}
+  }
+
+  /* ---------- RWD ---------- */
+  @media (max-width:980px){
+    .wl-head,.stock-main{
+      grid-template-columns:74px minmax(120px,1fr) 108px 92px 100px 108px;
+      grid-template-areas:
+        "code name  price delta pct vol"
+        "amt  amt   amt   amt   amt  amt";
+    }
+    .wl-head .amt,.s-amt{text-align:right;}
+    .s-amt{padding-top:5px;}
+    .kpis{grid-template-columns:repeat(2,1fr);}
+  }
+  @media (max-width:760px){
+    .wrap{padding:0 16px;}
+    .top-in{padding:10px 16px;gap:10px;}
+    .top-meta{margin-left:0;width:100%;}
+    .hero{padding:20px 18px 18px;}
+    .card{padding:17px 16px;}
+    .idx-val{font-size:40px;}
+    .kpis{grid-template-columns:1fr 1fr;}
+    .kpi{padding:11px 12px;}
+    .kpi dd{font-size:15.5px;}
+
+    .wl-head{display:none;}
+    .wl{border:0;border-radius:0;overflow:visible;}
+    .stock{
+      border:1px solid var(--line);border-radius:var(--radius-s);
+      padding:13px 14px 12px;margin-bottom:10px;background:var(--surface);
+    }
+    .stock:last-child{margin-bottom:0;}
+    .stock-main{
+      grid-template-columns:minmax(0,1fr) auto;
+      grid-template-areas:
+        "code  price"
+        "name  price"
+        "delta pct"
+        "vol   amt";
+      gap:2px 12px;
+    }
+    .s-code{font-size:11.5px;}
+    .s-name b{font-size:15.5px;}
+    .s-price{font-size:20px;align-self:center;padding-left:10px;}
+    .s-delta{text-align:left;font-size:14px;padding-top:5px;}
+    .s-pct{text-align:right;padding-top:4px;}
+    .s-vol{text-align:left;font-size:12.5px;padding-top:2px;}
+    .s-amt{text-align:right;font-size:12.5px;padding-top:2px;}
+    .s-vol small,.s-amt small{font-size:10.5px;}
+    .chip{min-width:0;font-size:12.5px;padding:3px 9px;}
+    .rk{grid-template-columns:1fr;gap:5px;}
+    .rk-v{text-align:left;font-size:12.5px;}
+  }
+  @media (max-width:400px){
+    .idx-val{font-size:34px;}
+    .brand span{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <span class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3 17l4.5-5.5 3.5 3L15 8l6 7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <b>台股追蹤</b>
+      <span>加權指數＆自選股收盤概況</span>
+    </div>
+    <div class="top-meta">
+      <span class="pill"><span class="dot" aria-hidden="true"></span>2026/09/24（四）13:30 收盤</span>
+      <span class="pill">靜態快照・非即時</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ================= HERO：大盤概況 ================= -->
+  <section class="hero" aria-labelledby="hero-t">
+    <div class="hero-head">
+      <h1 id="hero-t">發行量加權股價指數</h1>
+      <span class="tag">集中市場・收盤</span>
+    </div>
+
+    <div class="idx-row">
+      <div class="idx-val num is-down">48,024.60</div>
+      <div class="idx-delta">
+        <span class="d1 num is-down">−132.69　−0.28%</span>
+        <span class="d2">較前一交易日（09/23 收 48,157.29）</span>
+      </div>
+    </div>
+    <p class="hero-note">當日振幅 362.82 點　|　開盤 48,075.39　最高 48,117.54　最低 47,754.72</p>
+
+    <dl class="kpis">
+      <div class="kpi">
+        <dt>成交金額（集中市場總計）</dt>
+        <dd class="num">7,755.91<small>億元</small></dd>
+      </div>
+      <div class="kpi">
+        <dt>其中一般股票</dt>
+        <dd class="num">7,188.80<small>億元</small></dd>
+      </div>
+      <div class="kpi">
+        <dt>上漲家數（上市股票）</dt>
+        <dd class="num is-up">386<small>家</small></dd>
+      </div>
+      <div class="kpi">
+        <dt>下跌家數（上市股票）</dt>
+        <dd class="num is-down">546<small>家</small></dd>
+      </div>
+    </dl>
+  </section>
+
+  <!-- ================= 漲跌家數 ================= -->
+  <section class="card" aria-labelledby="br-t">
+    <div class="card-head">
+      <h2 id="br-t">市場漲跌家數</h2>
+      <span class="sub">上市股票・2026/09/24</span>
+      <span class="legend">
+        <i><span class="sw" style="background:#d62b1c"></span>上漲</i>
+        <i><span class="sw" style="background:#0b8f4c"></span>下跌</i>
+        <i><span class="sw" style="background:#aab3bd"></span>持平</i>
+      </span>
+    </div>
+
+    <div class="breadth-top">
+      <div class="bstat">
+        <span class="lb">上漲</span>
+        <span class="vv num is-up">386</span>
+        <span class="xs">含漲停 11 家</span>
+      </div>
+      <div class="bstat">
+        <span class="lb">下跌</span>
+        <span class="vv num is-down">546</span>
+        <span class="xs">含跌停 1 家</span>
+      </div>
+      <div class="bstat" style="margin-left:auto">
+        <span class="lb">持平</span>
+        <span class="vv num" style="color:var(--flat)">140</span>
+        <span class="xs">合計 1,072 家</span>
+      </div>
+    </div>
+
+    <div class="bbar" role="img" aria-label="上市股票漲跌家數比例：上漲 386 家（36.0%）、下跌 546 家（50.9%）、持平 140 家（13.1%）">
+      <div class="b-up" style="width:36.0%">36.0%</div>
+      <div class="b-down" style="width:50.9%">50.9%</div>
+      <div class="b-flat" style="width:13.1%">13.1%</div>
+    </div>
+    <div class="bscale"><span>0%</span><span>50%</span><span>100%</span></div>
+
+    <p class="bfoot">
+      <b>整體市場</b>（含 ETF、權證、ETN、受益證券等全部上市有價證券）：上漲 <b class="num is-up">4,581</b> 家（漲停 67）、下跌 <b class="num is-down">8,065</b> 家（跌停 62）、持平 <b class="num">1,107</b> 家。
+    </p>
+  </section>
+
+  <!-- ================= 走勢圖 ================= -->
+  <section class="card" aria-labelledby="ch-t">
+    <div class="card-head">
+      <h2 id="ch-t">加權指數走勢</h2>
+      <span class="sub">近 60 個交易日收盤（2026/07/02 – 2026/09/24）</span>
+      <span class="legend">
+        <i><span class="sw" style="background:#2b6094"></span>收盤指數</i>
+        <i><span class="sw" style="background:#c2760b"></span>MA5</i>
+        <i><span class="sw" style="background:#0f7f8b"></span>MA20</i>
+      </span>
+    </div>
+
+    <div class="chart-box">
+      <svg viewBox="0 0 1000 420" role="img" aria-label="加權指數近 60 個交易日（2026/07/02 至 2026/09/24）收盤走勢、MA5／MA20 均線與成交量圖。最新收盤 48,024.60 點，MA5 47,776.33 點、MA20 46,755.77 點，收盤指數站上兩條均線。期間最低 39,933.30 點（7 月底回檔）、最高 48,157.29 點。下方柱狀圖為每日成交金額，最高 13,332 億元，紅柱代表收盤較前一日上漲、綠柱代表下跌，31 天上漲、29 天下跌。">
+        <title>加權指數近 60 個交易日收盤走勢、MA5／MA20 均線與成交量（成交金額）</title>
+
+        <!-- ===== 主圖：水平格線與 Y 軸標籤（指數點） ===== -->
+        <line class="grid-l" x1="62" y1="240.8" x2="984" y2="240.8"/>
+        <line class="grid-l" x1="62" y1="195.1" x2="984" y2="195.1"/>
+        <line class="grid-l" x1="62" y1="149.3" x2="984" y2="149.3"/>
+        <line class="grid-l" x1="62" y1="103.5" x2="984" y2="103.5"/>
+        <line class="grid-l" x1="62" y1="57.7" x2="984" y2="57.7"/>
+        <text class="axis-t" x="54" y="244.8" text-anchor="end">40,000</text>
+        <text class="axis-t" x="54" y="199.1" text-anchor="end">42,000</text>
+        <text class="axis-t" x="54" y="153.3" text-anchor="end">44,000</text>
+        <text class="axis-t" x="54" y="107.5" text-anchor="end">46,000</text>
+        <text class="axis-t" x="54" y="61.7" text-anchor="end">48,000</text>
+
+        <!-- ===== 收盤指數：面積與折線 ===== -->
+        <path class="area-f" d="M 62.0,250.0 L 62.0,86.5 77.6,85.6 93.3,90.8 108.9,115.4 124.5,109.6 140.1,118.3 155.8,117.7 171.4,132.4 187.0,111.9 202.6,112.1 218.3,179.7 233.9,184.8 249.5,144.0 265.2,130.4 280.8,129.8 296.4,157.2 312.0,157.7 327.7,204.1 343.3,239.9 358.9,242.4 374.5,169.4 390.2,163.3 405.8,163.9 421.4,135.3 437.1,140.2 452.7,144.1 468.3,128.0 483.9,123.6 499.6,114.5 515.2,103.0 530.8,107.8 546.4,106.8 562.1,119.3 577.7,132.8 593.3,127.9 608.9,121.3 624.6,131.8 640.2,122.5 655.8,107.3 671.5,104.1 687.1,95.9 702.7,100.6 718.3,81.8 734.0,99.7 749.6,106.8 765.2,90.9 780.8,73.2 796.5,78.2 812.1,76.4 827.7,82.0 843.4,99.3 859.0,106.7 874.6,114.7 890.2,107.0 905.9,96.9 921.5,76.5 937.1,64.2 952.7,62.3 968.4,54.1 984.0,57.2 L 984.0,250.0 Z"/>
+        <polyline class="line-p" points="62.0,86.5 77.6,85.6 93.3,90.8 108.9,115.4 124.5,109.6 140.1,118.3 155.8,117.7 171.4,132.4 187.0,111.9 202.6,112.1 218.3,179.7 233.9,184.8 249.5,144.0 265.2,130.4 280.8,129.8 296.4,157.2 312.0,157.7 327.7,204.1 343.3,239.9 358.9,242.4 374.5,169.4 390.2,163.3 405.8,163.9 421.4,135.3 437.1,140.2 452.7,144.1 468.3,128.0 483.9,123.6 499.6,114.5 515.2,103.0 530.8,107.8 546.4,106.8 562.1,119.3 577.7,132.8 593.3,127.9 608.9,121.3 624.6,131.8 640.2,122.5 655.8,107.3 671.5,104.1 687.1,95.9 702.7,100.6 718.3,81.8 734.0,99.7 749.6,106.8 765.2,90.9 780.8,73.2 796.5,78.2 812.1,76.4 827.7,82.0 843.4,99.3 859.0,106.7 874.6,114.7 890.2,107.0 905.9,96.9 921.5,76.5 937.1,64.2 952.7,62.3 968.4,54.1 984.0,57.2"/>
+
+        <!-- ===== MA20（長均線，底層） ===== -->
+        <polyline class="line-ma20" points="62.0,115.4 77.6,114.1 93.3,112.4 108.9,110.1 124.5,109.0 140.1,106.5 155.8,104.0 171.4,103.3 187.0,103.0 202.6,103.3 218.3,106.9 233.9,111.5 249.5,115.5 265.2,118.1 280.8,119.5 296.4,122.5 312.0,123.6 327.7,127.4 343.3,134.4 358.9,142.5 374.5,146.7 390.2,150.5 405.8,154.2 421.4,155.2 437.1,156.7 452.7,158.0 468.3,158.5 483.9,158.1 499.6,158.2 515.2,157.8 530.8,154.2 546.4,150.3 562.1,149.1 577.7,149.2 593.3,149.1 608.9,147.3 624.6,146.0 640.2,141.9 655.8,135.3 671.5,128.4 687.1,124.7 702.7,121.6 718.3,117.4 734.0,115.7 749.6,114.0 765.2,111.3 780.8,108.6 796.5,106.3 812.1,104.4 827.7,103.4 843.4,102.9 859.0,102.9 874.6,102.7 890.2,101.4 905.9,99.9 921.5,97.6 937.1,94.2 952.7,91.2 968.4,88.6 984.0,86.2"/>
+        <circle class="dot-ma20" cx="984.0" cy="86.2" r="3.6"/>
+
+        <!-- ===== MA5（短均線，上層） ===== -->
+        <polyline class="line-ma5" points="62.0,106.0 77.6,95.9 93.3,88.7 108.9,91.7 124.5,97.6 140.1,103.9 155.8,110.4 171.4,118.7 187.0,118.0 202.6,118.5 218.3,130.8 233.9,144.2 249.5,146.5 265.2,150.2 280.8,153.7 296.4,149.2 312.0,143.8 327.7,155.8 343.3,177.8 358.9,200.3 374.5,202.7 390.2,203.8 405.8,195.8 421.4,174.9 437.1,154.4 452.7,149.4 468.3,142.3 483.9,134.3 499.6,130.1 515.2,122.7 530.8,115.4 546.4,111.2 562.1,110.3 577.7,114.0 593.3,118.9 608.9,121.6 624.6,126.6 640.2,127.3 655.8,122.2 671.5,117.4 687.1,112.3 702.7,106.1 718.3,97.9 734.0,96.4 749.6,97.0 765.2,96.0 780.8,90.5 796.5,89.8 812.1,85.1 827.7,80.1 843.4,81.8 859.0,88.5 874.6,95.8 890.2,101.9 905.9,104.9 921.5,100.3 937.1,91.8 952.7,81.4 968.4,70.8 984.0,62.9"/>
+        <circle class="dot-ma5" cx="984.0" cy="62.9" r="3.6"/>
+
+        <!-- ===== 起點與終點標註 ===== -->
+        <circle cx="62.0" cy="86.5" r="3.4" fill="#2b6094"/>
+        <circle class="last-d" cx="984.0" cy="57.2" r="4.6"/>
+        <text class="axis-t" x="984.0" y="46.2" text-anchor="end" style="font-weight:700;fill:#14304f">48,024.60</text>
+
+        <!-- ===== 副圖：成交量（成交金額，億元） ===== -->
+        <text class="axis-t sub-chart-t" x="62" y="273.0">成交量（成交金額，億元）</text>
+        <line class="vol-base" x1="62" y1="380.0" x2="984" y2="380.0"/>
+        <line class="grid-l" x1="62" y1="348.7" x2="984" y2="348.7"/>
+        <line class="grid-l" x1="62" y1="317.3" x2="984" y2="317.3"/>
+        <line class="grid-l" x1="62" y1="286.0" x2="984" y2="286.0"/>
+        <text class="axis-t" x="54" y="352.7" text-anchor="end">5,000</text>
+        <text class="axis-t" x="54" y="321.3" text-anchor="end">10,000</text>
+        <text class="axis-t" x="54" y="290.0" text-anchor="end">15,000</text>
+        <rect class="v-down" x="57.3" y="312.1" width="9.4" height="67.9"><title>2026-07-02 成交金額 10,835.83 億元</title></rect>
+        <rect class="v-up" x="72.9" y="312.4" width="9.4" height="67.6"><title>2026-07-03 成交金額 10,780.28 億元</title></rect>
+        <rect class="v-down" x="88.6" y="313.3" width="9.4" height="66.7"><title>2026-07-06 成交金額 10,644.32 億元</title></rect>
+        <rect class="v-down" x="104.2" y="303.0" width="9.4" height="77.0"><title>2026-07-07 成交金額 12,281.19 億元</title></rect>
+        <rect class="v-up" x="119.8" y="317.0" width="9.4" height="63.0"><title>2026-07-08 成交金額 10,045.60 億元</title></rect>
+        <rect class="v-down" x="135.4" y="317.5" width="9.4" height="62.5"><title>2026-07-09 成交金額 9,967.89 億元</title></rect>
+        <rect class="v-up" x="151.1" y="313.1" width="9.4" height="66.9"><title>2026-07-13 成交金額 10,676.62 億元</title></rect>
+        <rect class="v-down" x="166.7" y="302.0" width="9.4" height="78.0"><title>2026-07-14 成交金額 12,452.07 億元</title></rect>
+        <rect class="v-up" x="182.3" y="315.8" width="9.4" height="64.2"><title>2026-07-15 成交金額 10,243.86 億元</title></rect>
+        <rect class="v-down" x="198.0" y="321.5" width="9.4" height="58.5"><title>2026-07-16 成交金額 9,331.81 億元</title></rect>
+        <rect class="v-down" x="213.6" y="296.5" width="9.4" height="83.5"><title>2026-07-17 成交金額 13,331.57 億元</title></rect>
+        <rect class="v-down" x="229.2" y="314.7" width="9.4" height="65.3"><title>2026-07-20 成交金額 10,414.57 億元</title></rect>
+        <rect class="v-up" x="244.8" y="325.7" width="9.4" height="54.3"><title>2026-07-21 成交金額 8,662.52 億元</title></rect>
+        <rect class="v-up" x="260.5" y="315.7" width="9.4" height="64.3"><title>2026-07-22 成交金額 10,259.58 億元</title></rect>
+        <rect class="v-up" x="276.1" y="321.7" width="9.4" height="58.3"><title>2026-07-23 成交金額 9,306.12 億元</title></rect>
+        <rect class="v-down" x="291.7" y="328.2" width="9.4" height="51.8"><title>2026-07-24 成交金額 8,271.30 億元</title></rect>
+        <rect class="v-down" x="307.3" y="333.1" width="9.4" height="46.9"><title>2026-07-27 成交金額 7,476.47 億元</title></rect>
+        <rect class="v-down" x="323.0" y="325.3" width="9.4" height="54.7"><title>2026-07-28 成交金額 8,725.75 億元</title></rect>
+        <rect class="v-down" x="338.6" y="308.0" width="9.4" height="72.0"><title>2026-07-29 成交金額 11,491.85 億元</title></rect>
+        <rect class="v-down" x="354.2" y="308.1" width="9.4" height="71.9"><title>2026-07-30 成交金額 11,469.38 億元</title></rect>
+        <rect class="v-up" x="369.9" y="324.4" width="9.4" height="55.6"><title>2026-07-31 成交金額 8,877.32 億元</title></rect>
+        <rect class="v-up" x="385.5" y="324.5" width="9.4" height="55.5"><title>2026-08-03 成交金額 8,855.06 億元</title></rect>
+        <rect class="v-down" x="401.1" y="311.9" width="9.4" height="68.1"><title>2026-08-04 成交金額 10,870.46 億元</title></rect>
+        <rect class="v-up" x="416.7" y="304.8" width="9.4" height="75.2"><title>2026-08-05 成交金額 12,002.13 億元</title></rect>
+        <rect class="v-down" x="432.4" y="319.0" width="9.4" height="61.0"><title>2026-08-06 成交金額 9,740.55 億元</title></rect>
+        <rect class="v-down" x="448.0" y="326.7" width="9.4" height="53.3"><title>2026-08-07 成交金額 8,508.15 億元</title></rect>
+        <rect class="v-up" x="463.6" y="324.8" width="9.4" height="55.2"><title>2026-08-10 成交金額 8,804.41 億元</title></rect>
+        <rect class="v-up" x="479.2" y="323.5" width="9.4" height="56.5"><title>2026-08-11 成交金額 9,020.52 億元</title></rect>
+        <rect class="v-up" x="494.9" y="324.1" width="9.4" height="55.9"><title>2026-08-12 成交金額 8,926.60 億元</title></rect>
+        <rect class="v-up" x="510.5" y="310.8" width="9.4" height="69.2"><title>2026-08-13 成交金額 11,040.25 億元</title></rect>
+        <rect class="v-down" x="526.1" y="310.5" width="9.4" height="69.5"><title>2026-08-14 成交金額 11,097.47 億元</title></rect>
+        <rect class="v-up" x="541.8" y="318.5" width="9.4" height="61.5"><title>2026-08-17 成交金額 9,810.55 億元</title></rect>
+        <rect class="v-down" x="557.4" y="316.8" width="9.4" height="63.2"><title>2026-08-18 成交金額 10,078.82 億元</title></rect>
+        <rect class="v-down" x="573.0" y="324.2" width="9.4" height="55.8"><title>2026-08-19 成交金額 8,902.70 億元</title></rect>
+        <rect class="v-up" x="588.6" y="327.7" width="9.4" height="52.3"><title>2026-08-20 成交金額 8,344.13 億元</title></rect>
+        <rect class="v-up" x="604.3" y="332.7" width="9.4" height="47.3"><title>2026-08-21 成交金額 7,549.05 億元</title></rect>
+        <rect class="v-down" x="619.9" y="338.9" width="9.4" height="41.1"><title>2026-08-24 成交金額 6,562.81 億元</title></rect>
+        <rect class="v-up" x="635.5" y="334.6" width="9.4" height="45.4"><title>2026-08-25 成交金額 7,242.58 億元</title></rect>
+        <rect class="v-up" x="651.1" y="327.2" width="9.4" height="52.8"><title>2026-08-26 成交金額 8,430.92 億元</title></rect>
+        <rect class="v-up" x="666.8" y="319.4" width="9.4" height="60.6"><title>2026-08-27 成交金額 9,674.66 億元</title></rect>
+        <rect class="v-up" x="682.4" y="313.0" width="9.4" height="67.0"><title>2026-08-28 成交金額 10,689.85 億元</title></rect>
+        <rect class="v-down" x="698.0" y="299.2" width="9.4" height="80.8"><title>2026-08-31 成交金額 12,892.28 億元</title></rect>
+        <rect class="v-up" x="713.7" y="305.6" width="9.4" height="74.4"><title>2026-09-01 成交金額 11,875.72 億元</title></rect>
+        <rect class="v-down" x="729.3" y="318.8" width="9.4" height="61.2"><title>2026-09-02 成交金額 9,765.00 億元</title></rect>
+        <rect class="v-down" x="744.9" y="317.8" width="9.4" height="62.2"><title>2026-09-03 成交金額 9,932.62 億元</title></rect>
+        <rect class="v-up" x="760.5" y="326.2" width="9.4" height="53.8"><title>2026-09-04 成交金額 8,582.45 億元</title></rect>
+        <rect class="v-up" x="776.2" y="317.5" width="9.4" height="62.5"><title>2026-09-07 成交金額 9,979.45 億元</title></rect>
+        <rect class="v-down" x="791.8" y="322.2" width="9.4" height="57.8"><title>2026-09-08 成交金額 9,226.58 億元</title></rect>
+        <rect class="v-up" x="807.4" y="328.9" width="9.4" height="51.1"><title>2026-09-09 成交金額 8,159.77 億元</title></rect>
+        <rect class="v-down" x="823.0" y="333.0" width="9.4" height="47.0"><title>2026-09-10 成交金額 7,507.43 億元</title></rect>
+        <rect class="v-down" x="838.7" y="332.2" width="9.4" height="47.8"><title>2026-09-11 成交金額 7,622.45 億元</title></rect>
+        <rect class="v-down" x="854.3" y="338.3" width="9.4" height="41.7"><title>2026-09-14 成交金額 6,653.16 億元</title></rect>
+        <rect class="v-down" x="869.9" y="340.2" width="9.4" height="39.8"><title>2026-09-15 成交金額 6,347.07 億元</title></rect>
+        <rect class="v-up" x="885.5" y="337.6" width="9.4" height="42.4"><title>2026-09-16 成交金額 6,759.70 億元</title></rect>
+        <rect class="v-up" x="901.2" y="325.7" width="9.4" height="54.3"><title>2026-09-17 成交金額 8,666.19 億元</title></rect>
+        <rect class="v-up" x="916.8" y="308.4" width="9.4" height="71.6"><title>2026-09-18 成交金額 11,423.22 億元</title></rect>
+        <rect class="v-up" x="932.4" y="325.7" width="9.4" height="54.3"><title>2026-09-21 成交金額 8,668.18 億元</title></rect>
+        <rect class="v-up" x="948.1" y="312.4" width="9.4" height="67.6"><title>2026-09-22 成交金額 10,787.76 億元</title></rect>
+        <rect class="v-up" x="963.7" y="323.9" width="9.4" height="56.1"><title>2026-09-23 成交金額 8,946.51 億元</title></rect>
+        <rect class="v-down" x="979.3" y="331.4" width="9.4" height="48.6"><title>2026-09-24 成交金額 7,755.91 億元</title></rect>
+
+        <!-- ===== X 軸標籤（主副圖共用） ===== -->
+        <text class="axis-t" x="62.0" y="404.0" text-anchor="start">07/02</text>
+        <text class="axis-t" x="249.5" y="404.0" text-anchor="middle">07/21</text>
+        <text class="axis-t" x="437.1" y="404.0" text-anchor="middle">08/06</text>
+        <text class="axis-t" x="624.6" y="404.0" text-anchor="middle">08/24</text>
+        <text class="axis-t" x="812.1" y="404.0" text-anchor="middle">09/09</text>
+        <text class="axis-t" x="984.0" y="404.0" text-anchor="end">09/24</text>
+      </svg>
+    </div>
+
+    <div class="ma-strip">
+      <span><i class="sw" style="background:#2b6094"></i>最新收盤 <b class="num">48,024.60</b></span>
+      <span><i class="sw" style="background:#c2760b"></i>MA5 <b class="num">47,776.33</b></span>
+      <span><i class="sw" style="background:#0f7f8b"></i>MA20 <b class="num">46,755.77</b></span>
+      <span class="pos">收盤 &gt; MA5 &gt; MA20（多頭排列）</span>
+    </div>
+  </section>
+
+  <!-- ================= 自選股追蹤清單 ================= -->
+  <section class="card" aria-labelledby="wl-t">
+    <div class="card-head">
+      <h2 id="wl-t">自選股追蹤清單</h2>
+      <span class="sub">10 檔・上市股票</span>
+      <span class="legend">
+        <i><span class="sw" style="background:#d62b1c"></span>紅漲</i>
+        <i><span class="sw" style="background:#0b8f4c"></span>綠跌</i>
+        <span>（台股慣例）</span>
+      </span>
+    </div>
+
+    <div class="wl">
+      <div class="wl-head" aria-hidden="true">
+        <span>代號</span><span>名稱 / 產業</span>
+        <span class="r">收盤價</span><span class="r">漲跌</span><span class="r">漲跌幅</span>
+        <span class="r">成交量</span><span class="r amt">成交金額</span>
+      </div>
+
+      <!-- 2330 -->
+      <div class="stock">
+        <div class="stock-main">
+          <span class="s-code num">2330</span>
+          <span class="s-name"><b>台積電</b><em>半導體</em></span>
+          <span class="s-price num down">2,475.00</span>
+          <span class="s-delta num down">−25.00</span>
+          <span class="s-pct"><span class="chip down num">−1.00%</span></span>
+          <span class="s-vol num">14,558<small>張</small></span>
+          <span class="s-amt num">361.07<small>億</small></span>
+        </div>
+        <div class="stock-sub"><span>開 <b>2,480.00</b></span><span>高 <b>2,490.00</b></span><span>低 <b>2,470.00</b></span><span>昨收 <b>2,500.00</b></span><span>本益比 <b>28.69</b></span></div>
+        <div class="rbar"><i class="down" style="width:13.33%"></i></div>
+      </div>
+
+      <!-- 2317 -->
+      <div class="stock">
+        <div class="stock-main">
+          <span class="s-code num">2317</span>
+          <span class="s-name"><b>鴻海</b><em>電子代工</em></span>
+          <span class="s-price num down">250.50</span>
+          <span class="s-delta num down">−5.50</span>
+          <span class="s-pct"><span class="chip down num">−2.15%</span></span>
+          <span class="s-vol num">34,510<small>張</small></span>
+          <span class="s-amt num">86.51<small>億</small></span>
+        </div>
+        <div class="stock-sub"><span>開 <b>253.00</b></span><span>高 <b>253.00</b></span><span>低 <b>249.50</b></span><span>昨收 <b>256.00</b></span><span>本益比 <b>16.51</b></span></div>
+        <div class="rbar"><i class="down" style="width:28.64%"></i></div>
+      </div>
+
+      <!-- 2454 -->
+      <div class="stock">
+        <div class="stock-main">
+          <span class="s-code num">2454</span>
+          <span class="s-name"><b>聯發科</b><em>IC 設計</em></span>
+          <span class="s-price num up">5,285.00</span>
+          <span class="s-delta num up">+100.00</span>
+          <span class="s-pct"><span class="chip up num">+1.93%</span></span>
+          <span class="s-vol num">7,817<small>張</small></span>
+          <span class="s-amt num">411.79<small>億</small></span>
+        </div>
+        <div class="stock-sub"><span>開 <b>5,105.00</b></span><span>高 <b>5,360.00</b></span><span>低 <b>5,105.00</b></span><span>昨收 <b>5,185.00</b></span><span>本益比 <b>87.28</b></span></div>
+        <div class="rbar"><i class="up" style="width:25.72%"></i></div>
+      </div>
+
+      <!-- 2308 -->
+      <div class="stock">
+        <div class="stock-main">
+          <span class="s-code num">2308</span>
+          <span class="s-name"><b>台達電</b><em>電源管理</em></span>
+          <span class="s-price num up">1,910.00</span>
+          <span class="s-delta num up">+10.00</span>
+          <span class="s-pct"><span class="chip up num">+0.53%</span></span>
+          <span class="s-vol num">8,984<small>張</small></span>
+          <span class="s-amt num">171.70<small>億</small></span>
+        </div>
+        <div class="stock-sub"><span>開 <b>1,875.00</b></span><span>高 <b>1,935.00</b></span><span>低 <b>1,875.00</b></span><span>昨收 <b>1,900.00</b></span><span>本益比 <b>60.79</b></span></div>
+        <div class="rbar"><i class="up" style="width:7.01%"></i></div>
+      </div>
+
+      <!-- 2412 -->
+      <div class="stock">
+        <div class="stock-main">
+          <span class="s-code num">2412</span>
+          <span class="s-name"><b>中華電</b><em>電信</em></span>
+          <span class="s-price num down">145.00</span>
+          <span class="s-delta num down">−0.50</span>
+          <span class="s-pct"><span class="chip down num">−0.34%</span></span>
+          <span class="s-vol num">6,312<small>張</small></span>
+          <span class="s-amt num">9.18<small>億</small></span>
+        </div>
+        <div class="stock-sub"><span>開 <b>145.50</b></span><span>高 <b>146.00</b></span><span>低 <b>145.00</b></span><span>昨收 <b>145.50</b></span><span>本益比 <b>28.49</b></span></div>
+        <div class="rbar"><i class="down" style="width:4.59%"></i></div>
+      </div>
+
+      <!-- 2303 -->
+      <div class="stock">
+        <div class="stock-main">
+          <span class="s-code num">2303</span>
+          <span class="s-name"><b>聯電</b><em>晶圓代工</em></span>
+          <span class="s-price num down">154.00</span>
+          <span class="s-delta num down">−6.00</span>
+          <span class="s-pct"><span class="chip down num">−3.75%</span></span>
+          <span class="s-vol num">157,009<small>張</small></span>
+          <span class="s-amt num">241.64<small>億</small></span>
+        </div>
+        <div class="stock-sub"><span>開 <b>157.00</b></span><span>高 <b>157.00</b></span><span>低 <b>152.00</b></span><span>昨收 <b>160.00</b></span><span>本益比 <b>23.16</b></span></div>
+        <div class="rbar"><i class="down" style="width:50.00%"></i></div>
+      </div>
+
+      <!-- 2382 -->
+      <div class="stock">
+        <div class="stock-main">
+          <span class="s-code num">2382</span>
+          <span class="s-name"><b>廣達</b><em>AI 伺服器</em></span>
+          <span class="s-price num down">338.50</span>
+          <span class="s-delta num down">−3.00</span>
+          <span class="s-pct"><span class="chip down num">−0.88%</span></span>
+          <span class="s-vol num">10,593<small>張</small></span>
+          <span class="s-amt num">35.74<small>億</small></span>
+        </div>
+        <div class="stock-sub"><span>開 <b>338.00</b></span><span>高 <b>339.50</b></span><span>低 <b>335.00</b></span><span>昨收 <b>341.50</b></span><span>本益比 <b>14.75</b></span></div>
+        <div class="rbar"><i class="down" style="width:11.72%"></i></div>
+      </div>
+
+      <!-- 2881 -->
+      <div class="stock">
+        <div class="stock-main">
+          <span class="s-code num">2881</span>
+          <span class="s-name"><b>富邦金</b><em>金融</em></span>
+          <span class="s-price num down">150.00</span>
+          <span class="s-delta num down">−3.00</span>
+          <span class="s-pct"><span class="chip down num">−1.96%</span></span>
+          <span class="s-vol num">8,417<small>張</small></span>
+          <span class="s-amt num">12.71<small>億</small></span>
+        </div>
+        <div class="stock-sub"><span>開 <b>151.50</b></span><span>高 <b>153.00</b></span><span>低 <b>150.00</b></span><span>昨收 <b>153.00</b></span><span>本益比 <b>14.02</b></span></div>
+        <div class="rbar"><i class="down" style="width:26.15%"></i></div>
+      </div>
+
+      <!-- 2882 -->
+      <div class="stock">
+        <div class="stock-main">
+          <span class="s-code num">2882</span>
+          <span class="s-name"><b>國泰金</b><em>金融</em></span>
+          <span class="s-price num down">110.50</span>
+          <span class="s-delta num down">−1.00</span>
+          <span class="s-pct"><span class="chip down num">−0.90%</span></span>
+          <span class="s-vol num">11,812<small>張</small></span>
+          <span class="s-amt num">13.05<small>億</small></span>
+        </div>
+        <div class="stock-sub"><span>開 <b>110.50</b></span><span>高 <b>111.50</b></span><span>低 <b>110.00</b></span><span>昨收 <b>111.50</b></span><span>本益比 <b>13.03</b></span></div>
+        <div class="rbar"><i class="down" style="width:11.96%"></i></div>
+      </div>
+
+      <!-- 2891 -->
+      <div class="stock">
+        <div class="stock-main">
+          <span class="s-code num">2891</span>
+          <span class="s-name"><b>中信金</b><em>金融</em></span>
+          <span class="s-price num down">68.50</span>
+          <span class="s-delta num down">−0.40</span>
+          <span class="s-pct"><span class="chip down num">−0.58%</span></span>
+          <span class="s-vol num">17,628<small>張</small></span>
+          <span class="s-amt num">12.09<small>億</small></span>
+        </div>
+        <div class="stock-sub"><span>開 <b>68.10</b></span><span>高 <b>69.10</b></span><span>低 <b>68.10</b></span><span>昨收 <b>68.90</b></span><span>本益比 <b>16.39</b></span></div>
+        <div class="rbar"><i class="down" style="width:7.75%"></i></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 漲跌幅視覺化 ================= -->
+  <section class="card" aria-labelledby="rk-t">
+    <div class="card-head">
+      <h2 id="rk-t">自選股漲跌幅比較</h2>
+      <span class="sub">由左（跌）至右（漲）；以中線為 0%</span>
+      <span class="legend">
+        <i><span class="sw" style="background:#d62b1c"></span>上漲</i>
+        <i><span class="sw" style="background:#0b8f4c"></span>下跌</i>
+      </span>
+    </div>
+
+    <div class="rank">
+      <div class="rk"><span class="rk-id"><span>2303</span>聯電</span>
+        <span class="rk-track"><i class="down" style="width:50.00%"></i></span>
+        <span class="rk-v num down">−3.75%</span></div>
+      <div class="rk"><span class="rk-id"><span>2317</span>鴻海</span>
+        <span class="rk-track"><i class="down" style="width:28.64%"></i></span>
+        <span class="rk-v num down">−2.15%</span></div>
+      <div class="rk"><span class="rk-id"><span>2881</span>富邦金</span>
+        <span class="rk-track"><i class="down" style="width:26.15%"></i></span>
+        <span class="rk-v num down">−1.96%</span></div>
+      <div class="rk"><span class="rk-id"><span>2330</span>台積電</span>
+        <span class="rk-track"><i class="down" style="width:13.33%"></i></span>
+        <span class="rk-v num down">−1.00%</span></div>
+      <div class="rk"><span class="rk-id"><span>2882</span>國泰金</span>
+        <span class="rk-track"><i class="down" style="width:11.96%"></i></span>
+        <span class="rk-v num down">−0.90%</span></div>
+      <div class="rk"><span class="rk-id"><span>2382</span>廣達</span>
+        <span class="rk-track"><i class="down" style="width:11.72%"></i></span>
+        <span class="rk-v num down">−0.88%</span></div>
+      <div class="rk"><span class="rk-id"><span>2891</span>中信金</span>
+        <span class="rk-track"><i class="down" style="width:7.75%"></i></span>
+        <span class="rk-v num down">−0.58%</span></div>
+      <div class="rk"><span class="rk-id"><span>2412</span>中華電</span>
+        <span class="rk-track"><i class="down" style="width:4.59%"></i></span>
+        <span class="rk-v num down">−0.34%</span></div>
+      <div class="rk"><span class="rk-id"><span>2308</span>台達電</span>
+        <span class="rk-track"><i class="up" style="width:7.01%"></i></span>
+        <span class="rk-v num up">+0.53%</span></div>
+      <div class="rk"><span class="rk-id"><span>2454</span>聯發科</span>
+        <span class="rk-track"><i class="up" style="width:25.72%"></i></span>
+        <span class="rk-v num up">+1.93%</span></div>
+    </div>
+  </section>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="site">
+    <div class="fgrid">
+      <div class="fbox">
+        <h3>資料時間</h3>
+        <p>2026/09/24（星期四）13:30 收盤</p>
+        <p>資料擷取時間：2026/09/24 20:20（UTC+8）</p>
+        <p>前一交易日：2026/09/23</p>
+        <p>走勢圖區間：2026/07/02 – 2026/09/24（60 個交易日）</p>
+      </div>
+      <div class="fbox">
+        <h3>資料來源（臺灣證券交易所）</h3>
+        <p><code>openapi.twse.com.tw</code> ／ STOCK_DAY_ALL（上市個股每日收盤行情）</p>
+        <p><code>openapi.twse.com.tw</code> ／ MI_INDEX（大盤統計、漲跌家數）</p>
+        <p><code>www.twse.com.tw</code> ／ MI_INDEX type=ALL（個股收盤價、成交量值、本益比）</p>
+        <p><code>www.twse.com.tw</code> ／ TAIEX MI_5MINS_HIST（加權指數每日收盤歷史）</p>
+        <p><code>www.twse.com.tw</code> ／ FMTQIK（市場成交資訊：成交股數、成交金額、發行量加權股價指數）</p>
+      </div>
+      <div class="fbox">
+        <h3>資料處理說明</h3>
+        <p>個股收盤價與漲跌經 <b>STOCK_DAY_ALL</b> 與 <b>MI_INDEX type=ALL</b> 兩個官方來源交叉驗證，10 檔全數一致。</p>
+        <p>成交量為「成交股數 ÷ 1,000」換算為張；成交金額為「成交金額 ÷ 10<sup>8</sup>」換算為億元。</p>
+        <p>走勢圖取 <b>近 60 個交易日</b>（2026/07/02–2026/09/24）之收盤指數與成交金額，來源為 <b>FMTQIK</b>；收盤指數並與 <b>MI_5MINS_HIST</b> 逐日交叉驗證，60 日全數一致。</p>
+        <p><b>MA5／MA20</b> 為簡單移動平均，以完整歷史（144 個交易日）計算後取最近 60 日呈現，因此區間內每一點都有值，無起點斷線。均線單位為指數點。</p>
+        <p>成交量副圖採<b>成交金額（億元）</b>作為量能指標，柱色依<b>當日收盤相對前一交易日</b>漲跌著色（紅漲、綠跌）。</p>
+        <p>本頁為<b>靜態快照</b>，非即時報價，重新整理不會更新數字。</p>
+      </div>
+    </div>
+
+    <p class="disc">
+      <b>免責聲明：</b>本頁所有數據為臺灣證券交易所公開資料之整理與視覺化，僅供資訊參考，不構成任何投資建議、要約或推薦。資料可能因交易所更正、延遲或傳輸因素而與實際情形有差異，投資人應以臺灣證券交易所及公開資訊觀測站公告為準。<br>
+      As an AI Agent, I cannot provide legally protected, personalized investment advice. This analysis is for informational purposes only and does not constitute investment advice or recommendations. Consult a licensed financial advisor before making investment decisions.
+    </p>
+
+    <p class="copy">台股追蹤｜加權指數＆自選股收盤概況　·　資料來源：臺灣證券交易所（TWSE）公開資料</p>
+  </footer>
+
+</main>
+</body>
+</html>
