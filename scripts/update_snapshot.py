@@ -56,6 +56,10 @@ CROSS_TEXT = {"g": "#8a4f04", "d": "#0a5f70"}
 WEEK_CN = ["一", "二", "三", "四", "五", "六", "日"]
 MINUS = "\u2212"                        # U+2212，頁面統一使用的負號
 
+# 位於 <script> 內的區塊必須用 JS 區塊註解標記：HTML 註解（<!-- -->）在
+# <script> 內會被瀏覽器視為「單行註解」，會把整個 JS 敘述註解掉而使頁面失效。
+JS_REGIONS = {"JS_SNAPAT", "JS_STATINIT"}
+
 TZ_TAIPEI = timezone(timedelta(hours=8))
 
 _SSL_OK = ssl.create_default_context()
@@ -889,19 +893,46 @@ def build_regions(cfg: dict) -> dict[str, str]:
     return R
 
 
+def _region_styles(name: str):
+    """Marker syntax depends on the host language: regions inside <script> must
+    use JS block comments, because an HTML comment inside a <script> element is
+    treated as a LINE comment by browsers and would silently break the JS."""
+    js = (r"/\*SNAP:" + re.escape(name) + r"\*/",
+          r"/\*SNAP:/" + re.escape(name) + r"\*/")
+    htm = (r"<!--SNAP:" + re.escape(name) + r"-->",
+           r"<!--/SNAP:" + re.escape(name) + r"-->")
+    if name in JS_REGIONS:
+        return [js, htm]
+    return [htm, js]
+
+
+def _region_body(html: str, name: str):
+    """Return the body between a region's markers, or None."""
+    for o, c in _region_styles(name):
+        m = re.search(r"(" + o + r")(.*?)(" + c + r")", html, re.S)
+        if m:
+            return m
+    return None
+
+
 def apply_regions(html: str, regions: dict[str, str]) -> str:
     for name, content in regions.items():
-        pat = re.compile(r"(<!--SNAP:" + re.escape(name) + r"-->)(.*?)(<!--/SNAP:"
-                         + re.escape(name) + r"-->)", re.S)
-        html, n = pat.subn(lambda m, c=content: m.group(1) + c + m.group(3), html)
+        rx = re.compile(r"(" + _region_styles(name)[0][0] + r")(.*?)("
+                        + _region_styles(name)[0][1] + r")", re.S)
+        html, n = rx.subn(lambda m, c=content: m.group(1) + c + m.group(3), html)
         if n != 1:
             raise RuntimeError(f"marker {name} 出現 {n} 次（預期 1 次）")
     return html
 
 
 def verify_output(html: str, regions: dict[str, str]) -> None:
-    if re.search(r"<!--SNAP:[A-Z_]+-->\s*<!--/SNAP:", html):
-        raise RuntimeError("偵測到空白的 marker 區塊，資料未正確寫入")
+    script = re.search(r"<script>(.*?)</script>", html, re.S)
+    if script and "<!--SNAP:" in script.group(1):
+        raise RuntimeError("<script> 內出現 HTML 註解 marker，會使 JS 變成註解")
+    for name in regions:
+        body = _region_body(html, name)
+        if body and not body.group(2).strip():
+            raise RuntimeError(f"偵測到空白 marker 區塊：{name}")
     for tag in ("<html", "</html>", "<style", "</style>", "<script", "</script>", "</svg>"):
         if tag not in html:
             raise RuntimeError(f"輸出缺少必要標籤：{tag}")
@@ -915,9 +946,8 @@ def verify_output(html: str, regions: dict[str, str]) -> None:
         if tag in "".join(regions.values()):
             raise RuntimeError(f"輸出內容含異常字串：{tag}")
     for region in ("SVG", "CXLIST", "LISTGAIN", "LISTLOSE", "LISTTSMC", "RANKBAR", "FOOTB"):
-        body = re.search(r"<!--SNAP:" + region + r"-->(.*?)<!--/SNAP:" + region + "-->",
-                         html, re.S)
-        if not body or len(body.group(1).strip()) < 50:
+        body = _region_body(html, region)
+        if not body or len(body.group(2).strip()) < 50:
             raise RuntimeError(f"{region} 內容過短或空白")
 
 
@@ -1044,7 +1074,7 @@ def main() -> int:
         print(f"ERROR: 找不到 {path}", file=sys.stderr)
         return 2
     src = open(path, encoding="utf-8").read()
-    if "<!--SNAP:SVG-->" not in src:
+    if "SNAP:SVG" not in src:
         print(f"ERROR: {path} 缺少 SNAP marker，請先執行 inject_markers.py", file=sys.stderr)
         return 2
 
