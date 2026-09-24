@@ -1158,21 +1158,35 @@ def main() -> int:
 
     try:
         cfg = collect()
-        # 資料本身無變化時保留既有的「資料擷取時間」，避免每個排程日都因時間戳
-        # 而產生一次實質無變化的 commit（例如週末／假日重跑）。
-        if args.force_meta:
-            stamp = datetime.now(TZ_TAIPEI).strftime("%Y/%m/%d %H:%M:%S")
-            source = "--force-meta"
+
+        # 檔案中「目前」的快照時間：只取 JS_SNAPAT 區塊的值。
+        # （先前用「檔案中所有日期取 min」，會抓到快取日期字串，永遠是舊值。）
+        m_old = re.search(r"var SNAPSHOT_AT = '([^']*)'", src)
+        existing = m_old.group(1) if m_old else None
+        now_stamp = datetime.now(TZ_TAIPEI).strftime("%Y/%m/%d %H:%M:%S")
+
+        def build_with(stamp: str):
+            cfg["fetched"] = stamp
+            regs = build_regions(cfg)
+            return regs, apply_regions(src, regs)
+
+        # 兩段式：先以「本次擷取時間」產生一次，判斷資料本身是否變更；
+        # 再決定要保留哪個時間戳。因為 meta_stripped() 會把時間戳正規化，
+        # 所以 data_changed 與時間戳無關，這樣判斷才正確。
+        regions, out = build_with(now_stamp)
+        data_changed = meta_stripped(out) != meta_stripped(src)
+
+        # 資料沒變（例如週末／假日重跑，STOCK_DAY_ALL 回傳同一交易日）→ 沿用檔案
+        # 中既有的時間戳，避免產生「實質無變化」的 commit。
+        # 資料有變 → 一定要用本次擷取時間，否則頁面會以舊時間標示新資料。
+        if not data_changed and existing and not args.force_meta:
+            regions, out = build_with(existing)
+            why = "沿用檔案中既有時間戳（資料未變）"
+        elif args.force_meta:
+            why = "--force-meta（強制更新時間戳）"
         else:
-            found = re.findall(r"\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}", src)
-            if not found:
-                raise RuntimeError("檔案中找不到既有的資料擷取時間，請以 --force-meta 執行")
-            stamp = min(found)
-            source = "沿用檔案中既有時間戳"
-        cfg["fetched"] = stamp
-        print(f"      資料擷取時間：{stamp}（{source}）")
-        regions = build_regions(cfg)
-        out = apply_regions(src, regions)
+            why = "本次擷取時間（資料已變更）"
+        print(f"      資料擷取時間：{cfg['fetched']}（{why}）")
         verify_output(out, regions)
     except Exception as e:  # noqa: BLE001
         print(f"\nERROR: {type(e).__name__}: {e}", file=sys.stderr)
