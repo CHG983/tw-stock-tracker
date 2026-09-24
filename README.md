@@ -88,7 +88,7 @@ python3 scripts/update_snapshot.py --file index.html --dry-run
 | 3 | 抓取 `FMTQIK`（近 14 個月加權指數歷史日資料） |
 | 4 | 抓取 `MI_5MINS_HIST` 並做**一致性驗證**（收盤指數、漲跌點數兩來源比對） |
 | 5 | 計算 MA5／MA20、交叉事件、漲跌幅排行榜與全部圖表座標 |
-| 6 | 只重寫 `<!--SNAP:…-->` 標記之間的區塊，其餘 HTML／CSS／JS 完全不動 |
+| 6 | 只重寫標記之間的區塊（HTML 區塊用 `<!--SNAP:…-->`；位於 `<script>` 內的區塊用 `/*SNAP:…*/`，因為 HTML 註解在 `<script>` 內會被當成單行註解而破圖 JS），其餘 HTML／CSS／JS 完全不動 |
 
 ### 更新範圍
 
