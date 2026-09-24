@@ -436,12 +436,47 @@ def assign_label_rows(crosses_in_win: list[dict]) -> dict[int, float]:
 # SVG
 # --------------------------------------------------------------------------
 def svg_region(win, win_ma5, win_ma20, win_prev, crosses, ax, vl, rows) -> str:
+    import html as _html
+
     xs = [x_of(i) for i in range(N_WINDOW)]
     ys_c = [price_y(r["close"], ax) for r in win]
     ys_5 = [price_y(v, ax) for v in win_ma5]
     ys_20 = [price_y(v, ax) for v in win_ma20]
     L: list[str] = []
     A = L.append
+
+    # --- <svg> wrapper -----------------------------------------------------
+    # NOTE: the wrapper must be emitted HERE. The injector marks the whole
+    # <svg>...</svg> block, so this function's output replaces it entirely —
+    # omitting the wrapper would leave every chart child as a bare, unknown
+    # HTML element with nothing painted.
+    lo = min(r["close"] for r in win)
+    hi = max(r["close"] for r in win)
+    up_days = sum(1 for i, r in enumerate(win)
+                  if win_prev[i] is not None and r["close"] > win_prev[i])
+    dn_days = sum(1 for i, r in enumerate(win)
+                  if win_prev[i] is not None and r["close"] < win_prev[i])
+    amax = max((r["amt"] for r in win if r.get("amt") is not None), default=0.0)
+    xt = [(c["date"], "黃金" if c["kind"] == "g" else "死亡") for c in crosses]
+    parts = [
+        f"針對加權指數近 {N_WINDOW} 個交易日（{win[0]['date']} 至 {win[-1]['date']}）"
+        f"的收盤走勢、MA5／MA20 均線與成交量圖。最新收盤 {f2(win[-1]['close'])} 點，"
+        f"MA5 {f2(win_ma5[-1])} 點、MA20 {f2(win_ma20[-1])} 點。"
+        f"期間最低 {f2(lo)} 點、最高 {f2(hi)} 點。"
+        f"下方柱狀圖為每日成交金額，最高 {f0(amax)} 億元，"
+        f"紅柱代表收盤較前一日上漲、綠柱代表下跌，{up_days} 天上漲、{dn_days} 天下跌。"
+    ]
+    if xt:
+        parts.append("圖上另以垂直虛線與圓點標示區間內 " + str(len(xt)) + " 次均線交叉："
+                     + "、".join(f"{d} {k}交叉" for d, k in xt)
+                     + "，日期標籤採交錯高度以避免重疊。")
+    else:
+        parts.append("此區間內 MA5 與 MA20 未發生交叉。")
+    aria = _html.escape("".join(parts), quote=True)
+
+    A(f'<svg viewBox="0 0 1000 420" role="img" aria-label="{aria}">')
+    A(f'        <title>加權指數近 {N_WINDOW} 個交易日收盤走勢、MA5／MA20 均線、'
+      f'均線交叉標示與成交量（成交金額）</title>')
 
     A("        <!-- ===== 主圖：水平格線與 Y 軸標籤（指數點） ===== -->")
     for t in reversed(ax["ticks"]):
@@ -462,7 +497,7 @@ def svg_region(win, win_ma5, win_ma20, win_prev, crosses, ax, vl, rows) -> str:
     A("        </g>")
 
     A("")
-    A("        <!-- ===== 收盤指數：面積與折線 =====")
+    A('        <!-- ===== 收盤指數：面積與折線 ===== -->')
     A(f'        <path class="area-f" d="M {yn(xs[0])},{yn(AREA_FLOOR_Y)} L '
       + " ".join(f"{yn(x)},{yn(y)}" for x, y in zip(xs, ys_c))
       + f' L {yn(xs[-1])},{yn(AREA_FLOOR_Y)} Z"/>')
@@ -540,6 +575,8 @@ def svg_region(win, win_ma5, win_ma20, win_prev, crosses, ax, vl, rows) -> str:
         anchor = "start" if idx == 0 else ("end" if idx == N_WINDOW - 1 else "middle")
         A(f'        <text class="axis-t" x="{yn(xs[idx])}" y="404.0" '
           f'text-anchor="{anchor}">{win[idx]["date"][5:]}</text>')
+
+    A("      </svg>")
     return "\n".join(L)
 
 
@@ -950,6 +987,43 @@ def verify_output(html: str, regions: dict[str, str]) -> None:
         if not body or len(body.group(2).strip()) < 50:
             raise RuntimeError(f"{region} 內容過短或空白")
 
+
+    # --- 圖表完整性 -------------------------------------------------------
+    # 這幾項是回歸防護：整個 SVG 區塊必須自帶 <svg>/</svg> wrapper 與必要元素。
+    # 少了 wrapper，所有圖表子元素會變成未知的 HTML 元素而完全不繪製；未閉合的
+    # HTML 註解則會吞掉後續元素。兩者都會讓圖表空白，但元素「數量」仍可能正確，
+    # 因此必須逐項檢查類別是否存在。
+    svg = _region_body(html, "SVG")
+    if svg is None:
+        raise RuntimeError("缺少 SNAP:SVG 區塊")
+    body = svg.group(2)
+    if "<svg" not in body or "</svg>" not in body:
+        raise RuntimeError("SVG 區塊缺少 <svg> 或 </svg> wrapper，圖表將無法繪製")
+    for need, label in (('viewBox="0 0 1000 420"', "viewBox"),
+                        ("<title>", "SVG <title>（無障礙）"),
+                        ('role="img"', 'role="img"'),
+                        ('class="area-f"', "收盤面積 area-f"),
+                        ('class="line-p"', "收盤折線 line-p"),
+                        ('class="line-ma5"', "MA5 折線"),
+                        ('class="line-ma20"', "MA20 折線"),
+                        ('class="cx-dot"', "均線交叉標記"),
+                        ('class="v-up"', "紅色量柱"),
+                        ('class="v-down"', "綠色量柱")):
+        if need not in body:
+            raise RuntimeError(f"SVG 區塊缺少 {label}（{need}）")
+    if body.count("<rect") < N_WINDOW:
+        raise RuntimeError(f"成交量柱不足：{body.count('<rect')} 根（預期 {N_WINDOW}）")
+    if body.count("<polyline") < 3:
+        raise RuntimeError(f"折線不足：{body.count('<polyline')} 條（預期 3）")
+    if not re.search(r'<svg[^>]*role="img"', body):
+        raise RuntimeError("<svg> 缺少 role=\"img\"（無障礙）")
+
+    # 未閉合的 HTML 註解（例如 "<!-- ===== 標題 =====" 少了 -->）會把後面整段
+    # 標記吞進註解，造成元素消失卻不報錯。
+    for m in re.finditer(r"<!--", html):
+        if "-->" not in html[m.start():m.start() + 400]:
+            raise RuntimeError("偵測到未閉合的 HTML 註解，會吞掉後續元素："
+                               + html[m.start():m.start() + 60].replace("\n", " "))
 
 def meta_stripped(html: str) -> str:
     """Remove the volatile "last updated" values so two runs on the same
