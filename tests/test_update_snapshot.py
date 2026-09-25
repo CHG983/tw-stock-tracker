@@ -1483,5 +1483,110 @@ class TestAtomicWriteAndVerify(unittest.TestCase):
         self.assertIn("<!--", o)
 
 
+# ==========================================================================
+# 13. 投資免責聲明：必須逐字為指定英文版本，且不得被快照重寫覆蓋
+# ==========================================================================
+# 使用者指定的英文免責聲明（逐字，不得改動）
+DISCLAIMER_EN = (
+    "All data on this page is a compilation and visualization of publicly available "
+    "information from the Taiwan Stock Exchange; it is provided for informational "
+    "purposes only and does not constitute investment advice, an offer, or a "
+    "recommendation. Discrepancies between this data and actual conditions may arise "
+    "due to corrections by the exchange, delays, or transmission issues; investors "
+    "should rely on official announcements from the Taiwan Stock Exchange and the "
+    "Market Observation Post System."
+)
+
+# 舊版文字：一旦再出現即為回歸
+OLD_DISCLAIMER_MARKERS = (
+    "As an AI Agent",
+    "licensed financial advisor",
+    "legally protected, personalized investment advice",
+)
+
+# 中文免責聲明：必須保留
+DISCLAIMER_ZH = "本頁所有數據為臺灣證券交易所公開資料之整理與視覺化"
+
+
+def _region_spans(html: str) -> list[tuple[int, int, str]]:
+    """所有 SNAP 區塊的 (start, end, name)，含 HTML 與 JS 兩種 marker 語法。"""
+    spans: list[tuple[int, int, str]] = []
+    for rx in (r"<!--SNAP:([A-Z_]+)-->(.*?)<!--/SNAP:\1-->",
+               r"/\*SNAP:([A-Z_]+)\*/(.*?)/\*SNAP:/\1\*/"):
+        for m in re.finditer(rx, html, re.S):
+            spans.append((m.start(), m.end(), m.group(1)))
+    return spans
+
+
+def _disc_block(html: str) -> str | None:
+    m = re.search(r'<p class="disc">.*?</p>', html, re.S)
+    return m.group(0) if m else None
+
+
+def _forced_change_html() -> str:
+    """改掉一個快照數字，強制本次更新真的重寫檔案（否則測試會空轉）。"""
+    return re.sub(r'(id="idx-val">)[\d,.]+', r"\g<1>99,999.99", H.repo_index_html())
+
+
+class TestDisclaimerPreservation(unittest.TestCase):
+    """免責聲明為使用者指定的英文版本，且 update_snapshot.py 不得覆寫它。"""
+
+    def test_repo_index_has_new_disclaimer_verbatim(self):
+        html = H.repo_index_html()
+        self.assertEqual(html.count(DISCLAIMER_EN), 1,
+                         "index.html 應逐字包含新版英文免責聲明，且恰好一次")
+
+    def test_repo_index_has_no_old_disclaimer(self):
+        html = H.repo_index_html()
+        for marker in OLD_DISCLAIMER_MARKERS:
+            self.assertNotIn(marker, html, f"仍殘留舊版免責聲明文字：{marker!r}")
+
+    def test_chinese_disclaimer_kept(self):
+        html = H.repo_index_html()
+        self.assertIn(DISCLAIMER_ZH, html, "中文免責聲明不得被移除")
+
+    def test_disclaimer_is_outside_every_snap_region(self):
+        """免責聲明在 marker 之外 → update_snapshot.py 的 apply_regions 不會碰它。
+
+        若日後有人把免責聲明搬進某個 SNAP 區塊，此測試會失敗 —— 那就必須同步
+        更新腳本內的樣板，否則下次自動更新會把文字寫回去。
+        """
+        html = H.repo_index_html()
+        spans = _region_spans(html)
+        self.assertGreater(len(spans), 20, "應偵測到所有 SNAP 區塊")
+        i = html.index(DISCLAIMER_EN)
+        for start, end, name in spans:
+            self.assertFalse(start < i < end,
+                             f"免責聲明落在 SNAP:{name} 區塊內，腳本重寫時會覆蓋它")
+
+    def test_disclaimer_survives_a_snapshot_update(self):
+        """真的跑一次會寫檔的更新，新文字必須原樣留著、舊文字不得回來。"""
+        p = temp_html(_forced_change_html())
+        with H.FakeAPI():
+            r = H.run_cli(["--file", p])
+        self.assertEqual(r.rc, 0, f"{r.out}\n{r.err}")
+        self.assertEqual(r.changed, "1", f"應確實重寫檔案\n{r.out}")
+        self.assertTrue(r.wrote)
+        html = open(p, encoding="utf-8").read()
+        self.assertEqual(html.count(DISCLAIMER_EN), 1,
+                         "更新後新英文免責聲明必須逐字存在且僅一次")
+        self.assertIn(DISCLAIMER_ZH, html, "更新後中文免責聲明仍須存在")
+        for marker in OLD_DISCLAIMER_MARKERS:
+            self.assertNotIn(marker, html, f"更新後不得出現舊文字：{marker!r}")
+
+    def test_bytes_around_disclaimer_untouched_by_update(self):
+        """更新前後 .disc 區塊必須位元組完全相同。"""
+        p = temp_html(_forced_change_html())
+        before = open(p, encoding="utf-8").read()
+        with H.FakeAPI():
+            r = H.run_cli(["--file", p])
+        self.assertEqual(r.rc, 0, f"{r.out}\n{r.err}")
+        after = open(p, encoding="utf-8").read()
+        b_block, a_block = _disc_block(before), _disc_block(after)
+        self.assertIsNotNone(b_block, "找不到 .disc 區塊")
+        self.assertEqual(b_block, a_block,
+                         "更新後 .disc 區塊（中文＋新英文免責聲明）必須位元組不變")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

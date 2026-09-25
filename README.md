@@ -215,9 +215,10 @@ python3 scripts/update_snapshot.py --file index.html --dry-run
 欄位缺失、非交易日、欄位格式異常…）。
 
 ```bash
-python3 -m unittest discover -s tests -t . -v      # 全部執行（建議）
+python3 -m unittest discover -s tests -t . -v      # 全部執行（建議，共 191 個案例）
 python3 -m unittest tests.test_update_snapshot -v  # 同上，指定模組
 python3 -m unittest tests.test_update_snapshot.TestNoNetwork -v  # 只驗證「不連網」
+python3 -m unittest tests.test_update_snapshot.TestDisclaimerPreservation -v  # 只驗證免責聲明不被覆寫
 ```
 
 > 亦可使用 pytest（`pip install pytest && python3 -m pytest tests/ -v`），但
@@ -234,6 +235,7 @@ python3 -m unittest tests.test_update_snapshot.TestNoNetwork -v  # 只驗證「�
 | **時間戳邏輯** | 資料未變沿用舊時間戳；資料有變改用本次擷取時間（避免新資料配舊時間戳） |
 | **交叉事件計算** | 以可控合成資料驗證 MA5／MA20 黃金／死亡交叉的判定與日期，並確認每一筆都是真實的差值變號 |
 | **不連網保證** | 將 `socket.socket` 換成會拋例外者，完整流程仍須成功 |
+| **免責聲明保存** | 英文免責聲明必須逐字為指定版本且恰好一次；確認它落在所有 SNAP marker **之外**（否則腳本重寫會覆蓋）；實際跑一次會寫檔的更新，驗證更新後新文字仍在、舊文字（`As an AI Agent`…）不得回來、中文免責聲明保留，且 `.disc` 區塊位元組不變 |
 
 ### 重新擷取樣本
 
@@ -253,9 +255,7 @@ python3 tests/capture_fixtures.py
 
 ## ⚠️ 投資免責聲明
 
-As an AI Agent, I cannot provide legally protected, personalized investment advice.
-This analysis is for informational purposes only and does not constitute investment advice or recommendations.
-Consult a licensed financial advisor before making investment decisions.
+All data on this page is a compilation and visualization of publicly available information from the Taiwan Stock Exchange; it is provided for informational purposes only and does not constitute investment advice, an offer, or a recommendation. Discrepancies between this data and actual conditions may arise due to corrections by the exchange, delays, or transmission issues; investors should rely on official announcements from the Taiwan Stock Exchange and the Market Observation Post System.
 
 本專案僅為資料視覺化技術示範，所有內容僅供資訊參考，**不構成任何投資建議或推薦**。
 資料雖取自臺灣證券交易所公開資料，仍可能存在延遲、缺漏或解析誤差，**請勿作為交易決策的唯一依據**。
