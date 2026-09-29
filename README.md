@@ -215,10 +215,11 @@ python3 scripts/update_snapshot.py --file index.html --dry-run
 欄位缺失、非交易日、欄位格式異常…）。
 
 ```bash
-python3 -m unittest discover -s tests -t . -v      # 全部執行（建議，共 191 個案例）
+python3 -m unittest discover -s tests -t . -v      # 全部執行（建議，共 226 個案例）
 python3 -m unittest tests.test_update_snapshot -v  # 同上，指定模組
 python3 -m unittest tests.test_update_snapshot.TestNoNetwork -v  # 只驗證「不連網」
 python3 -m unittest tests.test_update_snapshot.TestDisclaimerPreservation -v  # 只驗證免責聲明不被覆寫
+python3 -m unittest tests.test_update_snapshot.TestVerifyOutputGuards -v  # 只驗證寫檔前閘門
 ```
 
 > 亦可使用 pytest（`pip install pytest && python3 -m pytest tests/ -v`），但
@@ -231,11 +232,14 @@ python3 -m unittest tests.test_update_snapshot.TestDisclaimerPreservation -v  # 
 | **正常交易日** | 24 組 SNAP 區塊全部由本次資料重建（以哨兵字串證明）、輸出含 `<svg>` wrapper／折線／量柱／交叉標記、數字與樣本逐一相符 |
 | **非交易日／假日** | 資料未變 → `CHANGED=0`、**不寫檔**、檔案位元組不變、時間戳沿用 |
 | **缺資料** | 任一端點空陣列／null／缺欄位／HTTP 500／timeout／空回應／HTML 錯誤頁 → **非 0 結束且原檔位元組完全不變**，且不留暫存檔 |
-| **資料格式異常** | 千分位逗號、空字串、`--`、Unicode 負號、非數字、HTML 標籤、欄位數不足、除以零 → 個股層級「排除」而非崩潰 |
+| **資料格式異常** | 千分位逗號、空字串、`--`、Unicode 負號、非數字、HTML 標籤、欄位數不足、除以零 → 個股層級「排除」而非崩潰；**單一壞列不得讓整支程式失敗**（`TestToleratedMalformedRows`） |
 | **時間戳邏輯** | 資料未變沿用舊時間戳；資料有變改用本次擷取時間（避免新資料配舊時間戳） |
 | **交叉事件計算** | 以可控合成資料驗證 MA5／MA20 黃金／死亡交叉的判定與日期，並確認每一筆都是真實的差值變號 |
 | **不連網保證** | 將 `socket.socket` 換成會拋例外者，完整流程仍須成功 |
 | **免責聲明保存** | 英文免責聲明必須逐字為指定版本且恰好一次；確認它落在所有 SNAP marker **之外**（否則腳本重寫會覆蓋）；實際跑一次會寫檔的更新，驗證更新後新文字仍在、舊文字（`As an AI Agent`…）不得回來、中文免責聲明保留，且 `.disc` 區塊位元組不變 |
+| **寫檔前閘門** | `verify_output()` 的每一條防護分支都必須真的 raise：空白區塊、`idx-val`／`kpi-amt` 非數字、輸出含 `None`／`undefined`／`{{`、區塊過短、未閉合 HTML 註解、`<script>` 內出現 HTML marker、SVG 缺 wrapper／`role="img"`／`viewBox`／`<title>`／`area-f`／`line-ma20`／`cx-dot`／`v-down`（`TestVerifyOutputGuards`） |
+| **純函式邊界** | `n2()` 對空字串／`--`／`N/A`／`nan`／`None`／list／dict 皆回 `None`，對千分位／Unicode 負號／HTML 標籤／百分比／`0` 正確解析；`sma()` 窗口未滿回 `None`；`axis_layout()` 對全平序列仍能覆蓋；`vol_layout(0)` 不除以零；`_parse_cnt()` 處理缺值與 `1,234(56)` 格式（`TestHelperEdgeCases`） |
+| **故障注入無死碼** | 每個定義的故障注入都必須被至少一個測試引用（`test_no_unused_fault_names`），防止日後新增故障卻忘了接上測試 |
 
 ### 重新擷取樣本
 

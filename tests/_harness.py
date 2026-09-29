@@ -268,6 +268,28 @@ def _f_5min_shift_date(body, params):
     return _dump(j)
 
 
+def _f_json_null(body, params):
+    """整個回應為 JSON null（端點異常時可能出現）→ 必須失敗。"""
+    return _dump(None)
+
+
+def _f_mi_data_null(body, params):
+    """把每張表的 data 設為 null → 缺欄位，必須失敗。"""
+    j = _as_json(body)
+    for t in (j.get("tables") or []):
+        t["data"] = None
+    return _dump(j)
+
+
+def _f_fmt_short_row(body, params):
+    """把某一列截短（缺欄位）→ 必須失敗，不得寫入。"""
+    j = _as_json(body)
+    if j.get("data"):
+        i = len(j["data"]) // 2
+        j["data"][i] = j["data"][i][:3]
+    return _dump(j)
+
+
 _FAULT_FUNCS = {
     "empty_body": _f_empty,
     "html_error": _f_html,
@@ -295,6 +317,9 @@ _FAULT_FUNCS = {
     "5min_empty": _f_5min_empty,
     "5min_bad_ohlc": _f_5min_bad_ohlc,
     "5min_shift_date": _f_5min_shift_date,
+    "json_null_body": _f_json_null,
+    "mi_data_null": _f_mi_data_null,
+    "fmt_short_row": _f_fmt_short_row,
 }
 
 # 會直接拋出例外的故障

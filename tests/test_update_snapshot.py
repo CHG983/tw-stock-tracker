@@ -520,6 +520,14 @@ FAILURE_CASES = [
     ("min_html_error", PATH_5MIN, "html_error"),
     ("min_http500", PATH_5MIN, "http_500"),
     ("min_timeout", PATH_5MIN, "timeout"),
+    # --- 補強：先前定義了卻未被任何測試使用的故障注入（死碼） ---
+    ("stock_header_only", PATH_STOCK, "stock_header_only"),
+    ("fmt_empty_month", PATH_FMT, "fmt_empty_month"),
+    ("mi_fields_stripped", PATH_MI, "mi_fields_stripped"),
+    # --- 補強：JSON null 與缺欄位（端點異常時可能出現） ---
+    ("stock_json_null", PATH_STOCK, "json_null_body"),
+    ("mi_data_null", PATH_MI, "mi_data_null"),
+    ("fmt_short_row", PATH_FMT, "fmt_short_row"),
 ]
 
 
@@ -1586,6 +1594,178 @@ class TestDisclaimerPreservation(unittest.TestCase):
         self.assertIsNotNone(b_block, "找不到 .disc 區塊")
         self.assertEqual(b_block, a_block,
                          "更新後 .disc 區塊（中文＋新英文免責聲明）必須位元組不變")
+
+
+# ==========================================================================
+# 14. 可容忍的異常列：個股層級的壞資料應「排除」而非讓整支程式失敗
+# ==========================================================================
+TOLERATED_CASES = [
+    ("stock_bad_close", PATH_STOCK, "stock_bad_close"),
+    ("stock_full_roc_date", PATH_STOCK, "stock_full_roc_date"),
+]
+
+
+class TestToleratedMalformedRows(unittest.TestCase):
+    """個股層級的壞資料（單一列）不得讓整支程式失敗，但也不得寫入錯誤內容。"""
+
+    def _run(self, path, fault):
+        d = tempfile.mkdtemp(prefix="twstock-tol-")
+        p = os.path.join(d, "index.html")
+        H.write_html(p)
+        before = H.read_bytes(p)
+        with H.FakeAPI({path: fault}):
+            r = H.run_cli(["--file", p])
+        return r, p, before
+
+    def test_bad_close_row_is_excluded_not_fatal(self):
+        """單一檔個股收盤價為 N/A → 該檔被排除，程式仍成功且不亂寫。"""
+        r, p, before = self._run(PATH_STOCK, "stock_bad_close")
+        self.assertEqual(r.rc, 0, f"單一壞列不應讓程式失敗\n{r.err}")
+        self.assertEqual(before, H.read_bytes(p), "資料未變時不得改寫原檔")
+        self.assertTrue(no_temps(p))
+
+    def test_roc_date_with_slashes_is_accepted(self):
+        """115/09/24 與 1150924 必須等價（兩種民國日期寫法都要能解析）。"""
+        r, p, before = self._run(PATH_STOCK, "stock_full_roc_date")
+        self.assertEqual(r.rc, 0, f"兩種民國日期寫法應等價\n{r.err}")
+        self.assertEqual(before, H.read_bytes(p))
+
+    def test_no_unused_fault_names(self):
+        """每個定義的故障注入都必須被至少一個測試引用（防止死碼）。"""
+        with open(os.path.abspath(__file__), encoding="utf-8") as f:
+            src = f.read()
+        unused = [n for n in H.FAULT_NAMES if f'"{n}"' not in src]
+        self.assertEqual(unused, [], f"定義了卻未被任何測試使用的故障注入：{unused}")
+
+
+# ==========================================================================
+# 15. verify_output 的防護分支：每一條都必須真的擋下壞輸出
+# ==========================================================================
+class TestVerifyOutputGuards(unittest.TestCase):
+    """verify_output() 是「寫檔前的最後一道閘門」，每個分支都必須真的會 raise。"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.good = H.repo_index_html()
+        cls.regions = {n: us._region_body(cls.good, n).group(2)
+                       for n in H.EXPECTED_REGIONS
+                       if us._region_body(cls.good, n) is not None}
+
+    def _expect_reject(self, mutate, needle=None):
+        r = dict(self.regions)
+        mutate(r)
+        with self.assertRaises(RuntimeError) as cm:
+            us.verify_output(us.apply_regions(self.good, r), r)
+        if needle:
+            self.assertIn(needle, str(cm.exception))
+
+    def test_accepts_the_real_document(self):
+        us.verify_output(self.good, self.regions)  # 不應拋例外
+
+    def test_rejects_blank_region(self):
+        self._expect_reject(lambda r: r.__setitem__("FOOTB", ""), "空白")
+
+    def test_rejects_non_numeric_idx_val(self):
+        self._expect_reject(
+            lambda r: r.__setitem__("IDXROW",
+                r["IDXROW"].replace('id="idx-val">', 'id="idx-val">abc')), "idx-val")
+
+    def test_rejects_non_numeric_kpi_amt(self):
+        self._expect_reject(
+            lambda r: r.__setitem__("KPIS",
+                r["KPIS"].replace('id="kpi-amt">', 'id="kpi-amt">x')), "kpi-amt")
+
+    def test_rejects_none_literal(self):
+        self._expect_reject(lambda r: r.__setitem__("FOOTB", r["FOOTB"] + "None"), "None")
+
+    def test_rejects_undefined_literal(self):
+        self._expect_reject(lambda r: r.__setitem__("FOOTB", r["FOOTB"] + "undefined"), "undefined")
+
+    def test_rejects_unrendered_template(self):
+        self._expect_reject(lambda r: r.__setitem__("FOOTB", r["FOOTB"] + "{{x}}"), "{{")
+
+    def test_rejects_too_short_region(self):
+        self._expect_reject(lambda r: r.__setitem__("CXLIST", "<p>x</p>"), "過短")
+
+    def test_rejects_unclosed_html_comment(self):
+        self._expect_reject(lambda r: r.__setitem__("FOOTB", "<!-- oops " + r["FOOTB"]), "未閉合")
+
+    def test_rejects_html_marker_inside_script(self):
+        self._expect_reject(
+            lambda r: r.__setitem__("JS_SNAPAT", "<!--SNAP:X-->1<!--/SNAP:X-->"), "script")
+
+    def test_rejects_missing_svg_close(self):
+        self._expect_reject(lambda r: r.__setitem__("SVG", r["SVG"].replace("</svg>", "")), "wrapper")
+
+    def test_rejects_missing_role_img(self):
+        self._expect_reject(lambda r: r.__setitem__("SVG", r["SVG"].replace('role="img"', "")), "role")
+
+    def test_rejects_missing_viewbox(self):
+        self._expect_reject(
+            lambda r: r.__setitem__("SVG", r["SVG"].replace('viewBox="0 0 1000 420"', "")), "viewBox")
+
+    def test_rejects_missing_svg_title(self):
+        self._expect_reject(lambda r: r.__setitem__("SVG", r["SVG"].replace("<title>", "<t>")), "title")
+
+    def test_rejects_missing_area(self):
+        self._expect_reject(
+            lambda r: r.__setitem__("SVG", r["SVG"].replace('class="area-f"', 'class="xx"')), "area-f")
+
+    def test_rejects_missing_ma20_line(self):
+        self._expect_reject(
+            lambda r: r.__setitem__("SVG", r["SVG"].replace('class="line-ma20"', 'class="xx"')), "MA20")
+
+    def test_rejects_missing_cross_dot(self):
+        self._expect_reject(
+            lambda r: r.__setitem__("SVG", r["SVG"].replace('class="cx-dot"', 'class="xx"')), "交叉")
+
+    def test_rejects_missing_green_volume_bar(self):
+        self._expect_reject(
+            lambda r: r.__setitem__("SVG", r["SVG"].replace('class="v-down"', 'class="xx"')), "量柱")
+
+
+# ==========================================================================
+# 16. 純函式邊界：缺值、空字串、非數字、極端輸入
+# ==========================================================================
+class TestHelperEdgeCases(unittest.TestCase):
+    def test_n2_handles_all_missing_forms(self):
+        for v in ("", " ", "-", "--", "N/A", "nan", "NaN", "None", None, [1], {}):
+            self.assertIsNone(us.n2(v), f"n2({v!r}) 應為 None")
+
+    def test_n2_parses_real_numbers(self):
+        self.assertEqual(us.n2("1,234.5"), 1234.5)
+        self.assertEqual(us.n2("\u2212123"), -123.0)      # unicode minus
+        self.assertEqual(us.n2("<b>5</b>"), 5.0)          # HTML 標籤剝除
+        self.assertEqual(us.n2("12%"), 12.0)              # 百分比符號剝除
+        self.assertEqual(us.n2(0), 0.0)                   # 0 不是缺值
+
+    def test_sma_returns_none_until_window_filled(self):
+        self.assertEqual(us.sma([1, 2, 3], 5), [None, None, None])
+        self.assertEqual(us.sma([1, 2, 3], 3), [None, None, 2.0])
+
+    def test_axis_layout_covers_flat_series(self):
+        ax = us.axis_layout([100.0, 100.0, 100.0])
+        self.assertLessEqual(ax["lo"], 100.0)
+        self.assertGreaterEqual(ax["hi"], 100.0)
+
+    def test_vol_layout_handles_zero_volume(self):
+        self.assertGreater(us.vol_layout(0)["vmax"], 0)
+
+    def test_esc_handles_none(self):
+        self.assertEqual(us.esc(None), "None")
+
+    def test_parse_cnt_handles_missing_and_grouped(self):
+        self.assertEqual(us._parse_cnt(None), (None, None))
+        self.assertEqual(us._parse_cnt(""), (None, None))
+        self.assertEqual(us._parse_cnt("1,234(56)"), (1234, 56))
+        self.assertEqual(us._parse_cnt("1,234"), (1234, None))
+
+    def test_formatters_render_missing_as_zero(self):
+        self.assertEqual(us.f2(None), "0.00")
+        self.assertEqual(us.f0(None), "0")
+        self.assertEqual(us.sgn(0), "flat")
+        self.assertEqual(us.pts(None), "0.00")
+        self.assertEqual(us.pct(None), "0.00%")
 
 
 if __name__ == "__main__":
