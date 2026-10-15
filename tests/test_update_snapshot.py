@@ -2240,9 +2240,27 @@ class TestChatEngineHonesty(unittest.TestCase):
                      self.p["greeting"], self.p["source_note"]):
             self.assertNotIn("虛擬分析師", blob)
 
-    def test_greeting_states_not_a_real_person(self):
-        self.assertIn("我不是真人", self.p["greeting"])
+    def test_greeting_is_the_exact_specified_copy(self):
+        """開場訊息必須逐字等於使用者指定的固定文案（含標點與換行）。"""
+        self.assertEqual(
+            self.p["greeting"],
+            "我是「韭經考驗的台股戰士-宇程君」，是一位韭菜型AI並不智能的硅基生命體"
+            "<br><br>"
+            "你可以點下面的問題，或直接打字問我")
         self.assertIn(analyst.CHARACTER, self.p["greeting"])
+
+    def test_greeting_is_fixed_and_does_not_track_the_data(self):
+        """開場訊息是固定文案：改動當日資料不得改變它（當日評語改由分析面板承載）。"""
+        cfg = _analyst_cfg()
+        base = _payload(cfg)["greeting"]
+        cfg2 = dict(cfg, today_close=cfg["today_close"] + 500.0)
+        self.assertEqual(base, _payload(cfg2)["greeting"])
+        self.assertEqual(base, analyst.GREETING)
+
+    def test_greeting_keeps_the_two_paragraph_break(self):
+        """兩段之間必須保留空行（<br><br>），不可被壓成一行。"""
+        self.assertIn("<br><br>", self.p["greeting"])
+        self.assertEqual(self.p["greeting"].count("<br><br>"), 1)
 
     def test_source_note_is_disclosed(self):
         self.assertIn("固定規則", self.p["source_note"])

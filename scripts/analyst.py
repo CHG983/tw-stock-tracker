@@ -149,6 +149,16 @@ CHAT_HONESTY = (
     "宇程君是 AI 生成的虛擬角色（本頁標示為「韭齡多年的虛擬分析失」），不是真人。"
 )
 
+# 開場訊息（彈窗開啟時宇程君的第一則訊息）。
+# 【務必逐字照用】使用者指定的固定文案：角色自我介紹＋操作提示。
+# 屬固定文案，**不隨每日資料變動**；當日評語仍保留在「今日完整分析」面板內。
+# 兩段之間以 <br><br> 呈現空行（innerText 即為兩個段落間的一個空行）。
+GREETING = (
+    "我是「{who}」，是一位韭菜型AI並不智能的硅基生命體"
+    "<br><br>"
+    "你可以點下面的問題，或直接打字問我"
+).format(who=CHARACTER)
+
 
 # --------------------------------------------------------------------------
 # 小工具
@@ -494,17 +504,11 @@ def build_dialog_payload(cfg: dict, *, f0, f2, pct, pts, esc) -> dict:
     replies = {t: answer(t, a, cfg, f, f0=f0, f2=f2, pct=pct, pts=pts, esc=esc)
                for t in sorted(topics)}
 
-    greeting = (
-        "我是「{who}」，{lbl}。我不是真人，只會照著當日證交所的公開數字講話。"
-        "<br><br>先給你今天的重點：{quote}"
-        "<br><br>你可以點下面的問題，或直接打字問我。".format(
-            who=CHARACTER, lbl=ROLE_LABEL, quote=f["quote"]))
-
     return {
         "character": CHARACTER,
         "role_label": ROLE_LABEL,
         "data_date": cfg["date"],
-        "greeting": greeting,
+        "greeting": GREETING,
         "replies": replies,
         "quick": [{"label": label, "topic": topic} for label, topic in QUICK_REPLIES],
         "fallback": fallback(f),
