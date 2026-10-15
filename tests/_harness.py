@@ -48,7 +48,7 @@ TZ_TAIPEI = timezone(timedelta(hours=8))
 REF_NOW = datetime(2026, 9, 24, 21, 0, 0, tzinfo=TZ_TAIPEI)
 
 # 25 組 SNAP 區塊（build_regions 回傳鍵集合）
-# AIANALYST 為「韭經考驗的台股戰士-宇程君」每日 AI 角色評論區塊，
+# AIANALYST 為「韭經考驗的台股戰士-宇程君」（韭齡多年的虛擬分析失）每日角色評論區塊，
 # 由 scripts/analyst.py 依當日資料以固定規則產生（無隨機、無寫死數字）。
 EXPECTED_REGIONS = {
     "TITLE", "HEROTAG", "IDXROW", "KPIS", "BREADTH", "BRDATE", "SVG", "CHARTSUB",

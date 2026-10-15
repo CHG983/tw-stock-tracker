@@ -33,9 +33,9 @@ https://<你的帳號>.github.io/tw-stock-tracker/
 │   └── v6/index.html       # v6：+ 每日自動更新快照（與根目錄 index.html 同內容）
 ├── scripts/
 │   ├── update_snapshot.py  # 抓取 TWSE 公開資料並重寫 index.html 的內建快照
-│   └── analyst.py          # 「韭經考驗的台股戰士-宇程君」每日 AI 角色評論產生器
+│   └── analyst.py          # 「韭經考驗的台股戰士-宇程君」每日角色評論產生器
 ├── assets/
-│   └── yu_cheng_jun_avatar.png  # 宇程君角色頭像（AI 生成插圖，隨 repo 版控）
+│   └── yu_cheng_jun_avatar.png  # 宇程君角色頭像（使用者提供之插圖，等比裁切後隨 repo 版控）
 ├── tests/
 │   ├── fixtures/           # 從 TWSE 實際擷取的原始回應樣本（讓測試可離線重播）
 │   ├── capture_fixtures.py # 重新擷取樣本（只連網一次，手動執行）
@@ -243,7 +243,7 @@ python3 -m unittest tests.test_update_snapshot.TestVerifyOutputGuards -v  # 只�
 | **寫檔前閘門** | `verify_output()` 的每一條防護分支都必須真的 raise：空白區塊、`idx-val`／`kpi-amt` 非數字、輸出含 `None`／`undefined`／`{{`、區塊過短、未閉合 HTML 註解、`<script>` 內出現 HTML marker、SVG 缺 wrapper／`role="img"`／`viewBox`／`<title>`／`area-f`／`line-ma20`／`cx-dot`／`v-down`（`TestVerifyOutputGuards`） |
 | **純函式邊界** | `n2()` 對空字串／`--`／`N/A`／`nan`／`None`／list／dict 皆回 `None`，對千分位／Unicode 負號／HTML 標籤／百分比／`0` 正確解析；`sma()` 窗口未滿回 `None`；`axis_layout()` 對全平序列仍能覆蓋；`vol_layout(0)` 不除以零；`_parse_cnt()` 處理缺值與 `1,234(56)` 格式（`TestHelperEdgeCases`） |
 | **故障注入無死碼** | 每個定義的故障注入都必須被至少一個測試引用（`test_no_unused_fault_names`），防止日後新增故障卻忘了接上測試 |
-| **宇程君角色文字** | 同一份 `cfg` 重跑必須逐位元組相同、且把時鐘移到隔天仍不得改變（證明無 `random`／`datetime.now` 相依）；改指數或改量能必須使文字改變（證明數字非寫死）；輸出必須含當日指數、漲跌家數、成交金額、MA5／MA20、交叉筆數、2330、漲跌幅榜首等真實數字；必須含「AI 生成角色／非真人分析師／非投資建議」等誠實標示（`TestAnalyst*`） |
+| **宇程君角色文字** | 同一份 `cfg` 重跑必須逐位元組相同、且把時鐘移到隔天仍不得改變（證明無 `random`／`datetime.now` 相依）；改指數或改量能必須使文字改變（證明數字非寫死）；輸出必須含當日指數、漲跌家數、成交金額、MA5／MA20、交叉筆數、2330、漲跌幅榜首等真實數字；必須含「韭齡多年的虛擬分析失／AI 生成虛擬角色／非投資建議」等誠實標示，且不得殘留舊標籤（`TestAnalyst*`） |
 
 ### 重新擷取樣本
 
@@ -278,9 +278,10 @@ python3 tests/capture_fixtures.py
 
 ---
 
-## 🎭 宇程君（AI 生成角色）
+## 🎭 宇程君（韭齡多年的虛擬分析失）
 
-頁面上的「韭經考驗的台股戰士-宇程君」是 **AI 生成的虛擬角色**，**不是真人、不是分析師**。
+頁面上的「韭經考驗的台股戰士-宇程君」是 **AI 生成的虛擬角色**，頁面標示其角色為
+**「韭齡多年的虛擬分析失」**，**不是真人**。（「分析失」為指定的諧音寫法，勿改為「分析師」。）
 
 - 每段文字由 `scripts/analyst.py` 於每日自動更新時，依當日自證交所實際抓到的數字，
   以**固定規則（門檻判斷＋模板）**產生：**無隨機成分、無時間相依、無寫死的市場數字**。
@@ -291,7 +292,8 @@ python3 tests/capture_fixtures.py
   （指數漲跌 35%、漲跌家數比 30%、量能變化 20%、均線排列 15%）；四個分項值與權重
   都直接顯示在頁面上供複核。它**不是**市場共識、不是機率、也不是預測值。
 - 族群歸類係**依股票代號區間粗略判定**，非證交所官方產業別（頁面已標示）。
-- 頭像為 AI 生成插圖，存於 `assets/yu_cheng_jun_avatar.png`，**不依賴任何外部圖片連結**。
+- 頭像為**使用者提供之插圖**，以原圖等比正方形裁切（保留頭部中心、不拉伸變形）為 176×176，
+  存於 `assets/yu_cheng_jun_avatar.png`，**不依賴任何外部圖片連結**。
 
 ---
 

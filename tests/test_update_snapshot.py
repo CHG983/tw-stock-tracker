@@ -26,6 +26,7 @@ import json
 import os
 import re
 import socket
+import struct
 import sys
 import tempfile
 import unittest
@@ -1801,7 +1802,7 @@ class TestHelperEdgeCases(unittest.TestCase):
 
 
 # ==========================================================================
-# 16. 宇程君（AI 生成角色）每日評論：scripts/analyst.py
+# 16. 宇程君（韭齡多年的虛擬分析失）每日評論：scripts/analyst.py
 # ==========================================================================
 # 這一組測試守住整個角色功能的核心承諾：**文字完全由當日資料決定**。
 # 若 analyst.py 偷讀了 datetime.now()、random、或任何寫死的市場數字，
@@ -1909,15 +1910,15 @@ class TestAnalystReferencesRealData(unittest.TestCase):
 
 
 class TestAnalystHonesty(unittest.TestCase):
-    """角色必須誠實標示自己是 AI、非真人、非投資建議。"""
+    """角色必須誠實標示：AI 生成虛擬角色、角色標籤為「韭齡多年的虛擬分析失」、非投資建議。"""
 
     def setUp(self):
         self.html = _analyst_html()
 
     def test_states_ai_generated_and_not_a_person(self):
-        for phrase in ("AI 生成角色", "非真人分析師", "非投資建議"):
+        for phrase in (analyst.ROLE_LABEL, "AI 生成虛擬角色", "非投資建議"):
             self.assertIn(phrase, self.html, f"缺少誠實標示：{phrase}")
-        self.assertIn("不是真人、不是分析師", self.html)
+        self.assertIn("不是真人", self.html)
 
     def test_discloses_how_text_is_generated(self):
         self.assertIn("固定規則", self.html)
@@ -1931,6 +1932,16 @@ class TestAnalystHonesty(unittest.TestCase):
     def test_sector_classification_is_disclosed_as_approximate(self):
         self.assertIn("依股票代號區間粗略判定", self.html)
         self.assertIn("非證交所官方產業別", self.html)
+
+    def test_stale_role_labels_are_gone(self):
+        """舊標籤文字不得殘留在頁面上（換標籤時最容易漏掉的地方）。"""
+        for stale in ("AI 生成角色", "非真人分析師", "不是分析師"):
+            self.assertNotIn(stale, self.html, f"頁面仍殘留舊標籤：{stale}")
+
+    def test_role_label_is_exactly_as_specified(self):
+        """「分析失」是使用者指定的諧音寫法，不可被改成「分析師」。"""
+        self.assertIn(analyst.ROLE_LABEL, self.html)
+        self.assertNotIn("虛擬分析師", self.html)
 
     def test_avatar_is_local_not_external(self):
         self.assertIn('src="assets/yu_cheng_jun_avatar.png"', self.html)
@@ -1979,6 +1990,20 @@ class TestAnalystBlockIsWiredIntoThePage(unittest.TestCase):
         p = os.path.join(H.ROOT, "assets", "yu_cheng_jun_avatar.png")
         self.assertTrue(os.path.isfile(p), "角色頭像必須隨 repo 一起版控")
         self.assertGreater(os.path.getsize(p), 2000)
+
+    def test_avatar_is_square_and_176px(self):
+        """頭像必須是正方形（圓形裁切才不會被切掉）且為 88px 顯示的 2x。
+
+        直接讀 PNG 的 IHDR，不需 PIL（測試套件維持零外部相依）。
+        """
+        p = os.path.join(H.ROOT, "assets", "yu_cheng_jun_avatar.png")
+        with open(p, "rb") as fh:
+            head = fh.read(24)
+        self.assertEqual(head[:8], b"\x89PNG\r\n\x1a\n", "頭像必須是 PNG")
+        width, height = struct.unpack(">II", head[16:24])
+        self.assertEqual(width, height, "頭像必須是正方形，否則圓形裁切會切掉主體")
+        self.assertEqual((width, height), (176, 176),
+                         "頭像應為 176x176（頁面以 88px 顯示，2x 供高解析螢幕）")
 
 
 if __name__ == "__main__":

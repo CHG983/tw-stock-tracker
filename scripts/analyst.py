@@ -5,7 +5,7 @@ analyst.py — 「韭經考驗的台股戰士-宇程君」每日市場評論產�
 
 角色定位（務必誠實）
 --------------------
-宇程君是 **AI 生成的虛擬角色**，不是真人、不是分析師。他的每一句話都由本檔案
+宇程君是 **AI 生成的虛擬角色**，頁面標示其角色為「韭齡多年的虛擬分析失」；不是真人。他的每一句話都由本檔案
 依 `update_snapshot.py` 自臺灣證券交易所（TWSE）公開資料抓到的 **當日真實數字**，
 以固定規則（門檻判斷 + 模板）產生：
 
@@ -29,6 +29,10 @@ from __future__ import annotations
 from collections import Counter
 
 CHARACTER = "韭經考驗的台股戰士-宇程君"
+
+# 角色標籤：頁面、README 與測試共用這一個字串，確保全站一致。
+# 【務必照原樣使用】「分析失」為使用者指定的諧音寫法，不可自行改成「分析師」。
+ROLE_LABEL = "韭齡多年的虛擬分析失"
 
 # --------------------------------------------------------------------------
 # 族群歸類：**依股票代號區間**做的粗略歸類（非 TWSE 官方產業別）
@@ -370,13 +374,13 @@ def render_html(a: dict, *, ad: str, f0, f2, pct, pts, esc) -> str:
         '<section class="card ai-card" aria-labelledby="ai-t">\n'
         '    <div class="ai-head">\n'
         '      <img class="ai-av" src="assets/yu_cheng_jun_avatar.png" width="88" height="88"\n'
-        '           alt="「韭經考驗的台股戰士-宇程君」角色頭像（AI 生成插圖）" decoding="async">\n'
+        '           alt="「韭經考驗的台股戰士-宇程君」角色頭像（AI 生成虛擬角色）" decoding="async">\n'
         '      <div class="ai-id">\n'
         '        <h2 id="ai-t">韭經考驗的台股戰士-宇程君</h2>\n'
-        '        <p class="ai-role">AI 生成角色・依當日證交所公開資料自動產生的市場評論</p>\n'
+        '        <p class="ai-role">{lbl}・依當日證交所公開資料自動產生的市場評論</p>\n'
         '        <p class="ai-badges">\n'
-        '          <span class="ai-badge">AI 生成角色</span>\n'
-        '          <span class="ai-badge">非真人分析師</span>\n'
+        '          <span class="ai-badge">{lbl}</span>\n'
+        '          <span class="ai-badge">AI 生成虛擬角色</span>\n'
         '          <span class="ai-badge is-warn">非投資建議</span>\n'
         '        </p>\n'
         '      </div>\n'
@@ -391,7 +395,7 @@ def render_html(a: dict, *, ad: str, f0, f2, pct, pts, esc) -> str:
         '\n'
         '    <blockquote class="ai-quote">\n'
         '      「{quote}」\n'
-        '      <cite>— 宇程君（AI 角色，非真人）</cite>\n'
+        '      <cite>— 宇程君（{lbl}）</cite>\n'
         '    </blockquote>\n'
         '\n'
         '    <ul class="ai-points">\n'
@@ -401,7 +405,7 @@ def render_html(a: dict, *, ad: str, f0, f2, pct, pts, esc) -> str:
         '    <p class="ai-risk"><b>宇程君碎念：</b>{warns}</p>\n'
         '\n'
         '    <p class="ai-src"><b>這個角色與這段文字是怎麼來的：</b>'
-        '「{who}」是 <b>AI 生成的虛擬角色</b>，不是真人、不是分析師。'
+        '「{who}」是 <b>AI 生成的虛擬角色</b>，也就是本站標示的<b>{lbl}</b>；不是真人。'
         '本區塊文字由 <code>scripts/analyst.py</code> 於每日自動更新時，'
         '依當日自證交所實際抓取的數字，以<b>固定規則</b>產生'
         '（無隨機成分、無寫死的市場數字；同一份資料重跑會得到完全相同的文字）。'
@@ -411,7 +415,7 @@ def render_html(a: dict, *, ad: str, f0, f2, pct, pts, esc) -> str:
             tk=a["tier_key"], tl=a["tier_label"],
             mv="{:.1f}".format(a["mood"]), mw="{:.1f}".format(a["mood"]),
             quote=quote, li=li_html, warns=warns, who=CHARACTER,
-            ad=esc(ad))
+            lbl=ROLE_LABEL, ad=esc(ad))
     )
 
 
