@@ -2617,6 +2617,33 @@ class TestStockSearchAndIndustryFilter(unittest.TestCase):
         self.assertIn("上市公司基本資料", self.src)
         self.assertIn("未分類", self.src)
 
+    # ---- 搜尋範圍誠實性（2026-10-15 除錯）----
+    def test_search_scope_is_stated_as_the_rendered_lists(self):
+        """搜尋只涵蓋頁面上已渲染的榜單列（漲幅／跌幅前十、2330、成交金額排行），
+        並非全市場 1,079 檔母體。文案必須誠實說明範圍，否則使用者輸入
+        「中華電信」「鴻海」等不在榜單的個股會得到 0 筆而誤以為網站壞掉。"""
+        self.assertIn("搜尋榜單中的代號或名稱", self.src, "placeholder 未說明搜尋範圍")
+        self.assertIn("在下方榜單中", self.src, "sr-only 標籤未說明搜尋範圍")
+        self.assertIn("搜尋與篩選僅涵蓋下方榜單已顯示的股票", self.src, "sf-note 未說明搜尋範圍")
+
+    def test_empty_state_explains_scope_not_absence(self):
+        """空結果文案必須說明「不在榜單中」而非「該股不存在」，避免誤導。"""
+        i = self.src.index('id="sf-empty"')
+        block = self.src[i:i + 400]
+        self.assertIn("只涵蓋下方榜單已顯示的股票", block)
+        self.assertIn("並非該股不存在", block)
+
+    def test_meta_count_labels_the_denominator_as_the_list(self):
+        """計數分母必須標明是「本頁榜單」而非全市場母體。"""
+        i = self.src.index("if(meta) meta.innerHTML")
+        self.assertIn("本頁榜單共", self.src[i:i + 200])
+
+    def test_search_does_not_claim_full_market_coverage(self):
+        """搜尋 UI 不得再暗示涵蓋全市場（舊文案的誤導來源）。"""
+        i = self.src.index('class="stock-filter"')
+        block = self.src[i:i + 3000]
+        self.assertNotIn("以股票代號或名稱關鍵字搜尋，例如 2330、台積、鴻海、半導體", block)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

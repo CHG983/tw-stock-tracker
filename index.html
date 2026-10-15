@@ -1340,8 +1340,8 @@
     <div class="stock-filter" role="search">
       <div class="sf-row">
         <label class="sf-q">
-          <span class="sr-only">以股票代號或名稱關鍵字搜尋，例如 2330、台積、鴻海、半導體</span>
-          <input type="search" id="sf-q" placeholder="搜尋代號或名稱"
+          <span class="sr-only">在下方榜單中，以股票代號或名稱關鍵字搜尋，例如 2330、台積、半導體</span>
+          <input type="search" id="sf-q" placeholder="搜尋榜單中的代號或名稱"
                  autocomplete="off" aria-controls="list-gain list-lose list-tsmc rank-list">
         </label>
         <label class="sf-ind">
@@ -1375,8 +1375,8 @@
         <button type="button" class="sf-clear" id="sf-clear">清除篩選</button>
       </div>
       <p class="sf-meta" id="sf-meta" role="status" aria-live="polite">顯示 <b>21</b> 檔（漲幅 10・跌幅 10・台積電 1）</p>
-      <p class="sf-empty" id="sf-empty" hidden>找不到符合的股票，請換個關鍵字或產業，或按「清除篩選」。</p>
-      <p class="sf-note">產業類別取自臺灣證券交易所「上市公司基本資料」之官方產業別；未收錄者顯示「未分類」。篩選僅影響本頁顯示，不會改變資料來源或自動更新。</p>
+      <p class="sf-empty" id="sf-empty" hidden>本頁搜尋只涵蓋下方榜單已顯示的股票（漲幅／跌幅前十名、2330 台積電、成交金額排行），找不到代表它不在這份榜單中，並非該股不存在。請換個關鍵字或產業，或按「清除篩選」。</p>
+      <p class="sf-note">產業類別取自臺灣證券交易所「上市公司基本資料」之官方產業別；未收錄者顯示「未分類」。搜尋與篩選僅涵蓋下方榜單已顯示的股票，不會改變資料來源或自動更新。</p>
     </div>
 
     <div class="rl-block">
@@ -2271,7 +2271,7 @@
         el.hidden = !ok;
         if(ok) shown++;
       }
-      if(meta) meta.innerHTML = '顯示 <b>' + shown + '</b> 檔（共 ' + ALL + ' 檔）';
+      if(meta) meta.innerHTML = '顯示 <b>' + shown + '</b> 檔（本頁榜單共 ' + ALL + ' 檔）';
       if(empty) empty.hidden = shown !== 0;
       return shown;
     }
