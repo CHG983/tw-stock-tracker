@@ -841,6 +841,56 @@
     .sfr-item{grid-template-columns:auto 1fr;gap:2px 8px;}
     .sfr-quote{grid-column:2;grid-row:auto;text-align:left;white-space:normal;}
   }
+  /* ---------- 恐懼貪婪指數 ---------- */
+  .fg-card{margin-top:18px;}
+  .fg-en{font-size:11.5px;font-weight:600;color:var(--ink-3);letter-spacing:.2px;}
+  .fg-actions{margin-left:auto;display:inline-flex;align-items:center;gap:8px;}
+  .fg-badge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:650;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:3px 9px;}
+  .fg-badge .d{width:7px;height:7px;border-radius:50%;background:#8a97a5;}
+  .fg-badge.is-live .d{background:var(--down);}
+  .fg-badge.is-snap .d{background:#c2760b;}
+  .fg-btn{display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:12.5px;font-weight:650;color:#fff;background:var(--navy-2);border:1px solid var(--navy-2);border-radius:9px;padding:5px 11px;cursor:pointer;}
+  .fg-btn svg{width:14px;height:14px;}
+  .fg-btn:hover{background:var(--navy);}
+  .fg-btn[disabled]{opacity:.55;cursor:default;}
+  .fg-wrap{display:grid;grid-template-columns:236px minmax(0,1fr);gap:22px;align-items:start;margin-top:12px;}
+  .fg-gauge{text-align:center;border:1px solid var(--line-2);background:var(--surface-2);border-radius:var(--radius-s);padding:14px 10px 13px;}
+  .fg-gauge svg{width:100%;max-width:210px;height:auto;display:block;margin:0 auto;}
+  .fg-seg{fill:none;stroke-width:22;stroke-linecap:butt;}
+  .fg-tick{font-size:9.5px;fill:var(--ink-3);font-family:var(--mono);}
+  .fg-gval{font-size:40px;font-weight:760;letter-spacing:-1.6px;line-height:1.05;margin-top:7px;font-variant-numeric:tabular-nums;}
+  .fg-gof{font-size:10.5px;color:var(--ink-3);margin-top:-1px;}
+  .fg-chip{display:inline-flex;align-items:center;gap:6px;margin-top:9px;padding:4px 13px;border-radius:999px;font-size:13.5px;font-weight:750;border:1px solid;}
+  .fg-chip .d{width:7px;height:7px;border-radius:50%;background:currentColor;}
+  .fg-asof{font-size:10.5px;color:var(--ink-3);margin-top:8px;line-height:1.5;}
+  .fg-right{display:flex;flex-direction:column;gap:13px;min-width:0;}
+  .fg-hist{border:1px solid var(--line-2);background:var(--surface-2);border-radius:var(--radius-s);padding:10px 12px 4px;}
+  .fg-hist-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--ink-3);margin-bottom:2px;}
+  .fg-hist-head b{font-size:12.5px;color:var(--ink);}
+  .fg-hist svg{width:100%;height:auto;display:block;}
+  .fg-grid-l{stroke:var(--line);stroke-width:1;stroke-dasharray:3 4;}
+  .fg-axis{font-size:9.5px;fill:var(--ink-3);font-family:var(--mono);}
+  .fg-area{fill:rgba(43,96,148,.10);stroke:none;}
+  .fg-line{fill:none;stroke:var(--navy-3);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;}
+  .fg-last{fill:#fff;stroke:var(--navy-3);stroke-width:2;}
+  .fg-comps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+  .fg-comp{border:1px solid var(--line-2);border-radius:var(--radius-s);padding:8px 10px 9px;background:var(--surface);}
+  .fg-comp-top{display:flex;align-items:baseline;justify-content:space-between;gap:6px;}
+  .fg-comp-name{font-size:12px;font-weight:650;color:var(--ink);line-height:1.35;}
+  .fg-comp-name i{font-style:normal;font-weight:500;color:var(--ink-3);font-size:10.5px;}
+  .fg-comp-val{font-size:14px;font-weight:750;font-variant-numeric:tabular-nums;}
+  .fg-bar{display:block;height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin:6px 0 5px;}
+  .fg-bar i{display:block;height:100%;border-radius:99px;}
+  .fg-comp-raw{font-size:10.5px;color:var(--ink-3);}
+  .fg-note{margin:14px 0 0;padding-top:11px;border-top:1px dashed var(--line);font-size:11.5px;line-height:1.75;color:var(--ink-3);}
+  .fg-note b{color:var(--ink-2);}
+  .fg-note code{font-family:var(--mono);font-size:10.5px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:4px;padding:0 4px;}
+  @media(max-width:860px){
+    .fg-wrap{grid-template-columns:1fr;gap:16px;}
+    .fg-gauge{max-width:300px;margin:0 auto;}
+    .fg-comps{grid-template-columns:repeat(2,minmax(0,1fr));}
+  }
+  @media(max-width:520px){.fg-comps{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -912,6 +962,99 @@
         <dd class="num is-down" id="kpi-down">805<small>家</small></dd>
       </div>
     </dl><!--/SNAP:KPIS-->
+  </section>
+
+  <!-- ================= 恐懼貪婪指數 ================= -->
+  <section class="card fg-card" aria-labelledby="fg-t">
+    <div class="card-head">
+      <h2 id="fg-t">恐懼貪婪指數 <span class="fg-en">Fear &amp; Greed Index</span></h2>
+      <span class="sub" id="fg-sub">近 30 個交易日（2026/09/01 – 2026/10/15）・0 極度恐懼 ~ 100 極度貪婪</span>
+      <span class="fg-actions">
+        <span class="fg-badge is-snap" id="fg-mode"><span class="d" aria-hidden="true"></span><span id="fg-mode-text">內建快照</span></span>
+        <button class="fg-btn" id="fg-refresh" type="button" aria-label="向臺灣證券交易所取得最新資料並重新計算恐懼貪婪指數">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M20.8 4.6v5.6h-5.6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span id="fg-btn-text">更新</span>
+        </button>
+      </span>
+    </div>
+
+    <div class="fg-wrap">
+      <div class="fg-gauge">
+        <svg id="fg-gauge-svg" viewBox="0 0 300 162" role="img" aria-label="恐懼貪婪指數目前 24.0 分，對應狀態「極度恐懼」">
+          <title>恐懼貪婪指數儀表板（0 極度恐懼 ~ 100 極度貪婪）</title>
+          <path class="fg-seg" stroke="#0a7d43" d="M38.0 148.0 A112 112 0 0 1 68.4 71.3"/>
+          <path class="fg-seg" stroke="#3f9d70" d="M68.4 71.3 A112 112 0 0 1 132.5 37.4"/>
+          <path class="fg-seg" stroke="#8a97a5" d="M132.5 37.4 A112 112 0 0 1 171.0 38.0"/>
+          <path class="fg-seg" stroke="#dd7a63" d="M171.0 38.0 A112 112 0 0 1 231.6 71.3"/>
+          <path class="fg-seg" stroke="#d62b1c" d="M231.6 71.3 A112 112 0 0 1 262.0 148.0"/>
+          <text class="fg-tick" x="62" y="152" text-anchor="middle">0</text>
+          <text class="fg-tick" x="87.8" y="89.8" text-anchor="middle">25</text>
+          <text class="fg-tick" x="150" y="64" text-anchor="middle">50</text>
+          <text class="fg-tick" x="212.2" y="89.8" text-anchor="middle">75</text>
+          <text class="fg-tick" x="238" y="152" text-anchor="middle">100</text>
+          <g id="fg-needle" transform="rotate(-46.80 150 148)">
+            <line x1="150" y1="148" x2="150" y2="44" stroke="#14304f" stroke-width="3.4" stroke-linecap="round"/>
+          </g>
+          <circle cx="150" cy="148" r="6" fill="#14304f"/>
+          <circle cx="150" cy="148" r="2.2" fill="#fff"/>
+        </svg>
+        <div class="fg-gval num" id="fg-val" style="color:#0a7d43">24.0</div>
+        <div class="fg-gof">總分 0 – 100</div>
+        <div class="fg-chip" id="fg-chip" style="color:#0a7d43;border-color:#0a7d43;background:#e8f6ee"><span class="d" aria-hidden="true"></span><span id="fg-label">極度恐懼</span></div>
+        <div class="fg-asof">資料日期 <b id="fg-asof">2026/10/15</b></div>
+      </div>
+
+      <div class="fg-right">
+        <div class="fg-hist">
+          <div class="fg-hist-head"><b>指數歷史走勢</b><span id="fg-hist-note">近 30 個交易日・最新 24.0（極度恐懼）</span></div>
+          <svg viewBox="0 0 1000 190" role="img" aria-label="恐懼貪婪指數近 30 個交易日走勢，由 2026/09/01 的 77.3 分（貪婪）一路震盪下滑至 2026/10/15 的 24.0 分（極度恐懼）。">
+            <title>恐懼貪婪指數近 30 個交易日歷史走勢</title>
+            <rect class="fg-zband" x="46" y="125.4" width="928" height="32.6" style="fill:rgba(10,125,67,.16)"/>
+            <rect class="fg-zband" x="46" y="96.8" width="928" height="28.6" style="fill:rgba(63,157,112,.15)"/>
+            <rect class="fg-zband" x="46" y="81.8" width="928" height="15.0" style="fill:rgba(138,151,165,.14)"/>
+            <rect class="fg-zband" x="46" y="54.6" width="928" height="27.2" style="fill:rgba(221,122,99,.15)"/>
+            <rect class="fg-zband" x="46" y="22.0" width="928" height="32.6" style="fill:rgba(214,43,28,.14)"/>
+            <line class="fg-grid-l" x1="46" y1="22.0" x2="974" y2="22.0"/>
+            <line class="fg-grid-l" x1="46" y1="49.2" x2="974" y2="49.2"/>
+            <line class="fg-grid-l" x1="46" y1="76.4" x2="974" y2="76.4"/>
+            <line class="fg-grid-l" x1="46" y1="103.6" x2="974" y2="103.6"/>
+            <line class="fg-grid-l" x1="46" y1="130.8" x2="974" y2="130.8"/>
+            <line class="fg-grid-l" x1="46" y1="158" x2="974" y2="158"/>
+            <text class="fg-axis" x="38" y="25.5" text-anchor="end">100</text>
+            <text class="fg-axis" x="38" y="52.7" text-anchor="end">80</text>
+            <text class="fg-axis" x="38" y="79.9" text-anchor="end">60</text>
+            <text class="fg-axis" x="38" y="107.1" text-anchor="end">40</text>
+            <text class="fg-axis" x="38" y="134.3" text-anchor="end">20</text>
+            <text class="fg-axis" x="38" y="161.5" text-anchor="end">0</text>
+            <path class="fg-area" id="fg-area" d="M46.0 52.9 L78.0 68.4 L110.0 80.5 L142.0 64.2 L174.0 67.0 L206.0 77.1 L238.0 72.9 L270.0 84.2 L302.0 82.0 L334.0 81.2 L366.0 86.3 L398.0 70.8 L430.0 77.2 L462.0 67.0 L494.0 79.5 L526.0 76.8 L558.0 79.0 L590.0 83.6 L622.0 87.4 L654.0 75.2 L686.0 81.8 L718.0 76.9 L750.0 70.8 L782.0 72.3 L814.0 71.1 L846.0 81.0 L878.0 80.9 L910.0 105.2 L942.0 85.9 L974.0 125.4 L974.0 158.0 L46.0 158.0 Z"/>
+            <path class="fg-line" id="fg-line" d="M46.0 52.9 L78.0 68.4 L110.0 80.5 L142.0 64.2 L174.0 67.0 L206.0 77.1 L238.0 72.9 L270.0 84.2 L302.0 82.0 L334.0 81.2 L366.0 86.3 L398.0 70.8 L430.0 77.2 L462.0 67.0 L494.0 79.5 L526.0 76.8 L558.0 79.0 L590.0 83.6 L622.0 87.4 L654.0 75.2 L686.0 81.8 L718.0 76.9 L750.0 70.8 L782.0 72.3 L814.0 71.1 L846.0 81.0 L878.0 80.9 L910.0 105.2 L942.0 85.9 L974.0 125.4"/>
+            <circle class="fg-last" id="fg-dot" cx="974.0" cy="125.4" r="4.2"/>
+            <g id="fg-xlab">
+              <text class="fg-axis" x="46.0" y="176" text-anchor="start">09/01</text>
+              <text class="fg-axis" x="249.5" y="176" text-anchor="middle">09/08</text>
+              <text class="fg-axis" x="437.1" y="176" text-anchor="middle">09/15</text>
+              <text class="fg-axis" x="624.6" y="176" text-anchor="middle">09/22</text>
+              <text class="fg-axis" x="812.1" y="176" text-anchor="middle">10/01</text>
+              <text class="fg-axis" x="974.0" y="176" text-anchor="end">10/15</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="fg-comps" id="fg-comps">
+          <div class="fg-comp"><div class="fg-comp-top"><span class="fg-comp-name">動能<br><i>收盤 vs MA20</i></span><span class="fg-comp-val num" style="color:#3f9d70">32.2</span></div><span class="fg-bar"><i style="width:32.2%;background:#3f9d70"></i></span><span class="fg-comp-raw">-2.23%</span></div>
+          <div class="fg-comp"><div class="fg-comp-top"><span class="fg-comp-name">波動<br><i>年化波動</i></span><span class="fg-comp-val num" style="color:#3f9d70">28.5</span></div><span class="fg-bar"><i style="width:28.5%;background:#3f9d70"></i></span><span class="fg-comp-raw">年化 20.3%</span></div>
+          <div class="fg-comp"><div class="fg-comp-top"><span class="fg-comp-name">廣度<br><i>上漲家數占比</i></span><span class="fg-comp-val num" style="color:#0a7d43">19.9</span></div><span class="fg-bar"><i style="width:19.9%;background:#0a7d43"></i></span><span class="fg-comp-raw">上漲占比 19.9%</span></div>
+          <div class="fg-comp"><div class="fg-comp-top"><span class="fg-comp-name">量能<br><i>量能倍數</i></span><span class="fg-comp-val num" style="color:#0a7d43">0.2</span></div><span class="fg-bar"><i style="width:0.2%;background:#0a7d43"></i></span><span class="fg-comp-raw">當日 1.50 倍均量</span></div>
+          <div class="fg-comp"><div class="fg-comp-top"><span class="fg-comp-name">槓桿<br><i>融資餘額 5 日</i></span><span class="fg-comp-val num" style="color:#8a97a5">54.0</span></div><span class="fg-bar"><i style="width:54.0%;background:#8a97a5"></i></span><span class="fg-comp-raw">融資 +1.00%</span></div>
+          <div class="fg-comp"><div class="fg-comp-top"><span class="fg-comp-name">法人<br><i>法人 5 日買超</i></span><span class="fg-comp-val num" style="color:#0a7d43">9.5</span></div><span class="fg-bar"><i style="width:9.5%;background:#0a7d43"></i></span><span class="fg-comp-raw">買超 -13.49%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <p class="fg-note" id="fg-note">
+      <b>編製方式：</b>本指數為<b>本頁自行編製</b>的台股市場情緒指標（<b>非</b>官方或交易所發布之指數），以臺灣證券交易所公開資料計算 6 個分項後<b>等權平均</b>：動能（收盤相對 MA20）、波動（20 日年化波動度，越低越貪婪）、廣度（上漲家數 ÷（上漲＋下跌））、量能（成交金額相對 20 日均量，方向由 5 日漲跌決定）、槓桿（融資餘額 5 日變化）、法人（三大法人 5 日買賣超 ÷ 5 日成交金額）。各分項先映射為 0–100 分後平均為總分；分級為 0–24 極度恐懼、25–44 恐懼、45–55 中性、56–75 貪婪、76–100 極度貪婪。分項資料不足時不納入平均。<br>
+      <b>即時更新：</b>點右上「更新」後，瀏覽器以 <code>fetch</code> 直接呼叫 <code>www.twse.com.tw</code> 之 MI_5MINS_HIST（指數歷史）、FMTQIK（成交金額）、MI_INDEX type=MS（漲跌家數）、MI_MARGN（融資餘額）、BFI82U（三大法人買賣超）等端點並重算；若連線失敗（離線或端點異常）則保留內建快照並標示，不會顯示空白或錯誤數字。歷史走勢線於更新時僅重算最新一日，過去各日沿用內建快照之計算值。
+    </p>
   </section>
 
   <!-- ================= 漲跌家數 ================= -->
@@ -2493,6 +2636,276 @@
   setTimeout(function(){ refresh(); }, 1200);
 })();
 </script>
+
+  <script>
+  /* ================= 恐懼貪婪指數：靜態快照 + TWSE 即時重算 ================= */
+  /*SNAP:FG_DATA*/var FG_DATA={"asOf":"20261015","value":24,"label":"極度恐懼","components":{"momentum":{"s":32.2,"v":-2.2301},"volatility":{"s":28.5,"v":20.2612},"breadth":{"s":19.9,"v":0.199},"turnover":{"s":0.2,"v":1.4984},"leverage":{"s":54,"v":1.0022},"institution":{"s":9.5,"v":-13.4898}},"history":[{"d":"20260901","v":77.3},{"d":"20260902","v":65.9},{"d":"20260903","v":57},{"d":"20260904","v":69},{"d":"20260907","v":66.9},{"d":"20260908","v":59.5},{"d":"20260909","v":62.6},{"d":"20260910","v":54.3},{"d":"20260911","v":55.9},{"d":"20260914","v":56.5},{"d":"20260915","v":52.7},{"d":"20260916","v":64.1},{"d":"20260917","v":59.4},{"d":"20260918","v":66.9},{"d":"20260921","v":57.7},{"d":"20260922","v":59.7},{"d":"20260923","v":58.1},{"d":"20260924","v":54.7},{"d":"20260929","v":51.9},{"d":"20260930","v":60.9},{"d":"20261001","v":56},{"d":"20261002","v":59.6},{"d":"20261005","v":64.1},{"d":"20261006","v":63},{"d":"20261007","v":63.9},{"d":"20261008","v":56.6},{"d":"20261012","v":56.7},{"d":"20261013","v":38.8},{"d":"20261014","v":53},{"d":"20261015","v":24}]};/*/SNAP:FG_DATA*/
+
+  (function(){
+    "use strict";
+    var B = "https://www.twse.com.tw";
+    var KEY = ["momentum","volatility","breadth","turnover","leverage","institution"];
+    var NM  = {momentum:"動能",volatility:"波動",breadth:"廣度",turnover:"量能",leverage:"槓桿",institution:"法人"};
+    var SB  = {momentum:"收盤 vs MA20",volatility:"年化波動",breadth:"上漲家數占比",turnover:"量能倍數",leverage:"融資餘額 5 日",institution:"法人 5 日買超"};
+    var RAW = {
+      momentum:   function(v){ return (v>=0?"+":"") + v.toFixed(2) + "%"; },
+      volatility: function(v){ return "年化 " + v.toFixed(1) + "%"; },
+      breadth:    function(v){ return "上漲占比 " + (v*100).toFixed(1) + "%"; },
+      turnover:   function(v){ return "當日 " + v.toFixed(2) + " 倍均量"; },
+      leverage:   function(v){ return "融資 " + (v>=0?"+":"") + v.toFixed(2) + "%"; },
+      institution:function(v){ return "買超 " + (v>=0?"+":"" + "") + v.toFixed(2) + "%"; }
+    };
+    function $(id){ return document.getElementById(id); }
+    function cl(x){ return Math.max(0, Math.min(100, x)); }
+    function num(s){
+      if(s===null||s===undefined) return null;
+      var t = String(s).replace(/[,\%+]/g,"").replace(/\u2212/g,"-").trim();
+      var v = parseFloat(t);
+      return isNaN(v) ? null : v;
+    }
+    function roc(s){
+      var m = String(s).trim().split("/");
+      if(m.length !== 3) return null;
+      return (parseInt(m[0],10)+1911) + ("0"+m[1]).slice(-2) + ("0"+m[2]).slice(-2);
+    }
+    function pair(s){ var a = String(s).split("("); return [num(a[0]), a.length>1 ? num(a[1].split(")")[0]) : null]; }
+    function labelOf(v){ return v<=24 ? "極度恐懼" : v<=44 ? "恐懼" : v<=55 ? "中性" : v<=75 ? "貪婪" : "極度貪婪"; }
+    function colorOf(v){ return v<=24 ? "#0a7d43" : v<=44 ? "#3f9d70" : v<=55 ? "#8a97a5" : v<=75 ? "#dd7a63" : "#d62b1c"; }
+    function bgOf(v){ return v<=24 ? "#e8f6ee" : v<=44 ? "#eef7f2" : v<=55 ? "#f1f3f6" : v<=75 ? "#fdf0ed" : "#fef6f4"; }
+    function fmtD(d){ return d.slice(0,4) + "/" + d.slice(4,6) + "/" + d.slice(6,8); }
+    function getJSON(u){
+      var ctl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+      var t = setTimeout(function(){ if(ctl) ctl.abort(); }, 15000);
+      var o = {cache:"no-store"};
+      if(ctl) o.signal = ctl.signal;
+      return fetch(u, o).then(function(r){
+        clearTimeout(t);
+        if(!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      });
+    }
+
+    function pathOf(h){
+      var n = h.length, x0 = 46, x1 = 974, y0 = 158, y1 = 22, p = [], i, x, y;
+      for(i=0;i<n;i++){
+        x = x0 + i*(x1-x0)/(n-1);
+        y = y0 - (h[i].v/100)*(y0-y1);
+        p.push([x,y]);
+      }
+      var d = "M" + p.map(function(q){ return q[0].toFixed(1) + " " + q[1].toFixed(1); }).join(" L");
+      return {
+        line: d,
+        area: d + " L" + p[n-1][0].toFixed(1) + " " + y0 + " L" + p[0][0].toFixed(1) + " " + y0 + " Z",
+        pts: p
+      };
+    }
+
+    function render(d){
+      var v = d.value, col = colorOf(v), lab = d.label || labelOf(v);
+      var nd = $("fg-needle");
+      if(nd) nd.setAttribute("transform", "rotate(" + (1.8*v - 90).toFixed(2) + " 150 148)");
+      var vEl = $("fg-val");
+      if(vEl){ vEl.textContent = v.toFixed(1); vEl.style.color = col; }
+      var chip = $("fg-chip");
+      if(chip){ chip.style.color = col; chip.style.borderColor = col; chip.style.background = bgOf(v); }
+      var lEl = $("fg-label");
+      if(lEl) lEl.textContent = lab;
+      var gs = $("fg-gauge-svg");
+      if(gs) gs.setAttribute("aria-label", "恐懼貪婪指數目前 " + v.toFixed(1) + " 分，對應狀態「" + lab + "」");
+      var aEl = $("fg-asof");
+      if(aEl) aEl.textContent = fmtD(d.asOf);
+
+      var h = d.history || [];
+      if(h.length > 1){
+        var p = pathOf(h);
+        var ln = $("fg-line"), ar = $("fg-area"), dot = $("fg-dot");
+        if(ln) ln.setAttribute("d", p.line);
+        if(ar) ar.setAttribute("d", p.area);
+        if(dot){
+          dot.setAttribute("cx", p.pts[p.pts.length-1][0].toFixed(1));
+          dot.setAttribute("cy", p.pts[p.pts.length-1][1].toFixed(1));
+        }
+        var xl = $("fg-xlab");
+        if(xl){
+          var n = h.length, x0 = 46, x1 = 974, s = "", i;
+          var idx = [0];
+          for(i=1;i<6;i++) idx.push(Math.round(i*(n-1)/6));
+          idx[5] = n-1;
+          for(i=0;i<idx.length;i++){
+            var xi = x0 + idx[i]*(x1-x0)/(n-1);
+            var anc = idx[i]===0 ? "start" : (idx[i]===n-1 ? "end" : "middle");
+            s += '<text class="fg-axis" x="' + xi.toFixed(1) + '" y="176" text-anchor="' + anc + '">' + h[idx[i]].d.slice(4,6) + "/" + h[idx[i]].d.slice(6,8) + "</text>";
+          }
+          xl.innerHTML = s;
+        }
+        var hn = $("fg-hist-note");
+        if(hn) hn.textContent = "近 " + n + " 個交易日・最新 " + v.toFixed(1) + "（" + lab + "）";
+        var sb = $("fg-sub");
+        if(sb) sb.textContent = "近 " + n + " 個交易日（" + fmtD(h[0].d) + " – " + fmtD(h[n-1].d) + "）・0 極度恐懼 ~ 100 極度貪婪";
+      }
+
+      var cw = $("fg-comps");
+      if(cw && d.components){
+        cw.innerHTML = KEY.map(function(k){
+          var c = d.components[k];
+          if(!c || c.s === null || c.s === undefined) return "";
+          var cc = colorOf(c.s);
+          return '<div class="fg-comp"><div class="fg-comp-top"><span class="fg-comp-name">' + NM[k] +
+                 '<br><i>' + SB[k] + '</i></span><span class="fg-comp-val num" style="color:' + cc + '">' + c.s.toFixed(1) +
+                 '</span></div><span class="fg-bar"><i style="width:' + c.s.toFixed(1) + '%;background:' + cc +
+                 '"></i></span><span class="fg-comp-raw">' + (RAW[k] && c.v !== null ? RAW[k](c.v) : "—") + "</span></div>";
+        }).join("");
+      }
+    }
+
+    function monthsBack(k){
+      var out = [], now = new Date(), i, dt;
+      for(i=0;i<=k;i++){
+        dt = new Date(now.getFullYear(), now.getMonth()-i, 1);
+        out.push(dt.getFullYear() + ("0"+(dt.getMonth()+1)).slice(-2) + "01");
+      }
+      return out;
+    }
+
+    function fetchSeries(ms){
+      var q = [];
+      ms.forEach(function(m){
+        q.push(getJSON(B + "/rwd/zh/TAIEX/MI_5MINS_HIST?response=json&date=" + m));
+        q.push(getJSON(B + "/rwd/zh/afterTrading/FMTQIK?response=json&date=" + m));
+      });
+      return Promise.all(q).then(function(res){
+        var close = {}, amt = {}, i;
+        for(i=0;i<res.length;i+=2){
+          (res[i].data || []).forEach(function(r){ var d = roc(r[0]); if(d && num(r[4]) !== null) close[d] = num(r[4]); });
+          (res[i+1].data || []).forEach(function(r){ var d = roc(r[0]); if(d && num(r[2]) !== null) amt[d] = num(r[2]); });
+        }
+        return {close: close, amt: amt};
+      });
+    }
+
+    function live(){
+      return fetchSeries(monthsBack(2)).then(function(S){
+        var days = Object.keys(S.close).sort();
+        if(days.length < 45) throw new Error("指數歷史不足");
+        var i = days.length - 1, last = days[i], k;
+
+        var w = [];
+        for(k=i-19;k<=i;k++) w.push(S.close[days[k]]);
+        var ma = w.reduce(function(a,b){return a+b;},0)/20;
+        var dev = (S.close[last]-ma)/ma*100;
+
+        function volAt(m){
+          var out = [];
+          for(k=m-19;k<=m;k++) out.push((S.close[days[k]]-S.close[days[k-1]])/S.close[days[k-1]]);
+          var mu = out.reduce(function(a,b){return a+b;},0)/20;
+          var sd = Math.sqrt(out.reduce(function(a,b){return a+(b-mu)*(b-mu);},0)/20);
+          return sd*Math.sqrt(252)*100;
+        }
+        var vol = volAt(i), volt = [];
+        for(k=i-19;k<=i;k++) volt.push(volAt(k));
+        var vma = volt.reduce(function(a,b){return a+b;},0)/volt.length;
+
+        var aw = [];
+        for(k=i-19;k<=i;k++) if(S.amt[days[k]] !== undefined) aw.push(S.amt[days[k]]);
+        var vr = (aw.length >= 15 && S.amt[last] !== undefined) ? S.amt[last]/(aw.reduce(function(a,b){return a+b;},0)/aw.length) : null;
+        var dirn = (S.close[last] >= S.close[days[i-5]]) ? 1 : -1;
+
+        var lag6 = days.slice(-6), lag5 = days.slice(-5), reqs = [];
+        reqs.push(getJSON(B + "/rwd/zh/afterTrading/MI_INDEX?date=" + last + "&type=MS&response=json"));
+        lag6.forEach(function(d){ reqs.push(getJSON(B + "/rwd/zh/marginTrading/MI_MARGN?date=" + d + "&selectType=MS&response=json")); });
+        lag5.forEach(function(d){ reqs.push(getJSON(B + "/rwd/zh/fund/BFI82U?dayDate=" + d + "&response=json&type=day")); });
+
+        return Promise.all(reqs).then(function(R){
+          var up = null, down = null, t, r, tb;
+          tb = (R[0].tables || []);
+          for(t=0;t<tb.length;t++){
+            if(String(tb[t].title||"").indexOf("漲跌證券數合計") === 0){
+              (tb[t].data || []).forEach(function(row){
+                var kk = String(row[0]);
+                if(kk.indexOf("上漲") === 0) up = pair(row[2])[0];
+                else if(kk.indexOf("下跌") === 0) down = pair(row[2])[0];
+              });
+            }
+          }
+          var br = (up !== null && down !== null && (up+down) > 0) ? up/(up+down) : null;
+
+          var fins = [], ins = [], ok = true;
+          for(t=1;t<=6;t++){
+            var fin = null; r = (R[t].tables || []);
+            for(var a=0;a<r.length;a++){
+              (r[a].data || []).forEach(function(row){
+                if(String(row[0]).indexOf("融資金額") === 0) fin = num(row[5]);
+              });
+            }
+            fins.push(fin);
+          }
+          for(t=7;t<=11;t++){
+            var tot = null; r = (R[t].data || []);
+            for(var b2=0;b2<r.length;b2++){ if(String(r[b2][0]).indexOf("合計") === 0) tot = num(r[b2][3]); }
+            ins.push(tot);
+          }
+          var lev = (fins[0] !== null && fins[5] !== null && fins[5]) ? (fins[0]-fins[5])/fins[5]*100 : null;
+          var ns = 0, vs = 0;
+          for(t=0;t<5;t++){
+            if(ins[t] === null || S.amt[lag5[t]] === undefined){ ok = false; break; }
+            ns += ins[t]; vs += S.amt[lag5[t]];
+          }
+          var n5 = (ok && vs) ? ns/vs*100 : null;
+
+          var comp = {
+            momentum:    {s: cl(50 + dev*8),                v: dev},
+            volatility:  {s: cl(50 + (vma-vol)/vma*100),    v: vol},
+            breadth:     {s: br === null ? null : cl(br*100), v: br},
+            turnover:    {s: vr === null ? null : cl(50 + dirn*(vr-1)*100), v: vr},
+            leverage:    {s: lev === null ? null : cl(50 + lev*4), v: lev},
+            institution: {s: n5 === null ? null : cl(50 + n5*3),  v: n5}
+          };
+          var vals = [], q2;
+          for(q2=0;q2<KEY.length;q2++){ if(comp[KEY[q2]].s !== null) vals.push(comp[KEY[q2]].s); }
+          var score = Math.round((vals.reduce(function(a,b){return a+b;},0)/vals.length)*10)/10;
+
+          var hist = FG_DATA.history.slice(), found = -1, z;
+          for(z=0;z<hist.length;z++) if(hist[z].d === last) found = z;
+          if(found >= 0) hist[found] = {d: last, v: score};
+          else { hist.push({d: last, v: score}); if(hist.length > 30) hist = hist.slice(hist.length-30); }
+
+          return {asOf: last, value: score, label: labelOf(score), components: comp, history: hist};
+        });
+      });
+    }
+
+    function setMode(txt, live){
+      var m = $("fg-mode"), mt = $("fg-mode-text");
+      if(mt) mt.textContent = txt;
+      if(m){
+        m.className = "fg-badge " + (live ? "is-live" : "is-snap");
+        m.title = txt;
+      }
+    }
+
+    function run(){
+      var btn = $("fg-refresh"), bt = $("fg-btn-text");
+      if(btn) btn.disabled = true;
+      if(bt) bt.textContent = "更新中…";
+      setMode("連線中…", false);
+      live().then(function(d){
+        render(d);
+        setMode("已連線 TWSE", true);
+      }).catch(function(){
+        render(FG_DATA);
+        setMode("內建快照（連線失敗）", false);
+      }).then(function(){
+        if(btn) btn.disabled = false;
+        if(bt) bt.textContent = "更新";
+      });
+    }
+
+    render(FG_DATA);
+    var rb = $("fg-refresh");
+    if(rb) rb.addEventListener("click", run);
+    setTimeout(run, 900);
+  })();
+  </script>
 </main>
 </body>
 </html>
