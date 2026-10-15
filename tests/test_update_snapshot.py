@@ -2002,8 +2002,8 @@ class TestAnalystBlockIsWiredIntoThePage(unittest.TestCase):
         """「今日完整分析」必須嵌在 AI_CHAT（彈窗）區塊內，頁面上不得再有獨立區塊。"""
         out = baseline_out()
         chat = region_body(out, "AI_CHAT")
-        self.assertIn("ai-brief-tog", chat)
-        self.assertIn("ai-brief-body", chat)
+        self.assertIn('id="ai-more"', chat)
+        self.assertIn('id="ai-drawer"', chat)
         self.assertIn("<!--SNAP:AIANALYST-->", chat)
         # 頁面本文（去掉 AI_CHAT 區塊後）不得再出現獨立的宇程君卡片
         page_without_chat = out.replace(chat, "")
@@ -2324,15 +2324,103 @@ class TestChatIsWiredIntoThePage(unittest.TestCase):
         block = src[src.index("@media (max-width:520px)"):]
         self.assertIn("left:0;right:0;bottom:0", block)
 
-    def test_brief_panel_is_inside_the_popup_and_toggles(self):
-        """「今日完整分析」必須在彈窗內，且有可收合的切換鈕與前端接線。"""
+    def test_drawer_is_inside_the_popup_and_toggles(self):
+        """「今日完整分析」必須以可開合的抽屜形式在彈窗內，且有前端接線。"""
         body = region_body(self.out, "AI_CHAT")
-        for need in ('id="ai-brief-tog"', 'id="ai-brief-body"',
-                     'aria-controls="ai-brief-body"', "<!--SNAP:AIANALYST-->"):
+        for need in ('id="ai-more"', 'id="ai-drawer"', 'id="ai-drawer-x"',
+                     'aria-controls="ai-drawer"', 'id="ai-brief-body"',
+                     '<!--SNAP:AIANALYST-->'):
             self.assertIn(need, body, f"AI_CHAT 區塊缺少 {need}")
         src = H.repo_index_html()
-        self.assertIn("ai-brief-tog", src, "前端缺少收合鈕接線")
-        self.assertIn("ai-brief-body", src, "前端缺少收合面板接線")
+        self.assertIn("ai-more", src, "前端缺少抽屜入口接線")
+        self.assertIn("ai-drawer", src, "前端缺少抽屜接線")
+        self.assertIn("openDrawer", src, "前端缺少開啟抽屜的函式")
+        self.assertIn("closeDrawer", src, "前端缺少收合抽屜的函式")
+
+
+class TestAnalystChatPopupUx(unittest.TestCase):
+    """對話彈窗的版面契約：對話是主體，完整分析收進抽屜。
+
+    這些断言守住 2026-10-15 的修正：原本「今日完整分析」區塊常駐展開，
+    吃掉桌面 55%、手機 31% 的彈窗高度，把對話擠到不能用。
+    """
+
+    def setUp(self):
+        self.chat = region_body(baseline_out(), "AI_CHAT")
+        self.src = H.repo_index_html()
+
+    def test_no_always_on_brief_block_steals_the_log_space(self):
+        """彈窗外框不得再有不分青紅皂白就展開的 .ai-brief 區塊。"""
+        self.assertNotIn('class="ai-brief"', self.chat)
+        self.assertNotIn("ai-brief-tog", self.chat)
+
+    def test_drawer_starts_hidden(self):
+        """抽屜必須預設 hidden，否則一開啟就又是長文佔滿。"""
+        i = self.chat.index('id="ai-drawer"')
+        head = self.chat[i:i + 200]
+        self.assertIn("hidden", head, "抽屜必須預設隱藏")
+
+    def test_drawer_holds_analysis_and_disclaimer(self):
+        """完整分析與投資免責聲明都要在抽屜內（不佔對話高度仍看得到）。"""
+        body = region_body(baseline_out(), "AI_CHAT")
+        i_drawer = body.index('id="ai-drawer"')
+        i_an = body.index("<!--SNAP:AIANALYST-->")
+        i_disc = body.index('id="ai-panel-disc"')
+        self.assertGreater(i_an, i_drawer, "完整分析必須在抽屜內")
+        self.assertGreater(i_disc, i_drawer, "免責聲明必須在抽屜內")
+
+    def test_honesty_bar_is_always_visible_not_buried(self):
+        """誠實標示必須常駐於對話視圖（在抽屜之前），不能只有抽屜裡看得到。"""
+        self.assertIn('id="ai-panel-hon"', self.chat)
+        self.assertLess(self.chat.index('id="ai-panel-hon"'),
+                        self.chat.index('id="ai-drawer"'),
+                        "誠實標示必須在抽屜之外常駐顯示")
+        self.assertIn("honesty", self.src, "前端必須填入誠實標示")
+
+    def test_fab_uses_lede_not_the_lineheight_breaker(self):
+        """浮動鈕不得再用 .ai-fab-tx（line-height:0 的 62px 圓形內容溢出 4px）。"""
+        self.assertNotIn("ai-fab-tx", self.chat)
+        self.assertNotIn("ai-fab-tx", self.src)
+        self.assertIn('id="ai-fab-lede"', self.chat)
+        self.assertIn("ai-fab-lede", self.src)
+
+    def test_quick_row_is_a_single_scrollable_line(self):
+        """快捷問題必須單列可橫向滑動，不得換行擠掉訊息區。"""
+        i = self.src.index(".ai-panel-quick{")
+        block = self.src[i:self.src.index("}", i)]
+        self.assertIn("overflow-x:auto", block)
+        self.assertNotIn("flex-wrap:wrap", block)
+        self.assertIn("white-space:nowrap", self.src)
+
+    def test_mobile_panel_uses_dynamic_viewport_height(self):
+        """手機彈窗必須吃滿動態視窗高度（避開瀏覽器工具列）。"""
+        self.assertIn("100dvh", self.src)
+
+    def test_greeting_is_emitted_only_once(self):
+        """問候語不得在每次重開彈窗時重複堆疊。"""
+        self.assertIn("greeted", self.src)
+
+    def test_message_log_is_bounded(self):
+        """長對話必須有 DOM 上限，否則手機越來越慢。"""
+        self.assertIn("LOG_MAX", self.src)
+
+    def test_escape_closes_drawer_before_dialog(self):
+        """Esc 必須先關抽屜、再關彈窗。"""
+        i = self.src.index("addEventListener('keydown'")
+        block = self.src[i:i + 700]
+        self.assertIn("drawerOpen()", block, "Esc 必須先判斷抽屜是否開著")
+
+    def test_tab_scope_follows_the_drawer(self):
+        """抽屜開著時 Tab 只能在抽屜內循環。"""
+        i = self.src.index("ev.key !== 'Tab'")
+        block = self.src[i:i + 1400]
+        self.assertIn("drawerOpen() ? drawer : panel", block)
+
+    def test_no_dangling_old_panel_foot(self):
+        """舊的 .ai-panel-foot 容器必須完全移除（曾把輸入列推離彈窗底部）。"""
+        self.assertNotIn("ai-panel-foot", self.chat)
+        self.assertNotIn("ai-panel-foot", self.src)
+        self.assertNotIn("ai-fab-hint", self.src)
 
     def test_removed_entry_strip_leaves_no_dangling_references(self):
         """入口條移除後，前端不得再引用已不存在的 #ai-open 或舊樣式類別。"""

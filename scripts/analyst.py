@@ -620,17 +620,24 @@ def build_chat_ui(brief_html: str = "", data_date: str = "") -> str:
     角色名稱與標籤一律取自單一常數，換標籤時不必改這個函式。
 
     `brief_html` 為「今日完整分析」的內容（由 render_brief 產生），會以
-    SNAP:AIANALYST 的 marker 對包住後嵌入彈窗內的可收合面板 —— 如此該區塊
+    SNAP:AIANALYST 的 marker 對包住後嵌入彈窗內可開合的「抽屜」——如此該區塊
     仍留在 region 註冊表中（重播時 marker 仍存在），但頁面上不再有獨立區塊。
+
+    版面配置（對話為主體）：
+
+    - 對話視圖：標題列 → 誠實標示單行條 → 訊息區（flex:1，吃掉剩餘高度）
+      → 快捷問題（單列可橫向滑動）→ 輸入列 →「今日完整分析」細長入口。
+      抽屜關閉時，完整分析完全不佔用對話空間。
+    - 抽屜：覆蓋訊息區，內含完整分析與投資免責聲明，可捲動、可收合。
     """
     return (
         '<div class="ai-fab-wrap">\n'
+        '  <span class="ai-fab-lede" id="ai-fab-lede" aria-hidden="true"></span>\n'
         '  <button class="ai-fab" id="ai-fab" type="button"\n'
         '          aria-label="開啟「{who}」對話視窗" aria-haspopup="dialog"\n'
         '          aria-expanded="false" aria-controls="ai-panel">\n'
         '    <img src="assets/yu_cheng_jun_avatar.png" width="56" height="56" alt=""\n'
         '         aria-hidden="true" decoding="async">\n'
-        '    <span class="ai-fab-tx">宇程君</span>\n'
         '  </button>\n'
         '</div>\n'
         '\n'
@@ -648,17 +655,7 @@ def build_chat_ui(brief_html: str = "", data_date: str = "") -> str:
         '    </button>\n'
         '  </div>\n'
         '\n'
-        '  <div class="ai-brief">\n'
-        '    <button class="ai-brief-tog" id="ai-brief-tog" type="button"\n'
-        '            aria-expanded="true" aria-controls="ai-brief-body">\n'
-        '      <span class="ai-brief-t">今日完整分析</span>\n'
-        '      <span class="ai-brief-d">資料日 {ad}</span>\n'
-        '      <span class="ai-brief-chev" aria-hidden="true">▾</span>\n'
-        '    </button>\n'
-        '    <div class="ai-brief-body" id="ai-brief-body">\n'
-        '<!--SNAP:AIANALYST-->{brief}<!--/SNAP:AIANALYST-->\n'
-        '    </div>\n'
-        '  </div>\n'
+        '  <p class="ai-hon" id="ai-panel-hon"></p>\n'
         '\n'
         '  <div class="ai-panel-log" id="ai-log" role="log" aria-live="polite"\n'
         '       aria-relevant="additions text" aria-label="與宇程君的對話內容"></div>\n'
@@ -672,11 +669,27 @@ def build_chat_ui(brief_html: str = "", data_date: str = "") -> str:
         '    <button class="ai-send" id="ai-send" type="submit">送出</button>\n'
         '  </form>\n'
         '\n'
-        '  <div class="ai-panel-foot">\n'
-        '    <p class="ai-panel-hon" id="ai-panel-hon"></p>\n'
-        '    <p class="ai-panel-disc" id="ai-panel-disc"></p>\n'
+        '  <button class="ai-more" id="ai-more" type="button"\n'
+        '          aria-expanded="false" aria-controls="ai-drawer">\n'
+        '    <span class="ai-more-t">今日完整分析</span>\n'
+        '    <span class="ai-more-d">資料日 {ad}</span>\n'
+        '    <span class="ai-more-chev" aria-hidden="true">▴</span>\n'
+        '  </button>\n'
+        '\n'
+        '  <div class="ai-drawer" id="ai-drawer" hidden>\n'
+        '    <div class="ai-drawer-head">\n'
+        '      <span class="ai-drawer-t">今日完整分析</span>\n'
+        '      <span class="ai-drawer-d">資料日 {ad}</span>\n'
+        '      <button class="ai-drawer-x" id="ai-drawer-x" type="button"\n'
+        '              aria-label="收合今日完整分析，回到對話">\n'
+        '        <span aria-hidden="true">▾</span>\n'
+        '      </button>\n'
+        '    </div>\n'
+        '    <div class="ai-drawer-body" id="ai-brief-body">\n'
+        '<!--SNAP:AIANALYST-->{brief}<!--/SNAP:AIANALYST-->\n'
+        '      <p class="ai-panel-disc" id="ai-panel-disc"></p>\n'
+        '    </div>\n'
         '  </div>\n'
         '</div>'.format(who=CHARACTER, lbl=ROLE_LABEL,
-                        ad=brief_html and data_date or data_date,
-                        brief=brief_html)
+                        ad=data_date, brief=brief_html)
     )

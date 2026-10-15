@@ -614,22 +614,40 @@
   .ai-not{color:#8a4f04;font-weight:660;}
   .ai-brief-head{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 9px;}
 
-  /* 彈窗內的「今日完整分析」可收合面板 */
-  .ai-brief{flex:0 0 auto;border-bottom:1px solid #eef1f4;background:#fbfcfe;}
-  .ai-brief-tog{
-    width:100%;display:flex;align-items:center;gap:8px;padding:9px 12px;
-    background:none;border:0;cursor:pointer;font-family:inherit;text-align:left;
+  /* ---------- 「今日完整分析」抽屜：覆蓋訊息區，不佔對話空間 ---------- */
+  /* 細長入口鈕；抽屜關閉時這是唯一佔版的元素（單行 36px）。 */
+  .ai-more{
+    flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:9px 12px;
+    background:#fbfcfe;border:0;border-top:1px solid #eef1f4;cursor:pointer;
+    font-family:inherit;text-align:left;
   }
-  .ai-brief-tog:hover{background:#f2f7fc;}
-  .ai-brief-t{font-size:12.5px;font-weight:680;color:#1d4368;}
-  .ai-brief-d{font-size:11px;color:var(--ink-2);margin-left:auto;}
-  .ai-brief-chev{font-size:11px;color:#2b6094;transition:transform .15s;line-height:1;}
-  .ai-brief-tog[aria-expanded="false"] .ai-brief-chev{transform:rotate(-90deg);}
-  .ai-brief-body{
-    max-height:min(38vh,300px);overflow-y:auto;overscroll-behavior:contain;
-    padding:0 12px 12px;
+  .ai-more:hover{background:#f2f7fc;}
+  .ai-more-t{font-size:12.5px;font-weight:680;color:#1d4368;}
+  .ai-more-d{font-size:11px;color:var(--ink-2);margin-left:auto;}
+  .ai-more-chev{font-size:11px;color:#2b6094;line-height:1;}
+
+  /* 抽屜本體：absolute 覆蓋訊息區與入口鈕，開啟時才出現。 */
+  .ai-drawer{
+    position:absolute;left:0;right:0;top:0;bottom:0;z-index:2;
+    display:flex;flex-direction:column;background:#fff;
   }
-  .ai-brief-body[hidden]{display:none;}
+  .ai-drawer[hidden]{display:none;}
+  .ai-drawer-head{
+    flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:10px 12px;
+    border-bottom:1px solid #eef1f4;background:#fbfcfe;
+  }
+  .ai-drawer-t{font-size:12.5px;font-weight:680;color:#1d4368;}
+  .ai-drawer-d{font-size:11px;color:var(--ink-2);margin-left:auto;}
+  .ai-drawer-x{
+    flex:0 0 auto;width:28px;height:28px;padding:0;line-height:1;cursor:pointer;
+    border-radius:8px;border:1px solid #d7e2ee;background:#fff;
+    color:#2b6094;font-size:12px;font-family:inherit;
+  }
+  .ai-drawer-x:hover{background:#eef3f9;border-color:#2b6094;}
+  .ai-drawer-body{
+    flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+    padding:12px 12px 14px;
+  }
 
   /* ---------- 宇程君：浮動按鈕 ＋ 聊天彈窗 ---------- */
   .sr-only{
@@ -641,14 +659,16 @@
     position:fixed;right:16px;bottom:16px;z-index:60;
     display:flex;flex-direction:column;align-items:flex-end;gap:8px;pointer-events:none;
   }
-  .ai-fab-hint{
-    pointer-events:auto;font-size:12px;font-weight:620;color:#2b6094;
-    background:#fff;border:1px solid #cddbea;border-radius:999px;padding:5px 11px;
-    box-shadow:0 4px 14px -6px rgba(20,48,79,.4);white-space:nowrap;
+  .ai-fab-lede{
+    pointer-events:auto;max-width:210px;font-size:12px;font-weight:620;color:#2b6094;
+    background:#fff;border:1px solid #cddbea;border-radius:12px;padding:6px 11px;
+    box-shadow:0 4px 14px -6px rgba(20,48,79,.4);
+    line-height:1.5;text-align:left;
   }
+  .ai-fab-lede[hidden]{display:none;}
   .ai-fab{
     pointer-events:auto;width:62px;height:62px;border-radius:50%;padding:3px;
-    border:1px solid #cddbea;background:#fff;cursor:pointer;line-height:0;
+    border:1px solid #cddbea;background:#fff;cursor:pointer;line-height:1;
     box-shadow:0 8px 24px -8px rgba(20,48,79,.5);
   }
   .ai-fab:hover{border-color:#2b6094;}
@@ -656,8 +676,8 @@
 
   .ai-panel{
     position:fixed;right:16px;bottom:92px;z-index:70;
-    width:min(392px, calc(100vw - 32px));
-    max-height:min(620px, calc(100vh - 128px));
+    width:min(400px, calc(100vw - 32px));
+    max-height:min(660px, calc(100vh - 118px));
     display:flex;flex-direction:column;overflow:hidden;
     background:#fff;border:1px solid #d7e2ee;border-radius:14px;
     box-shadow:0 24px 60px -18px rgba(16,40,66,.45);
@@ -703,12 +723,17 @@
     border:1px solid #e0e5ea;border-radius:4px;padding:1px 4px;color:var(--ink-2);
   }
 
+  /* 快捷問題：單列、可橫向滑動（絕不擠成多列而壓縮訊息區）。 */
   .ai-panel-quick{
-    flex:0 0 auto;display:flex;flex-wrap:wrap;gap:6px;padding:9px 12px;
-    border-top:1px solid #eef1f4;background:#fff;max-height:104px;overflow-y:auto;
+    flex:0 0 auto;display:flex;gap:6px;padding:9px 12px;
+    border-top:1px solid #eef1f4;background:#fff;
+    overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
   }
+  .ai-panel-quick::-webkit-scrollbar{display:none;}
   .ai-q{
-    font-family:inherit;font-size:12px;font-weight:600;padding:6px 11px;
+    flex:0 0 auto;white-space:nowrap;
+    font-family:inherit;font-size:12px;font-weight:600;padding:7px 12px;
     border-radius:999px;border:1px solid #cddbea;background:#f2f7fc;color:#2b6094;cursor:pointer;
   }
   .ai-q:hover{background:#e4eefa;border-color:#2b6094;}
@@ -728,12 +753,13 @@
   }
   .ai-send:hover{background:#1d4368;}
 
-  .ai-panel-foot{
-    flex:0 0 auto;padding:9px 12px 11px;border-top:1px solid #eef1f4;
-    background:#fbfcfe;max-height:132px;overflow-y:auto;
+  /* 誠實標示單行條：常駐可見、不佔對話高度。 */
+  .ai-hon{
+    flex:0 0 auto;margin:0;padding:5px 12px;font-size:11px;line-height:1.5;
+    color:#8a4f04;font-weight:600;background:#fdf8ee;border-bottom:1px solid #f0e0c2;
   }
-  .ai-panel-hon{margin:0 0 5px;font-size:11.5px;line-height:1.65;color:#8a4f04;font-weight:600;}
-  .ai-panel-disc{margin:0;font-size:11px;line-height:1.7;color:var(--ink-2);}
+  .ai-panel-disc{margin:10px 0 0;font-size:11px;line-height:1.7;color:var(--ink-2);
+    padding-top:9px;border-top:1px dashed var(--line);}
 
   /* 讓浮動按鈕落在頁尾留白區，不壓住最後一段文字。 */
   main{padding-bottom:88px;}
@@ -741,17 +767,17 @@
   @media (max-width:760px){
     .ai-quote{font-size:12px;padding:9px 11px 9px 12px;}
     .ai-points li{font-size:11.5px;padding:8px 10px;}
-    .ai-brief-body{max-height:min(34vh,260px);}
   }
   @media (max-width:520px){
     .ai-fab-wrap{right:12px;bottom:12px;}
+    .ai-fab-lede{max-width:158px;font-size:11.5px;padding:5px 10px;display:none;}
+    /* 手機：貼底滿寬，並吃滿動態視窗高度（不依賴 100vh）。 */
     .ai-panel{
       left:0;right:0;bottom:0;width:auto;
-      max-height:calc(100vh - 10px);border-radius:14px 14px 0 0;border-bottom:0;
+      height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;
+      border-radius:14px 14px 0 0;border-bottom:0;
     }
-    .ai-fab-hint{display:none;}
     .ai-bub{max-width:88%;}
-    .ai-brief-body{max-height:min(30vh,220px);}
   }
 </style>
 </head>
@@ -871,12 +897,12 @@
   <!-- 宇程君（韭齡多年的虛擬分析失）已改為右下角聊天彈窗；
        其「今日完整分析」由 scripts/analyst.py 產生，注入彈窗內的 SNAP:AIANALYST 區塊。 -->
   <!--SNAP:AI_CHAT--><div class="ai-fab-wrap">
+  <span class="ai-fab-lede" id="ai-fab-lede" aria-hidden="true"></span>
   <button class="ai-fab" id="ai-fab" type="button"
           aria-label="開啟「韭經考驗的台股戰士-宇程君」對話視窗" aria-haspopup="dialog"
           aria-expanded="false" aria-controls="ai-panel">
     <img src="assets/yu_cheng_jun_avatar.png" width="56" height="56" alt=""
          aria-hidden="true" decoding="async">
-    <span class="ai-fab-tx">宇程君</span>
   </button>
 </div>
 
@@ -894,14 +920,37 @@
     </button>
   </div>
 
-  <div class="ai-brief">
-    <button class="ai-brief-tog" id="ai-brief-tog" type="button"
-            aria-expanded="true" aria-controls="ai-brief-body">
-      <span class="ai-brief-t">今日完整分析</span>
-      <span class="ai-brief-d">資料日 2026/10/15</span>
-      <span class="ai-brief-chev" aria-hidden="true">▾</span>
-    </button>
-    <div class="ai-brief-body" id="ai-brief-body">
+  <p class="ai-hon" id="ai-panel-hon"></p>
+
+  <div class="ai-panel-log" id="ai-log" role="log" aria-live="polite"
+       aria-relevant="additions text" aria-label="與宇程君的對話內容"></div>
+
+  <div class="ai-panel-quick" id="ai-quick" role="group" aria-label="常見問題"></div>
+
+  <form class="ai-panel-form" id="ai-form" autocomplete="off">
+    <label class="sr-only" for="ai-in">輸入想問宇程君的問題</label>
+    <input class="ai-in" id="ai-in" type="text" name="q" value=""
+           placeholder="問我：大盤現在怎樣？" maxlength="120">
+    <button class="ai-send" id="ai-send" type="submit">送出</button>
+  </form>
+
+  <button class="ai-more" id="ai-more" type="button"
+          aria-expanded="false" aria-controls="ai-drawer">
+    <span class="ai-more-t">今日完整分析</span>
+    <span class="ai-more-d">資料日 2026/10/15</span>
+    <span class="ai-more-chev" aria-hidden="true">▴</span>
+  </button>
+
+  <div class="ai-drawer" id="ai-drawer" hidden>
+    <div class="ai-drawer-head">
+      <span class="ai-drawer-t">今日完整分析</span>
+      <span class="ai-drawer-d">資料日 2026/10/15</span>
+      <button class="ai-drawer-x" id="ai-drawer-x" type="button"
+              aria-label="收合今日完整分析，回到對話">
+        <span aria-hidden="true">▾</span>
+      </button>
+    </div>
+    <div class="ai-drawer-body" id="ai-brief-body">
 <!--SNAP:AIANALYST--><p class="ai-brief-head">
   <span class="ai-badge">韭齡多年的虛擬分析失</span>
   <span class="ai-badge">AI 生成虛擬角色</span>
@@ -930,24 +979,8 @@
 <p class="ai-risk"><b>宇程君碎念：</b>市場氛圍偏冷，弱勢股容易持續破底，不宜任意攤平；今日有 21 檔跌停，賣壓相對集中；MA5 高於 MA20，中期均線結構偏多（均線皆為落後指標）；成交金額明顯放大，短線換手激烈。我這輩子被套的次數比看對的次數多得多，所以我的每一句話都請當成「參考」，不要當成「指令」。</p>
 
 <p class="ai-src"><b>這個角色與這些文字是怎麼來的：</b>「韭經考驗的台股戰士-宇程君」是 <b>AI 生成的虛擬角色</b>，也就是本站標示的<b>韭齡多年的虛擬分析失</b>；不是真人。本彈窗的文字皆由 <code>scripts/analyst.py</code> 於每日自動更新時，依當日自證交所實際抓取的數字，以<b>固定規則</b>產生（無隨機成分、無寫死的市場數字；同一份資料重跑會得到完全相同的文字）。氛圍分數的四個分項與權重皆列於上方供複核。資料日期 <b>2026/10/15</b>。</p><!--/SNAP:AIANALYST-->
+      <p class="ai-panel-disc" id="ai-panel-disc"></p>
     </div>
-  </div>
-
-  <div class="ai-panel-log" id="ai-log" role="log" aria-live="polite"
-       aria-relevant="additions text" aria-label="與宇程君的對話內容"></div>
-
-  <div class="ai-panel-quick" id="ai-quick" role="group" aria-label="常見問題"></div>
-
-  <form class="ai-panel-form" id="ai-form" autocomplete="off">
-    <label class="sr-only" for="ai-in">輸入想問宇程君的問題</label>
-    <input class="ai-in" id="ai-in" type="text" name="q" value=""
-           placeholder="問我：大盤現在怎樣？" maxlength="120">
-    <button class="ai-send" id="ai-send" type="submit">送出</button>
-  </form>
-
-  <div class="ai-panel-foot">
-    <p class="ai-panel-hon" id="ai-panel-hon"></p>
-    <p class="ai-panel-disc" id="ai-panel-disc"></p>
   </div>
 </div><!--/SNAP:AI_CHAT-->
 
@@ -1926,6 +1959,9 @@
       ['market',     ['大盤','指數','加權','行情','盤勢','今天','現在','概況']]
     ];
     var D = null, panel, fab, log, quick, input, form, lastFocus = null;
+    var lede = null, drawer = null, more = null, ledeDefault = '';
+    var greeted = false;                 /* 問候語只講一次，重開彈窗不重複 */
+    var LOG_MAX = 60;   /* DOM 訊息上限，避免長對話拖垮手機 */
 
     function el(id){ return document.getElementById(id); }
 
@@ -1952,6 +1988,8 @@
       b.innerHTML = html;
       row.appendChild(b);
       log.appendChild(row);
+      /* 訊息過多時摧毀最早的元素（長對話不再無限成長）。 */
+      while(log.children.length > LOG_MAX) log.removeChild(log.firstChild);
       log.scrollTop = log.scrollHeight;
     }
 
@@ -1963,16 +2001,44 @@
 
     function isOpen(){ return !!panel && !panel.hidden; }
 
+    function drawerOpen(){ return !!drawer && !drawer.hidden; }
+
+    function openDrawer(){
+      if(!drawer) return;
+      drawer.hidden = false;
+      if(more) more.setAttribute('aria-expanded', 'true');
+      /* 無障礙：焦點帶進抽屜，且抽屜內外層不可被 Tab 走到。 */
+      var bx = el('ai-drawer-x');
+      if(bx) bx.focus();
+    }
+
+    function closeDrawer(){
+      if(!drawer) return;
+      drawer.hidden = true;
+      if(more) more.setAttribute('aria-expanded', 'false');
+      if(more) more.focus();
+      if(log) log.scrollTop = log.scrollHeight;
+    }
+
+    /* 浮動按鈕旁的導引泡泡：僅在「從來沒打開過對話」時顯示，
+       打開過就收掉，不再遮住網站內容。 */
+    function hideLede(){
+      if(lede) lede.hidden = true;
+    }
+
     function open(){
       if(!panel || isOpen()) return;
       lastFocus = document.activeElement;
       panel.hidden = false;
       fab.setAttribute('aria-expanded', 'true');
+      hideLede();
+      if(!greeted){ bubble('ai', D.greeting); greeted = true; }
       if(input) input.focus();
     }
 
     function close(){
       if(!panel || !isOpen()) return;
+      if(drawerOpen()) closeDrawer();
       panel.hidden = true;
       fab.setAttribute('aria-expanded', 'false');
       var back = (lastFocus && document.contains(lastFocus)) ? lastFocus : fab;
@@ -1984,6 +2050,7 @@
       D = load();
       panel = el('ai-panel'); fab = el('ai-fab'); log = el('ai-log');
       quick = el('ai-quick'); input = el('ai-in'); form = el('ai-form');
+      lede = el('ai-fab-lede'); drawer = el('ai-drawer'); more = el('ai-more');
       /* 資料不存在（建置異常或被無 JS 環境載入）→ 收掉入口，不留壞掉的 UI。 */
       if(!D || !panel || !fab || !log || !form){
         if(fab && fab.parentNode) fab.parentNode.style.display = 'none';
@@ -1995,11 +2062,14 @@
       if(t) t.textContent = D.character;
       if(r) r.textContent = D.role_label;
       var hon = el('ai-panel-hon'), disc = el('ai-panel-disc');
-      if(hon) hon.innerHTML = '<b>角色說明：</b>' + D.honesty;
+      if(hon) hon.innerHTML = D.honesty;
       if(disc) disc.innerHTML = '<b>免責聲明：</b>' + D.disclaimer;
       if(fab) fab.setAttribute('aria-label', '開啟「' + D.character + '」對話視窗');
-
-      bubble('ai', D.greeting);
+      /* 浮動鈕旁的導引泡泡：文字同樣資料驅動（引號一律用頁面的 esc 處理）。 */
+      if(lede){
+        ledeDefault = '資料日 ' + esc(D.data_date) + '｜來聊兩句？';
+        lede.textContent = ledeDefault;
+      }
 
       var qs = D.quick || [];
       for(var i = 0; i < qs.length; i++){
@@ -2024,33 +2094,43 @@
       var bx = el('ai-panel-x');
       if(bx) bx.addEventListener('click', close);
 
-      /* 「今日完整分析」面板收合（彈窗內） */
-      var bt = el('ai-brief-tog'), bb = el('ai-brief-body');
-      if(bt && bb){
-        bt.addEventListener('click', function(){
-          var openNow = bt.getAttribute('aria-expanded') !== 'false';
-          bt.setAttribute('aria-expanded', openNow ? 'false' : 'true');
-          if(openNow) bb.setAttribute('hidden', ''); else bb.removeAttribute('hidden');
-        });
-      }
+      /* 「今日完整分析」抽屜：覆蓋訊息區，預設關閉 */
+      if(more) more.addEventListener('click', function(){ openDrawer(); });
+      var dx = el('ai-drawer-x');
+      if(dx) dx.addEventListener('click', closeDrawer);
 
-      /* Esc 關閉 */
+      /* Esc：先關抽屜，抽屜關了就關彈窗 */
       document.addEventListener('keydown', function(ev){
-        if((ev.key === 'Escape' || ev.keyCode === 27) && isOpen()){
-          ev.preventDefault(); close();
-        }
+        if(ev.key !== 'Escape' && ev.keyCode !== 27) return;
+        if(!isOpen()) return;
+        ev.preventDefault();
+        if(drawerOpen()) closeDrawer(); else close();
       });
 
-      /* Tab 在彈窗內循環（aria-modal="true" 的行為要求） */
+      /* Tab 在彈窗內循環（aria-modal="true" 的行為要求）。
+         抽屜開著時，Tab 只能在抽屜內循環。 */
       panel.addEventListener('keydown', function(ev){
         if(ev.key !== 'Tab') return;
-        var all = panel.querySelectorAll('button,input,[href],[tabindex]:not([tabindex="-1"])');
+        var scope = drawerOpen() ? drawer : panel;
+        if(!scope) return;
+        var all = scope.querySelectorAll('button,input,[href],[tabindex]:not([tabindex="-1"])');
         var list = [], i;
-        for(i = 0; i < all.length; i++){ if(!all[i].disabled) list.push(all[i]); }
-        if(!list.length) return;
+        for(i = 0; i < all.length; i++){
+          var e = all[i];
+          if(e.disabled) continue;
+          var cs = window.getComputedStyle(e);
+          if(cs.display === 'none' || cs.visibility === 'hidden') continue;
+          list.push(e);
+        }
+        /* 沒有可聚焦子元素時，把 Tab 留在彈窗本身，不要把焦點跑到背後的頁面。 */
+        if(!list.length){ ev.preventDefault(); panel.focus(); return; }
         var first = list[0], last = list[list.length - 1];
-        if(ev.shiftKey && document.activeElement === first){ ev.preventDefault(); last.focus(); }
-        else if(!ev.shiftKey && document.activeElement === last){ ev.preventDefault(); first.focus(); }
+        var act = document.activeElement;
+        var inside = false;
+        for(i = 0; i < list.length; i++){ if(list[i] === act) inside = true; }
+        if(!inside){ ev.preventDefault(); (ev.shiftKey ? last : first).focus(); return; }
+        if(ev.shiftKey && act === first){ ev.preventDefault(); last.focus(); }
+        else if(!ev.shiftKey && act === last){ ev.preventDefault(); first.focus(); }
       });
 
       /* 點彈窗外部關閉（僅桌機；手機為貼底滿寬彈窗，點外不易發生） */
