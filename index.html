@@ -6,6 +6,18 @@
 <!--SNAP:TITLE--><title>台股追蹤・加權指數與當日漲跌幅排行（2026/10/15）</title><!--/SNAP:TITLE-->
 <meta name="description" content="台灣證券交易所公開資料的收盤概況：加權指數、成交金額、漲跌家數、當日漲幅前十名、跌幅前十名、2330 台積電，以及 MA5／MA20 均線、黃金／死亡交叉標示與成交量走勢圖。">
 <meta name="theme-color" content="#14304f">
+<!-- ===== PWA（漸進式網頁應用）===== -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="icon" href="icons/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+<meta name="application-name" content="台股追蹤">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="台股追蹤">
+<meta name="format-detection" content="telephone=no">
 <style>
   :root{
     --bg:#eef1f5;
@@ -913,6 +925,10 @@
         </button>
         <button class="btn-auto" id="btn-auto" type="button" aria-pressed="true" aria-label="自動更新，每 60 秒">
           <span class="sw" aria-hidden="true"></span>自動更新
+        </button>
+        <button class="btn-install" id="btn-install" type="button" hidden aria-label="安裝台股追蹤為 App">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M7.5 9.5 12 14l4.5-4.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 17.5v1.2A2.3 2.3 0 0 0 6.8 21h10.4a2.3 2.3 0 0 0 2.3-2.3v-1.2" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          <span id="btn-install-text">安裝 App</span>
         </button>
       </div>
     </div>
@@ -2906,6 +2922,76 @@
     setTimeout(run, 900);
   })();
   </script>
+
+<!-- ===== PWA：安裝按鈕樣式 + Service Worker 註冊 ===== -->
+<style>
+  .btn-install{
+    display:inline-flex;align-items:center;gap:7px;
+    background:linear-gradient(160deg,var(--navy-3),var(--navy-2));
+    border:1px solid rgba(255,255,255,.24);
+    color:#fff;font-size:12.5px;line-height:1;
+    padding:7px 12px;border-radius:999px;cursor:pointer;
+    font-family:inherit;white-space:nowrap;
+    transition:filter .12s ease,transform .12s ease;
+  }
+  .btn-install:hover{filter:brightness(1.1);}
+  .btn-install:active{transform:translateY(1px);}
+  .btn-install svg{width:15px;height:15px;display:block;}
+  .btn-install[hidden]{display:none;}
+</style>
+<script>
+/* ==========================================================================
+   PWA：Service Worker 註冊 + 安裝提示（Android/Chrome 自動、iOS 手動指引）
+   ========================================================================== */
+(function(){
+  'use strict';
+
+  /* 1) 註冊 Service Worker（僅 https 或 localhost 可用；失敗不影響頁面） */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(function(){});
+    });
+  }
+
+  /* 2) 安裝按鈕 */
+  var btn = document.getElementById('btn-install');
+  var txt = document.getElementById('btn-install-text');
+  var deferred = null;
+  var standalone = window.matchMedia('(display-mode: standalone)').matches ||
+                   window.navigator.standalone === true;
+  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  function show(){ if (btn && !standalone) btn.hidden = false; }
+  function hide(){ if (btn) btn.hidden = true; }
+
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    deferred = e;
+    show();
+  });
+  window.addEventListener('appinstalled', function(){ deferred = null; hide(); });
+
+  /* iOS Safari 不支援 beforeinstallprompt，改為顯示手動安裝指引 */
+  if (isIOS && !standalone) {
+    show();
+    if (txt) txt.textContent = '加入主畫面';
+  }
+
+  if (btn) {
+    btn.addEventListener('click', function(){
+      if (deferred) {
+        deferred.prompt();
+        deferred.userChoice.then(function(){ deferred = null; hide(); });
+      } else if (isIOS) {
+        alert('在 iPhone／iPad 上安裝：\n\n1. 點下方工具列的「分享」按鈕\n2. 選擇「加入主畫面」\n3. 點右上角「新增」');
+      } else {
+        alert('此瀏覽器未提供自動安裝。\n\n可從瀏覽器選單選擇「安裝應用程式」或「加到主畫面」。');
+      }
+    });
+  }
+})();
+</script>
 </main>
 </body>
 </html>

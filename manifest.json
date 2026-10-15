@@ -1,0 +1,52 @@
+{
+  "id": "/tw-stock-tracker/",
+  "name": "台股追蹤｜加權指數與漲跌幅排行",
+  "short_name": "台股追蹤",
+  "description": "台灣證券交易所公開資料的收盤概況：加權指數、成交金額、漲跌家數、漲跌幅排行、恐懼貪婪指數與均線走勢圖。",
+  "lang": "zh-Hant",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "any",
+  "background_color": "#eef1f5",
+  "theme_color": "#14304f",
+  "categories": ["finance", "news", "productivity"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "恐懼貪婪指數",
+      "short_name": "恐懼貪婪",
+      "description": "直接查看台股恐懼貪婪指數與分項指標",
+      "url": "./index.html#fg-t",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "漲跌幅排行",
+      "short_name": "排行",
+      "description": "查看當日漲幅與跌幅排行",
+      "url": "./index.html#rank-list",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

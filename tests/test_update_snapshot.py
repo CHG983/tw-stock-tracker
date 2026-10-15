@@ -1025,7 +1025,10 @@ class TestNormalTradingDay(unittest.TestCase):
         src = H.repo_index_html()
         self.assertEqual(re.findall(r'src="https?://', src), [])
         self.assertEqual(re.findall(r'<link[^>]+href="(https?://[^"]+)"', src), [])
-        self.assertLessEqual(src.count("<link"), 1)
+        # PWA 需要本機的 manifest 與 App 圖示 <link>；仍禁止任何外部資源。
+        for href in re.findall(r'<link[^>]+href="([^"]+)"', src):
+            self.assertFalse(href.startswith(("http://", "https://", "//")),
+                             f"<link> 不得指向外部資源：{href}")
 
 
 # ==========================================================================
