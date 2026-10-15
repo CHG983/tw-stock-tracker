@@ -47,13 +47,15 @@ TZ_TAIPEI = timezone(timedelta(hours=8))
 # 日曆因素整批失敗（2026-10-01 起連續 16 天的 CI 全紅即為此故）。
 REF_NOW = datetime(2026, 9, 24, 21, 0, 0, tzinfo=TZ_TAIPEI)
 
-# 25 組 SNAP 區塊（build_regions 回傳鍵集合）
-# AIANALYST 為「韭經考驗的台股戰士-宇程君」（韭齡多年的虛擬分析失）每日角色評論區塊，
-# 由 scripts/analyst.py 依當日資料以固定規則產生（無隨機、無寫死數字）。
+# 27 組 SNAP 區塊（build_regions 回傳鍵集合）
+# AIANALYST 為「韭經考驗的台股戰士-宇程君」（韭齡多年的虛擬分析失）每日角色評論入口條，
+# AI_CHAT 為右下角浮動按鈕與聊天彈窗外框，AI_CHAT_DATA 為對話引擎的當日資料（JSON）。
+# 三者皆由 scripts/analyst.py 依當日資料以固定規則產生（無隨機、無寫死數字）。
 EXPECTED_REGIONS = {
     "TITLE", "HEROTAG", "IDXROW", "KPIS", "BREADTH", "BRDATE", "SVG", "CHARTSUB",
     "MASTRIP", "CXLIST", "CXMKEY", "CXNOTE", "LISTGAIN", "LISTLOSE", "LISTTSMC",
-    "RANKBAR", "RANKNOTE", "AIANALYST", "FOOTA", "FOOTB", "FOOTCOPY", "HTML_STATUS",
+    "RANKBAR", "RANKNOTE", "AIANALYST", "AI_CHAT", "AI_CHAT_DATA",
+    "FOOTA", "FOOTB", "FOOTCOPY", "HTML_STATUS",
     "HTML_LASTUPD", "JS_SNAPAT", "JS_STATINIT",
 }
 

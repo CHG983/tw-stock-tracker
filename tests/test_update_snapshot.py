@@ -710,8 +710,8 @@ class TestNormalTradingDay(unittest.TestCase):
         self.out = baseline_out()
 
     # ---- 25 組 marker 全部由本次資料重建 ------------------------------
-    def test_all_25_regions_are_rewritten_from_live_data(self):
-        """把 25 個區塊內容全換成哨兵，重跑後哨兵必須全部消失。"""
+    def test_all_27_regions_are_rewritten_from_live_data(self):
+        """把 27 個區塊內容全換成哨兵，重跑後哨兵必須全部消失。"""
         sentinel = "ZZ__STALE__ZZ"
         corrupted = H.repo_index_html()
         for name in sorted(H.EXPECTED_REGIONS):
@@ -730,10 +730,10 @@ class TestNormalTradingDay(unittest.TestCase):
         self.assertEqual(survivors, [], f"以下區塊未被更新：{survivors}")
         self.assertNotIn(sentinel, out)
 
-    def test_expected_region_set_is_25(self):
-        self.assertEqual(len(H.EXPECTED_REGIONS), 25)
+    def test_expected_region_set_is_27(self):
+        self.assertEqual(len(H.EXPECTED_REGIONS), 27)
 
-    def test_source_has_all_25_markers(self):
+    def test_source_has_all_27_markers(self):
         src = H.repo_index_html()
         for name in sorted(H.EXPECTED_REGIONS):
             self.assertIsNotNone(us._region_body(src, name), f"index.html 缺 marker {name}")
@@ -993,12 +993,17 @@ class TestNormalTradingDay(unittest.TestCase):
                          r"\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}")
 
     def test_js_regions_use_js_comment_markers(self):
-        """script 內的 marker 必須是 /* */，否則 JS 會被註解掉。"""
+        """script 內的 marker 必須是 /* */，否則 JS 會被註解掉。
+
+        頁面含多個 <script>（宇程君對話資料為獨立區塊），因此逐一檢查。
+        """
         src = H.repo_index_html()
-        script = re.search(r"<script>(.*?)</script>", src, re.S).group(1)
-        self.assertNotIn("<!--SNAP:", script)
+        scripts = re.findall(r"<script[^>]*>(.*?)</script>", src, re.S)
+        self.assertTrue(scripts, "頁面必須至少含一個 script 區塊")
+        js = "".join(scripts)
+        self.assertNotIn("<!--SNAP:", js)
         for name in sorted(us.JS_REGIONS):
-            self.assertIn(f"/*SNAP:{name}*/", script)
+            self.assertIn(f"/*SNAP:{name}*/", js, f"JS 區塊 {name} 缺少 /* */ marker")
         self.assertRegex(region_body(self.out, "JS_SNAPAT"),
                          r"var SNAPSHOT_AT = '\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}';")
 
@@ -2004,6 +2009,300 @@ class TestAnalystBlockIsWiredIntoThePage(unittest.TestCase):
         self.assertEqual(width, height, "頭像必須是正方形，否則圓形裁切會切掉主體")
         self.assertEqual((width, height), (176, 176),
                          "頭像應為 176x176（頁面以 88px 顯示，2x 供高解析螢幕）")
+
+
+# ==========================================================================
+# 17. 宇程君對話引擎：scripts/analyst.py 的聊天彈窗
+# ==========================================================================
+# 這一組守住聊天型彈窗的核心承諾：
+#   1. 回覆文字**完全由當日資料決定**（與評論區同樣是純函式）；
+#   2. 關鍵字比對是**前端與後端一致**的固定規則，不是模型推論；
+#   3. 聊天資料以 JSON 內嵌時**不會提前關閉 <script>**；
+#   4. 誠實標示與免責聲明也必須出現在聊天視窗內。
+# ==========================================================================
+def _payload(cfg=None) -> dict:
+    cfg = cfg if cfg is not None else _analyst_cfg()
+    return analyst.build_dialog_payload(cfg, f0=us.f0, f2=us.f2, pct=us.pct,
+                                        pts=us.pts, esc=us.esc)
+
+
+def _payload_text(cfg=None) -> str:
+    return analyst.build_chat_data(cfg if cfg is not None else _analyst_cfg(),
+                                   f0=us.f0, f2=us.f2, pct=us.pct,
+                                   pts=us.pts, esc=us.esc)
+
+
+class TestChatEngineDeterminism(unittest.TestCase):
+    """對話資料必須是資料的純函式（無隨機、無時鐘相依）。"""
+
+    def test_same_cfg_yields_byte_identical_json(self):
+        cfg = _analyst_cfg()
+        self.assertEqual(_payload_text(cfg), _payload_text(cfg),
+                         "同一份 cfg 重跑必須逐位元組相同（不可有隨機成分）")
+
+    def test_output_is_stable_across_a_real_clock_change(self):
+        """把時鐘移到隔天，聊天資料仍須完全相同 —— 證明沒有讀 datetime.now()。"""
+        cfg = _analyst_cfg()
+        before = _payload_text(cfg)
+        with H.freeze_now(H.ref_dt(23, 4, 5)):
+            after = _payload_text(cfg)
+        self.assertEqual(before, after,
+                         "聊天資料不得隨系統時間改變（只能取決於資料）")
+
+    def test_no_market_numbers_are_hardcoded(self):
+        a = _payload_text()
+        cfg = _analyst_cfg()
+        cfg["today_close"] = cfg["today_close"] + 500.0
+        self.assertNotEqual(a, _payload_text(cfg),
+                            "指數改了，聊天答案必須跟著改（不可寫死）")
+
+    def test_json_is_valid_and_key_order_is_fixed(self):
+        t = _payload_text()
+        body = t[len("var AI_CHAT_DATA="):-1]
+        parsed = json.loads(body.replace("<\\/", "</"))
+        self.assertEqual(parsed, json.loads(_payload_text()[len("var AI_CHAT_DATA="):-1]
+                                            .replace("<\\/", "</")))
+        self.assertEqual(list(parsed.keys()), sorted(parsed.keys()),
+                         "鍵序必須固定（sort_keys），否則重跑會產生偽變更")
+
+    def test_script_tag_cannot_be_closed_early(self):
+        """內嵌 JSON 不得包含未轉義的 </，否則 <script> 會被提前關閉。"""
+        for cfg in (_analyst_cfg(),):
+            t = _payload_text(cfg)
+            self.assertNotIn("</", t.replace("<\\/", ""),
+                             "JSON 內出現未轉義的 </ 會提前關閉 <script>")
+
+    def test_all_quick_replies_have_answers(self):
+        p = _payload()
+        self.assertTrue(p["quick"], "必須提供可點選的預設問題")
+        for item in p["quick"]:
+            self.assertIn(item["topic"], p["replies"],
+                          f"快捷問題 {item['label']} 沒有對應答案")
+
+
+class TestChatEngineKeywordMatching(unittest.TestCase):
+    """關鍵字比對必須是固定規則，且涵蓋需求列出的每一類問題。"""
+
+    def test_required_questions_map_to_expected_topics(self):
+        cases = {
+            "大盤現在怎樣？": "market",
+            "指數今天如何": "market",
+            "台積電 2330 均線怎麼看？": "tsmc",
+            "2330 現在多少": "tsmc",
+            "均線怎麼看": "ma",
+            "黃金交叉是什麼": "ma",
+            "死亡交叉": "ma",
+            "今天漲幅排行有什麼？": "gain",
+            "漲停有哪些": "gain",
+            "今天跌幅排行有什麼？": "lose",
+            "跌停幾家": "lose",
+            "成交量如何": "volume",
+            "量能": "volume",
+            "給我風險提醒": "risk",
+            "有什麼要注意的": "risk",
+            "免責聲明": "disclaimer",
+        }
+        for text, want in cases.items():
+            self.assertEqual(analyst.match_topic(text), want, f"{text!r} 應對應到 {want}")
+
+    def test_unknown_text_returns_none(self):
+        for text in ("", "   ", "你午餐吃什麼", "asdfghjkl"):
+            self.assertIsNone(analyst.match_topic(text), f"{text!r} 不應對應到任何主題")
+
+    def test_specific_topic_wins_over_generic(self):
+        """「台積電均線」必須走 tsmc（較具體）而非 ma，否則答案會漏掉台積電。"""
+        self.assertEqual(analyst.match_topic("台積電均線怎麼看"), "tsmc")
+
+    def test_matching_is_case_insensitive(self):
+        self.assertEqual(analyst.match_topic("TSMC 2330"), "tsmc")
+        self.assertEqual(analyst.match_topic("MA20"), "ma")
+
+    def test_frontend_keyword_table_matches_python(self):
+        """前端 JS 的關鍵字表必須與 Python 的同主題同詞，否則同一句話
+        在兩邊會得到不同答案。"""
+        src = H.repo_index_html()
+        for topic, words in analyst.TOPIC_KEYWORDS:
+            for w in words:
+                self.assertIn("'" + w + "'", src,
+                              f"前端關鍵字表缺少 {topic} 的 {w!r}")
+
+
+class TestChatEngineReferencesRealData(unittest.TestCase):
+    """聊天答案必須引用當日真實數字，且與頁面其他區塊一致。"""
+
+    def setUp(self):
+        self.cfg = _analyst_cfg()
+        self.p = _payload(self.cfg)
+
+    def test_market_answer_quotes_index_breadth_turnover(self):
+        s = self.p["replies"]["market"]
+        self.assertIn(us.f2(self.cfg["today_close"]), s)
+        self.assertIn(us.f0(self.cfg["mkt"]["up"]), s)
+        self.assertIn(us.f0(self.cfg["mkt"]["down"]), s)
+        self.assertIn(us.f2(self.cfg["mkt"]["total_amt"] / 1e8), s)
+
+    def test_tsmc_answer_quotes_2330(self):
+        s = self.p["replies"]["tsmc"]
+        self.assertIn(us.f2(self.cfg["tsmc"]["close"]), s)
+        self.assertIn(us.f0(self.cfg["tsmc"]["vol"] / 1000), s)
+
+    def test_ma_answer_quotes_both_moving_averages(self):
+        s = self.p["replies"]["ma"]
+        self.assertIn(us.f2(self.cfg["win_ma5"][-1]), s)
+        self.assertIn(us.f2(self.cfg["win_ma20"][-1]), s)
+
+    def test_gain_and_lose_answers_quote_top_names(self):
+        g = self.cfg["gain"][0]
+        l = self.cfg["lose"][0]
+        self.assertIn(us.esc(g["code"]), self.p["replies"]["gain"])
+        self.assertIn(us.esc(g["name"]), self.p["replies"]["gain"])
+        self.assertIn(us.esc(l["code"]), self.p["replies"]["lose"])
+        self.assertIn(us.esc(l["name"]), self.p["replies"]["lose"])
+
+    def test_volume_answer_quotes_the_ratio(self):
+        s = self.p["replies"]["volume"]
+        self.assertIn("{:.1f}".format(self.cfg["win"][-1]["amt"]
+                                       / (sum(r["amt"] for r in self.cfg["win"][-21:-1]
+                                              if r["amt"] is not None) / 20) * 100.0), s)
+
+    def test_numbers_block_matches_page_formatters(self):
+        n = self.p["numbers"]
+        self.assertEqual(n["close"], us.f2(self.cfg["today_close"]))
+        self.assertEqual(n["ma5"], us.f2(self.cfg["win_ma5"][-1]))
+        self.assertEqual(n["tsmc"], us.f2(self.cfg["tsmc"]["close"]))
+        self.assertEqual(n["amt"], us.f2(self.cfg["mkt"]["total_amt"] / 1e8))
+
+    def test_negative_signs_use_the_page_convention(self):
+        """負號必須是 U+2212（與頁面一致），且 JSON 不得出現 ASCII '-' 當負號。"""
+        cfg = self.cfg
+        cfg["today_close"] = cfg["prev_close"] - 100.0
+        p = _payload(cfg)
+        self.assertIn("\u2212", p["numbers"]["chg"])
+        self.assertNotIn("-", p["numbers"]["chg"])
+
+
+class TestChatEngineHonesty(unittest.TestCase):
+    """聊天視窗內也必須保留角色誠實標示與投資免責聲明。"""
+
+    def setUp(self):
+        self.p = _payload()
+        self.ui = analyst.build_chat_ui()
+
+    def test_payload_carries_honesty_and_disclaimer(self):
+        self.assertIn("AI 生成", self.p["honesty"])
+        self.assertIn(analyst.ROLE_LABEL, self.p["honesty"])
+        self.assertIn("不構成任何投資建議", self.p["disclaimer"])
+        self.assertIn("臺灣證券交易所", self.p["disclaimer"])
+
+    def test_ui_has_dialog_semantics(self):
+        for need in ('role="dialog"', 'aria-modal="true"', 'aria-labelledby="ai-panel-t"'):
+            self.assertIn(need, self.ui, f"彈窗缺少無障礙屬性：{need}")
+
+    def test_ui_has_fab_with_avatar_and_label(self):
+        self.assertIn('class="ai-fab"', self.ui)
+        self.assertIn("assets/yu_cheng_jun_avatar.png", self.ui)
+        self.assertIn("aria-label", self.ui)
+        self.assertIn(analyst.ROLE_LABEL, self.ui)
+        self.assertIn(analyst.CHARACTER, self.ui)
+
+    def test_ui_has_close_button_input_and_quick_area(self):
+        for need in ('id="ai-panel-x"', 'id="ai-in"', 'id="ai-quick"',
+                     'id="ai-log"', 'id="ai-form"', 'type="submit"'):
+            self.assertIn(need, self.ui, f"彈窗缺少必要元素：{need}")
+
+    def test_ui_uses_only_local_avatar(self):
+        self.assertNotIn("http://", self.ui)
+        self.assertNotIn("https://", self.ui)
+
+    def test_role_label_never_becomes_analyst(self):
+        """「分析失」不可被改成「分析師」（全站掃描，含聊天區塊）。"""
+        for blob in (self.p["honesty"], self.p["disclaimer"], self.ui,
+                     self.p["greeting"], self.p["source_note"]):
+            self.assertNotIn("虛擬分析師", blob)
+
+    def test_greeting_states_not_a_real_person(self):
+        self.assertIn("我不是真人", self.p["greeting"])
+        self.assertIn(analyst.CHARACTER, self.p["greeting"])
+
+    def test_source_note_is_disclosed(self):
+        self.assertIn("固定規則", self.p["source_note"])
+        self.assertIn("無隨機成分", self.p["source_note"])
+        self.assertIn("analyst.py", self.p["source_note"])
+
+    def test_fallback_mentions_what_can_be_asked(self):
+        self.assertIn("大盤", self.p["fallback"])
+        self.assertIn("風險", self.p["fallback"])
+
+
+class TestChatIsWiredIntoThePage(unittest.TestCase):
+    """聊天彈窗必須真的被注入 index.html 且前端行為完整。"""
+
+    def setUp(self):
+        self.out = baseline_out()
+
+    def test_regions_are_registered(self):
+        for name in ("AI_CHAT", "AI_CHAT_DATA"):
+            self.assertIn(name, H.EXPECTED_REGIONS)
+
+    def test_markers_exist_in_source(self):
+        src = H.repo_index_html()
+        for name in ("AI_CHAT", "AI_CHAT_DATA"):
+            self.assertIsNotNone(us._region_body(src, name), f"index.html 缺 marker {name}")
+
+    def test_rendered_page_has_fab_and_panel(self):
+        body = region_body(self.out, "AI_CHAT")
+        for need in ('id="ai-fab"', 'id="ai-panel"', 'id="ai-panel-x"',
+                     'id="ai-log"', 'id="ai-quick"', 'id="ai-form"', 'id="ai-in"'):
+            self.assertIn(need, body, f"AI_CHAT 區塊缺少 {need}")
+
+    def test_rendered_data_region_is_valid_json(self):
+        raw = us._region_body(self.out, "AI_CHAT_DATA")
+        self.assertIsNotNone(raw)
+        body = raw.group(2).strip()
+        self.assertTrue(body.startswith("var AI_CHAT_DATA="),
+                        "AI_CHAT_DATA 必須是 var AI_CHAT_DATA=... 的 JS 指定敘述")
+        self.assertTrue(body.endswith(";"), "JS 指定敘述應以分號結束")
+        payload = json.loads(body[len("var AI_CHAT_DATA="):-1].replace("<\\/", "</"))
+        self.assertIn("replies", payload)
+        self.assertIn("quick", payload)
+        self.assertTrue(payload["replies"], "聊天答案不得為空")
+        self.assertIn("character", payload)
+        self.assertIn("honesty", payload)
+        self.assertIn("disclaimer", payload)
+
+    def test_data_region_is_inside_a_script_and_uses_js_comment_markers(self):
+        """AI_CHAT_DATA 位於 <script> 內，必須用 JS 區塊註解；
+        HTML 註解在 <script> 內會被視為單行註解而弄壞 JS。"""
+        self.assertIn("AI_CHAT_DATA", us.JS_REGIONS)
+        src = H.repo_index_html()
+        self.assertIn("/*SNAP:AI_CHAT_DATA*/", src)
+        self.assertNotIn("<!--SNAP:AI_CHAT_DATA-->", src)
+
+    def test_frontend_implements_enter_escape_and_close(self):
+        src = H.repo_index_html()
+        self.assertIn("addEventListener('submit'", src, "缺少送出（Enter）處理")
+        self.assertIn("'Escape'", src, "缺少 Esc 關閉處理")
+        self.assertIn("ai-panel-x", src, "缺少關閉鈕處理")
+
+    def test_frontend_manages_focus_and_aria(self):
+        src = H.repo_index_html()
+        for need in ("aria-expanded", "aria-controls", "aria-haspopup",
+                     "focus()", "aria-modal"):
+            self.assertIn(need, src, f"前端缺少無障礙處理：{need}")
+
+    def test_frontend_does_not_hardcode_market_numbers(self):
+        """前端只能讀 AI_CHAT_DATA；不可在 JS 裡寫死市場數字。"""
+        src = H.repo_index_html()
+        block = src[src.index("var CHAT = (function()"):src.index("/* ---------- wiring ---------- */")]
+        for bad in ("46,969", "48,510", "14,357", "2,440"):
+            self.assertNotIn(bad, block, f"前端聊天模組寫死了市場數字：{bad}")
+
+    def test_mobile_breakpoint_makes_panel_full_width(self):
+        """手機 390px 時彈窗必須滿寬自適應（不可橫向溢出）。"""
+        src = H.repo_index_html()
+        self.assertIn("@media (max-width:520px)", src)
+        block = src[src.index("@media (max-width:520px)"):]
+        self.assertIn("left:0;right:0;bottom:0", block)
 
 
 if __name__ == "__main__":

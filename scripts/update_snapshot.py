@@ -64,7 +64,7 @@ MINUS = "\u2212"                        # U+2212，頁面統一使用的負號
 
 # 位於 <script> 內的區塊必須用 JS 區塊註解標記：HTML 註解（<!-- -->）在
 # <script> 內會被瀏覽器視為「單行註解」，會把整個 JS 敘述註解掉而使頁面失效。
-JS_REGIONS = {"JS_SNAPAT", "JS_STATINIT"}
+JS_REGIONS = {"JS_SNAPAT", "JS_STATINIT", "AI_CHAT_DATA"}
 
 TZ_TAIPEI = timezone(timedelta(hours=8))
 
@@ -949,6 +949,11 @@ def build_regions(cfg: dict) -> dict[str, str]:
     # 無隨機成分、無時間相依、無寫死的市場數字 → 同一份資料重跑文字逐字元相同。
     # 角色為 AI 生成的虛擬角色，頁面標示為「韭齡多年的虛擬分析失」，非投資建議（區塊內已明示）。
     R["AIANALYST"] = analyst.build(cfg, f0=f0, f2=f2, pct=pct, pts=pts, esc=esc)
+    # 對話視窗：靜態外框（角色名稱／標籤取自 analyst.CHARACTER / ROLE_LABEL）
+    R["AI_CHAT"] = analyst.build_chat_ui()
+    # 對話視窗的當日資料（quick replies、開場評語、關鍵字主題答案）
+    R["AI_CHAT_DATA"] = analyst.build_chat_data(
+        cfg, f0=f0, f2=f2, pct=pct, pts=pts, esc=esc)
 
     R["JS_SNAPAT"] = f"var SNAPSHOT_AT = '{cfg['fetched']}';"
     R["JS_STATINIT"] = f"setStatus('', '{R['HTML_STATUS']}');"
@@ -988,9 +993,11 @@ def apply_regions(html: str, regions: dict[str, str]) -> str:
 
 
 def verify_output(html: str, regions: dict[str, str]) -> None:
-    script = re.search(r"<script>(.*?)</script>", html, re.S)
-    if script and "<!--SNAP:" in script.group(1):
-        raise RuntimeError("<script> 內出現 HTML 註解 marker，會使 JS 變成註解")
+    # 頁面可能含多個 <script>（例如宇程君的當日對話資料區塊），
+    # 因此必須逐一檢查每一個 script 區塊，不能只看第一個。
+    for script in re.findall(r"<script[^>]*>(.*?)</script>", html, re.S):
+        if "<!--SNAP:" in script:
+            raise RuntimeError("<script> 內出現 HTML 註解 marker，會使 JS 變成註解")
     for name in regions:
         body = _region_body(html, name)
         if body and not body.group(2).strip():

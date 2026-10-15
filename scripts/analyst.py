@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-analyst.py — 「韭經考驗的台股戰士-宇程君」每日市場評論產生器。
+analyst.py — 「韭經考驗的台股戰士-宇程君」每日市場評論 ＋ 對話引擎。
 
 角色定位（務必誠實）
 --------------------
-宇程君是 **AI 生成的虛擬角色**，頁面標示其角色為「韭齡多年的虛擬分析失」；不是真人。他的每一句話都由本檔案
-依 `update_snapshot.py` 自臺灣證券交易所（TWSE）公開資料抓到的 **當日真實數字**，
-以固定規則（門檻判斷 + 模板）產生：
+宇程君是 **AI 生成的虛擬角色**，頁面標示其角色為「韭齡多年的虛擬分析失」；不是真人。
+他的每一句話都由本檔案依 `update_snapshot.py` 自臺灣證券交易所（TWSE）公開資料抓到的
+**當日真實數字**，以固定規則（門檻判斷 + 模板）產生：
 
   * 沒有隨機成分（no random、no time、no 網路之外的輸入）→ 同一份資料重跑，
     產出的文字逐字元相同，因此可重現、可單元測試。
@@ -18,6 +18,13 @@ analyst.py — 「韭經考驗的台股戰士-宇程君」每日市場評論產�
 本模組刻意 **不 import update_snapshot**（避免循環匯入），改用依賴注入傳入
 `f0 / f2 / pct / pts / esc`。
 
+對話引擎（本次新增）
+--------------------
+`build_dialog_payload()` 把當日資料轉成聊天視窗要用的資料結構：開場評語、五組
+快捷問題、以及「關鍵字 → 主題」比對後的答案。比對與答案產生同樣是 **純函式**，
+不含隨機與時鐘相依；答案文字全部由 `cfg` 推導，每日快照更新即自動改變。
+比對不到關鍵字時回覆宇程君式的幽默說明，並提示可問的問題。
+
 頁面用語
 --------
 「市場氛圍分數」是本頁自訂的啟發式指標（0–100），由四項可驗證的分項加權而成，
@@ -25,6 +32,8 @@ analyst.py — 「韭經考驗的台股戰士-宇程君」每日市場評論產�
 也不是預測值。
 """
 from __future__ import annotations
+
+import json
 
 from collections import Counter
 
@@ -99,6 +108,45 @@ CATCHPHRASES: dict[str, tuple[str, ...]] = {
 RISK_CLOSER = (
     "我這輩子被套的次數比看對的次數多得多，所以我的每一句話都請當成"
     "「參考」，不要當成「指令」。"
+)
+
+# --------------------------------------------------------------------------
+# 對話引擎：快捷問題與關鍵字
+# --------------------------------------------------------------------------
+# 快捷問題：(顯示文字, 主題代碼)。同一組也用於頁面入口條的提示與測試斷言。
+QUICK_REPLIES: tuple[tuple[str, str], ...] = (
+    ("大盤現在怎樣？", "market"),
+    ("台積電 2330 均線怎麼看？", "tsmc"),
+    ("今天漲幅排行有什麼？", "gain"),
+    ("今天跌幅排行有什麼？", "lose"),
+    ("給我風險提醒", "risk"),
+)
+
+# 關鍵字 → 主題。**順序即優先序**：越具體的主題排在越前面，
+# 避免「台積電均線」被泛用的「均線」規則先攔走。
+# 比對時一律把使用者輸入轉成小寫後做子字串包含檢查（純字串比對，非模型推論）。
+TOPIC_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("disclaimer", ("免責", "投資建議", "風險聲明", "聲明", "disclaimer", "法律")),
+    ("risk", ("風險", "停損", "注意", "提醒", "小心", "危險")),
+    ("tsmc", ("2330", "台積電", "台積", "護國神山", "tsmc")),
+    ("gain", ("漲幅", "漲停", "最強", "紅盤", "上漲排行")),
+    ("lose", ("跌幅", "跌停", "最弱", "綠盤", "下跌排行")),
+    ("volume", ("成交量", "成交金額", "量能", "量縮", "量增")),
+    ("ma", ("均線", "ma5", "ma20", "黃金交叉", "死亡交叉", "交叉", "月線")),
+    ("mood", ("氛圍", "情緒", "氣氛", "分數", "指標")),
+    ("market", ("大盤", "指數", "加權", "行情", "盤勢", "今天", "現在", "概況")),
+)
+
+# 免責聲明（聊天視窗底部常駐顯示；與頁尾措辭一致但精簡）
+CHAT_DISCLAIMER = (
+    "本對話所有內容僅供資訊參考，不構成任何投資建議、要約或推薦。"
+    "數字取自臺灣證券交易所公開資料，可能因交易所更正、延遲或傳輸因素而與實際情形有差異，"
+    "投資人應以臺灣證券交易所及公開資訊觀測站公告為準。"
+)
+
+# 角色誠實標示（聊天視窗底部常駐顯示）
+CHAT_HONESTY = (
+    "宇程君是 AI 生成的虛擬角色（本頁標示為「韭齡多年的虛擬分析失」），不是真人。"
 )
 
 
@@ -269,18 +317,16 @@ def analyze(cfg: dict) -> dict:
 
 
 # --------------------------------------------------------------------------
-# 版面
+# 共用語句：入口條與對話引擎共用同一份，確保頁面與聊天數字完全一致
 # --------------------------------------------------------------------------
-def render_html(a: dict, *, ad: str, f0, f2, pct, pts, esc) -> str:
-    """把 analyze() 的結果輸出成 SNAP:AIANALYST 區塊內容。
+def _facts(a: dict, *, f0, f2, pct, pts, esc) -> dict:
+    """由 analyze() 的結果推導出「一組共用語句」。
 
-    格式化函式由呼叫端注入，確保與頁面其他數字使用完全相同的慣例。
-    `ad` 為資料日期（AD 格式，取自 STOCK_DAY_ALL）。
+    入口條（render_html）與對話引擎（build_dialog_payload）都從這裡取字串，
+    因此同一個數字在頁面上與聊天中必定一模一樣。
     """
     pct_of_up = (a["up"] / (a["up"] + a["dn"] + a["fl"]) * 100.0
                  if (a["up"] + a["dn"] + a["fl"]) else 0.0)
-    diff_txt = ""  # 已改由上面的 rel 片語表達
-    diff_val = ""
     ratio_txt = ("放大" if a["amt_ratio"] >= 1.05 else
                  ("縮小" if a["amt_ratio"] <= 0.95 else "持平"))
     vp_class = ("up" if a["amt_ratio"] >= 1.05 and a["pchg"] > 0.05 else
@@ -319,61 +365,209 @@ def render_html(a: dict, *, ad: str, f0, f2, pct, pts, esc) -> str:
              ("表現較大盤<b>弱</b> {:.2f} 個百分點".format(abs(a["ts_diff"]))
               if a["ts_diff"] < -0.005 else "表現<b>與大盤同步</b>")))
 
+    ma_line = (
+        "收盤 <b>{c}</b> 點位於 MA5（{m5}）<b>{pos5}</b>、MA20（{m20}）<b>{pos20}</b>，"
+        "排列為 <b>{order}</b>；近期歷史區間內最近一次均線交叉為 <b>{cross}</b>"
+        "（全期共 {na} 筆，走勢圖 60 日區間內 {nw} 筆）。".format(
+            c=f2(a["close"]), m5=f2(a["ma5"]),
+            pos5="之上" if a["close"] > a["ma5"] else ("之下" if a["close"] < a["ma5"] else "約當"),
+            m20=f2(a["ma20"]),
+            pos20="之上" if a["close"] > a["ma20"] else ("之下" if a["close"] < a["ma20"] else "約當"),
+            order=a["ma_order"], cross=a["cross_txt"],
+            na=a["n_cross_all"], nw=a["n_cross_win"]))
+
+    volume_line = (
+        "最近交易日成交金額為前 20 個交易日均量的 <b>{r}%</b>（量能{rt}）；"
+        "指數 {dir} 配合量能變化，屬 <b class=\"{k}\">{vp}</b>。"
+        "（量能比較採走勢圖同一 FMTQIK 序列，避免跨端點單位差異。）".format(
+            r="{:.1f}".format(a["amt_ratio"] * 100.0), rt=ratio_txt,
+            dir=("上漲" if a["pchg"] > 0.05 else ("下跌" if a["pchg"] < -0.05 else "大致收平")),
+            k=vp_class, vp=a["vp"]))
+
+    mood_line = (
+        "指數漲跌 <b>{i}</b>／100（權重 35%）＋漲跌家數比 <b>{b}</b>／100（30%）"
+        "＋量能變化 <b>{v}</b>／100（20%）＋均線排列 <b>{m}</b>／100（15%）"
+        "＝ 合計 <b>{mood}</b> 分，對應等級「<b>{lab}</b>」。"
+        "此為本頁自訂的啟發式分數，<b>不是</b>市場共識、機率或預測值。".format(
+            i="{:.0f}".format(a["i_score"] * 100), b="{:.0f}".format(a["b_score"] * 100),
+            v="{:.0f}".format(a["a_score"] * 100), m="{:.0f}".format(a["ma_score"] * 100),
+            mood="{:.1f}".format(a["mood"]), lab=a["tier_label"]))
+
+    market_line = (
+        "加權指數收 <b>{c}</b> 點（{ch} 點／<b>{pc}</b>）；上市股票 <b>{u}</b> 家上漲"
+        "（含漲停 {us} 家）、<b>{d}</b> 家下跌（含跌停 {ds} 家）、<b>{fl}</b> 家持平，"
+        "上漲家數占 <b>{share}%</b>。全市場（含 ETF、權證等）漲停 {mus} 家、跌停 {mds} 家，"
+        "集中市場成交金額 <b>{amt}</b> 億元。".format(
+            c=f2(a["close"]), ch=pts(a["chg"]), pc=pct(a["pchg"]),
+            u=f0(a["up"]), us=f0(a["up_stop"]), d=f0(a["dn"]), ds=f0(a["dn_stop"]),
+            fl=f0(a["fl"]), share="{:.1f}".format(pct_of_up),
+            mus=f0(a["mkt_up_stop"]), mds=f0(a["mkt_dn_stop"]),
+            amt=f2(a["amt_yi"])))
+
+    return {
+        "quote": quote, "movers": movers, "ts_txt": ts_txt,
+        "ma_line": ma_line, "volume_line": volume_line, "mood_line": mood_line,
+        "market_line": market_line, "pct_of_up": pct_of_up, "ratio_txt": ratio_txt,
+        "vp_class": vp_class,
+    }
+
+
+def _rank_rows(records: list[dict], top: int, *, f2, pct, esc) -> str:
+    """把漲跌幅前 N 名排成一行式清單（供對話答案使用）。"""
+    out = []
+    for i, r in enumerate(records[:top], 1):
+        out.append("{}. <b>{code} {name}</b> {pc}（收 {px}）".format(
+            i, code=esc(r["code"]), name=esc(r["name"]),
+            pc=pct(r["pct"]), px=f2(r["close"])))
+    return "；".join(out) + "。" if out else "（當日無可用資料）"
+
+
+# --------------------------------------------------------------------------
+# 對話引擎（本次新增）：快捷問題 ＋ 關鍵字比對 ＋ 答案產生
+# --------------------------------------------------------------------------
+def match_topic(text: str) -> str | None:
+    """把使用者輸入比對到一個主題；比對不到回傳 None。
+
+    純字串包含比對（順序即優先序），**不是**語意理解或模型推論。
+    """
+    s = str(text or "").strip().lower()
+    if not s:
+        return None
+    for topic, words in TOPIC_KEYWORDS:
+        for w in words:
+            if w in s:
+                return topic
+    return None
+
+
+def answer(topic: str, a: dict, cfg: dict, f: dict, *,
+           f0, f2, pct, pts, esc) -> str:
+    """依主題產生回覆文字。所有數字都來自當日 cfg，非寫死文案。"""
+    if topic == "market":
+        return f["market_line"] + a["catchphrase"]
+    if topic == "ma":
+        return f["ma_line"] + "均線是落後指標，盤整時容易反覆交叉產生假訊號。"
+    if topic == "tsmc":
+        return ("台積電 2330 " + f["ts_txt"] + "。"
+                "把它跟大盤放一起看：" + f["ma_line"])
+    if topic == "gain":
+        return ("漲幅前十名（母體為上市普通股，依收盤漲跌價差百分比由高至低）："
+                + _rank_rows(cfg["gain"], 5, f2=f2, pct=pct, esc=esc)
+                + "族群上以 <b>{}</b>（共 {} 檔）最多，"
+                  "此歸類係<b>依股票代號區間粗略判定</b>，非證交所官方產業別。".format(
+                      a["g_sector"], a["g_n"]))
+    if topic == "lose":
+        return ("跌幅前十名（母體為上市普通股，依收盤漲跌價差百分比由低至高）："
+                + _rank_rows(cfg["lose"], 5, f2=f2, pct=pct, esc=esc)
+                + "族群上以 <b>{}</b>（共 {} 檔）最多，"
+                  "此歸類係<b>依股票代號區間粗略判定</b>，非證交所官方產業別。".format(
+                      a["l_sector"], a["l_n"]))
+    if topic == "volume":
+        return f["volume_line"]
+    if topic == "mood":
+        return f["mood_line"]
+    if topic == "risk":
+        return ("<b>宇程君碎念：</b>" + "；".join(a["warns"][:4]) + "。" + RISK_CLOSER)
+    if topic == "disclaimer":
+        return CHAT_DISCLAIMER + "另外，" + CHAT_HONESTY
+    return fallback(f)
+
+
+def fallback(f: dict) -> str:
+    """比對不到關鍵字時的宇程君式回覆，並提示可問的問題。"""
+    opts = "、".join(label for label, _t in QUICK_REPLIES)
+    return ("這題我聽不太懂，我只有小學畢業的選股智慧，別考我太難的。"
+            "你可以試著問我：" + opts + "。"
+            "（我懂的關鍵字：大盤／指數、台積電／2330、均線／黃金交叉／死亡交叉、"
+            "漲幅排行、跌幅排行、成交量能、風險提醒、免責聲明。）")
+
+
+def build_dialog_payload(cfg: dict, *, f0, f2, pct, pts, esc) -> dict:
+    """對外主要入口：回傳聊天視窗要用的完整資料結構。
+
+    純函式。同一份 cfg 永遠得到逐位元組相同的 payload。
+    """
+    a = analyze(cfg)
+    f = _facts(a, f0=f0, f2=f2, pct=pct, pts=pts, esc=esc)
+
+    topics = {t for _l, t in QUICK_REPLIES} | {"ma", "volume", "mood", "disclaimer"}
+    replies = {t: answer(t, a, cfg, f, f0=f0, f2=f2, pct=pct, pts=pts, esc=esc)
+               for t in sorted(topics)}
+
+    greeting = (
+        "我是「{who}」，{lbl}。我不是真人，只會照著當日證交所的公開數字講話。"
+        "<br><br>先給你今天的重點：{quote}"
+        "<br><br>你可以點下面的問題，或直接打字問我。".format(
+            who=CHARACTER, lbl=ROLE_LABEL, quote=f["quote"]))
+
+    return {
+        "character": CHARACTER,
+        "role_label": ROLE_LABEL,
+        "data_date": cfg["date"],
+        "greeting": greeting,
+        "replies": replies,
+        "quick": [{"label": label, "topic": topic} for label, topic in QUICK_REPLIES],
+        "fallback": fallback(f),
+        "honesty": CHAT_HONESTY,
+        "disclaimer": CHAT_DISCLAIMER,
+        "source_note": (
+            "本對話內容由 <code>scripts/analyst.py</code> 於每日自動更新時，"
+            "依當日自證交所實際抓取的數字，以<b>固定規則</b>產生"
+            "（無隨機成分、無寫死的市場數字）。資料日期 {d}。".format(d=cfg["date"])),
+        "numbers": {
+            "close": f2(a["close"]), "chg": pts(a["chg"]), "pct": pct(a["pchg"]),
+            "up": f0(a["up"]), "down": f0(a["dn"]), "flat": f0(a["fl"]),
+            "amt": f2(a["amt_yi"]), "ma5": f2(a["ma5"]), "ma20": f2(a["ma20"]),
+            "tsmc": f2(a["tsmc"]["close"]),
+            "mood": "{:.1f}".format(a["mood"]), "mood_label": a["tier_label"],
+        },
+    }
+
+
+def build_chat_data(cfg: dict, *, f0, f2, pct, pts, esc) -> str:
+    """把 payload 序列化成可安全內嵌於 <script> 的 JS 指定敘述。
+
+    區塊位於 <script> 內，因此必須是 **JavaScript** 而非 JSON 檔內容；
+    以 `var AI_CHAT_DATA=…;` 指定給全域，後續主程式直接讀取即可，不必再
+    JSON.parse 一次。`</` 一律轉成 `<\\/`，避免字串內容提前關閉 script 元素；
+    `sort_keys=True` 確保鍵序固定（重播逐位元組相同）。
+    """
+    payload = build_dialog_payload(cfg, f0=f0, f2=f2, pct=pct, pts=pts, esc=esc)
+    body = (json.dumps(payload, ensure_ascii=False, sort_keys=True,
+                       separators=(",", ":"))
+            .replace("</", "<\\/"))
+    return "var AI_CHAT_DATA=" + body + ";"
+
+
+# --------------------------------------------------------------------------
+# 版面：入口條（SNAP:AIANALYST）
+# --------------------------------------------------------------------------
+def render_html(a: dict, *, ad: str, f0, f2, pct, pts, esc) -> str:
+    """把分析結果輸出成 SNAP:AIANALYST 區塊內容（精簡入口條）。
+
+    完整互動改由右下角對話視窗承載，這裡保留角色身分、當日重點數字、
+    氛圍分數與誠實標示，作為頁面上的固定入口與無 JS 時的備援。
+    格式化函式由呼叫端注入，確保與頁面其他數字使用完全相同的慣例。
+    `ad` 為資料日期（AD 格式）。
+    """
+    f = _facts(a, f0=f0, f2=f2, pct=pct, pts=pts, esc=esc)
+
     points = [
-        ("大盤力道",
-         "加權指數收 <b>{c}</b> 點（{ch} 點／<b>{pc}</b>）；上市股票 <b>{u}</b> 家上漲"
-         "（含漲停 {us} 家）、<b>{d}</b> 家下跌（含跌停 {ds} 家）、<b>{fl}</b> 家持平，"
-         "上漲家數占 <b>{share}%</b>。全市場（含 ETF、權證等）漲停 {mus} 家、跌停 {mds} 家，"
-         "集中市場成交金額 <b>{amt}</b> 億元。".format(
-             c=f2(a["close"]), ch=pts(a["chg"]), pc=pct(a["pchg"]),
-             u=f0(a["up"]), us=f0(a["up_stop"]), d=f0(a["dn"]), ds=f0(a["dn_stop"]),
-             fl=f0(a["fl"]), share="{:.1f}".format(pct_of_up),
-             mus=f0(a["mkt_up_stop"]), mds=f0(a["mkt_dn_stop"]),
-             amt=f2(a["amt_yi"]))),
-
-        ("均線與交叉",
-         "收盤 <b>{c}</b> 點位於 MA5（{m5}）<b>{pos5}</b>、MA20（{m20}）<b>{pos20}</b>，"
-         "排列為 <b>{order}</b>；近期歷史區間內最近一次均線交叉為 <b>{cross}</b>"
-         "（全期共 {na} 筆，走勢圖 60 日區間內 {nw} 筆）。".format(
-             c=f2(a["close"]), m5=f2(a["ma5"]),
-             pos5="之上" if a["close"] > a["ma5"] else ("之下" if a["close"] < a["ma5"] else "約當"),
-             m20=f2(a["ma20"]),
-             pos20="之上" if a["close"] > a["ma20"] else ("之下" if a["close"] < a["ma20"] else "約當"),
-             order=a["ma_order"], cross=a["cross_txt"],
-             na=a["n_cross_all"], nw=a["n_cross_win"])),
-
-        ("台積電 2330", ts_txt + "。"),
-
-        ("族群與個股", movers +
+        ("大盤力道", f["market_line"]),
+        ("均線與交叉", f["ma_line"]),
+        ("台積電 2330", f["ts_txt"] + "。"),
+        ("族群與量能", f["movers"] + f["volume_line"] +
          "族群歸類係<b>依股票代號區間粗略判定</b>，非證交所官方產業別。"),
-
-        ("成交量能",
-         "最近交易日成交金額為前 20 個交易日均量的 <b>{r}%</b>（量能{rt}）；"
-         "指數 {dir} 配合量能變化，屬 <b class=\"{k}\">{vp}</b>。"
-         "（量能比較採走勢圖同一 FMTQIK 序列，避免跨端點單位差異。）".format(
-             r="{:.1f}".format(a["amt_ratio"] * 100.0), rt=ratio_txt,
-             dir=("上漲" if a["pchg"] > 0.05 else ("下跌" if a["pchg"] < -0.05 else "大致收平")),
-             k=vp_class, vp=a["vp"])),
-
-        ("氛圍計分（可複核）",
-         "指數漲跌 <b>{i}</b>／100（權重 35%）＋漲跌家數比 <b>{b}</b>／100（30%）"
-         "＋量能變化 <b>{v}</b>／100（20%）＋均線排列 <b>{m}</b>／100（15%）"
-         "＝ 合計 <b>{mood}</b> 分，對應等級「<b>{lab}</b>」。"
-         "此為本頁自訂的啟發式分數，<b>不是</b>市場共識、機率或預測值。".format(
-             i="{:.0f}".format(a["i_score"] * 100), b="{:.0f}".format(a["b_score"] * 100),
-             v="{:.0f}".format(a["a_score"] * 100), m="{:.0f}".format(a["ma_score"] * 100),
-             mood="{:.1f}".format(a["mood"]), lab=a["tier_label"])),
     ]
-
     li_html = "\n".join(
         '      <li><b class="lb">{}</b> {}</li>'.format(lb, body) for lb, body in points)
 
     warns = "；".join(a["warns"][:4]) + "。" + RISK_CLOSER
 
     return (
-        '<section class="card ai-card" aria-labelledby="ai-t">\n'
+        '<section class="card ai-card ai-strip" aria-labelledby="ai-t">\n'
         '    <div class="ai-head">\n'
-        '      <img class="ai-av" src="assets/yu_cheng_jun_avatar.png" width="88" height="88"\n'
+        '      <img class="ai-av" src="assets/yu_cheng_jun_avatar.png" width="72" height="72"\n'
         '           alt="「韭經考驗的台股戰士-宇程君」角色頭像（AI 生成虛擬角色）" decoding="async">\n'
         '      <div class="ai-id">\n'
         '        <h2 id="ai-t">韭經考驗的台股戰士-宇程君</h2>\n'
@@ -390,6 +584,7 @@ def render_html(a: dict, *, ad: str, f0, f2, pct, pts, esc) -> str:
         '        <span class="ai-mood-meter" role="img" aria-label="市場氛圍分數 {mv} 分，滿分 100 分">'
         '<i style="width:{mw}%"></i></span>\n'
         '        <span class="ai-mood-n num">{mv} / 100</span>\n'
+        '        <span class="ai-mood-src">啟發式分數（權重 35/30/20/15）・<span class="ai-not">不是</span>市場共識或預測值</span>\n'
         '      </div>\n'
         '    </div>\n'
         '\n'
@@ -398,28 +593,88 @@ def render_html(a: dict, *, ad: str, f0, f2, pct, pts, esc) -> str:
         '      <cite>— 宇程君（{lbl}）</cite>\n'
         '    </blockquote>\n'
         '\n'
-        '    <ul class="ai-points">\n'
+        '    <ul class="ai-points is-compact">\n'
         '{li}\n'
         '    </ul>\n'
         '\n'
         '    <p class="ai-risk"><b>宇程君碎念：</b>{warns}</p>\n'
         '\n'
-        '    <p class="ai-src"><b>這個角色與這段文字是怎麼來的：</b>'
+        '    <div class="ai-cta-row">\n'
+        '      <button class="ai-open" id="ai-open" type="button" aria-haspopup="dialog" aria-controls="ai-panel">\n'
+        '        跟我聊兩句（{nq} 個當日問題已備好）→\n'
+        '      </button>\n'
+        '      <span class="ai-cta-note">完整解讀請點右下角頭像，開啟對話視窗</span>\n'
+        '    </div>\n'
+        '\n'
+        '    <p class="ai-src"><b>這個角色與這些文字是怎麼來的：</b>'
         '「{who}」是 <b>AI 生成的虛擬角色</b>，也就是本站標示的<b>{lbl}</b>；不是真人。'
-        '本區塊文字由 <code>scripts/analyst.py</code> 於每日自動更新時，'
+        '入口條與對話視窗的文字皆由 <code>scripts/analyst.py</code> 於每日自動更新時，'
         '依當日自證交所實際抓取的數字，以<b>固定規則</b>產生'
         '（無隨機成分、無寫死的市場數字；同一份資料重跑會得到完全相同的文字）。'
-        '氛圍分數的四個分項與權重皆列於上方供複核。'
-        '資料日期 <b>{ad}</b>。</p>\n'
+        '氛圍分數的四個分項與權重皆列於上方供複核。資料日期 <b>{ad}</b>。</p>\n'
         '  </section>'.format(
             tk=a["tier_key"], tl=a["tier_label"],
             mv="{:.1f}".format(a["mood"]), mw="{:.1f}".format(a["mood"]),
-            quote=quote, li=li_html, warns=warns, who=CHARACTER,
-            lbl=ROLE_LABEL, ad=esc(ad))
+            quote=f["quote"], li=li_html, warns=warns, who=CHARACTER,
+            lbl=ROLE_LABEL, nq=len(QUICK_REPLIES), ad=esc(ad))
     )
 
 
 def build(cfg: dict, *, f0, f2, pct, pts, esc) -> str:
-    """對外主入口：回傳 SNAP:AIANALYST 的區塊內容。"""
+    """對外主入口：回傳 SNAP:AIANALYST 的區塊內容（精簡入口條）。"""
     return render_html(analyze(cfg), ad=cfg["date"],
                        f0=f0, f2=f2, pct=pct, pts=pts, esc=esc)
+
+
+# --------------------------------------------------------------------------
+# 版面：右下角浮動按鈕 ＋ 聊天彈窗（SNAP:AI_CHAT）
+# --------------------------------------------------------------------------
+def build_chat_ui() -> str:
+    """回傳浮動按鈕與聊天彈窗外框（SNAP:AI_CHAT 區塊內容）。
+
+    外框為靜態骨架；訊息內容全部由前端依 SNAP:AI_CHAT_DATA 的當日資料產生。
+    角色名稱與標籤一律取自單一常數，換標籤時不必改這個函式。
+    """
+    return (
+        '<div class="ai-fab-wrap">\n'
+        '  <button class="ai-fab" id="ai-fab" type="button"\n'
+        '          aria-label="開啟「{who}」對話視窗" aria-haspopup="dialog"\n'
+        '          aria-expanded="false" aria-controls="ai-panel">\n'
+        '    <img src="assets/yu_cheng_jun_avatar.png" width="56" height="56" alt=""\n'
+        '         aria-hidden="true" decoding="async">\n'
+        '    <span class="ai-fab-tx">宇程君</span>\n'
+        '  </button>\n'
+        '</div>\n'
+        '\n'
+        '<div class="ai-panel" id="ai-panel" role="dialog" aria-modal="true"\n'
+        '     aria-labelledby="ai-panel-t" hidden>\n'
+        '  <div class="ai-panel-head">\n'
+        '    <img class="ai-panel-av" src="assets/yu_cheng_jun_avatar.png" width="44" height="44"\n'
+        '         alt="" aria-hidden="true" decoding="async">\n'
+        '    <div class="ai-panel-id">\n'
+        '      <b id="ai-panel-t">{who}</b>\n'
+        '      <span class="ai-panel-role">{lbl}</span>\n'
+        '    </div>\n'
+        '    <button class="ai-panel-x" id="ai-panel-x" type="button" aria-label="關閉對話視窗">\n'
+        '      <span aria-hidden="true">✕</span>\n'
+        '    </button>\n'
+        '  </div>\n'
+        '\n'
+        '  <div class="ai-panel-log" id="ai-log" role="log" aria-live="polite"\n'
+        '       aria-relevant="additions text" aria-label="與宇程君的對話內容"></div>\n'
+        '\n'
+        '  <div class="ai-panel-quick" id="ai-quick" role="group" aria-label="常見問題"></div>\n'
+        '\n'
+        '  <form class="ai-panel-form" id="ai-form" autocomplete="off">\n'
+        '    <label class="sr-only" for="ai-in">輸入想問宇程君的問題</label>\n'
+        '    <input class="ai-in" id="ai-in" type="text" name="q" value=""\n'
+        '           placeholder="問我：大盤現在怎樣？" maxlength="120">\n'
+        '    <button class="ai-send" id="ai-send" type="submit">送出</button>\n'
+        '  </form>\n'
+        '\n'
+        '  <div class="ai-panel-foot">\n'
+        '    <p class="ai-panel-hon" id="ai-panel-hon"></p>\n'
+        '    <p class="ai-panel-disc" id="ai-panel-disc"></p>\n'
+        '  </div>\n'
+        '</div>'.format(who=CHARACTER, lbl=ROLE_LABEL)
+    )

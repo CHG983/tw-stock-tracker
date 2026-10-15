@@ -641,6 +641,145 @@
     .ai-id h2{font-size:15.5px;}
     .ai-av{width:58px;height:58px;}
   }
+
+  /* ---------- 宇程君：精簡入口條 ---------- */
+  .ai-strip .ai-av{width:72px;height:72px;}
+  .ai-points.is-compact li{font-size:13px;line-height:1.8;padding:10px 12px;}
+  .ai-mood-src{font-size:11px;line-height:1.55;color:var(--ink-2);}
+  .ai-not{color:#8a4f04;font-weight:660;}
+  .ai-cta-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0 0;}
+  .ai-open{
+    font-family:inherit;font-size:13px;font-weight:660;padding:10px 16px;
+    border-radius:9px;border:1px solid #1d4368;background:#2b6094;color:#fff;cursor:pointer;
+  }
+  .ai-open:hover{background:#1d4368;}
+  .ai-cta-note{font-size:12px;color:var(--ink-2);}
+
+  /* ---------- 宇程君：浮動按鈕 ＋ 聊天彈窗 ---------- */
+  .sr-only{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0 0 0 0);white-space:nowrap;border:0;
+  }
+  /* pointer-events:none 讓外框不攔截頁面操作；只有按鈕本體可點。 */
+  .ai-fab-wrap{
+    position:fixed;right:16px;bottom:16px;z-index:60;
+    display:flex;flex-direction:column;align-items:flex-end;gap:8px;pointer-events:none;
+  }
+  .ai-fab-hint{
+    pointer-events:auto;font-size:12px;font-weight:620;color:#2b6094;
+    background:#fff;border:1px solid #cddbea;border-radius:999px;padding:5px 11px;
+    box-shadow:0 4px 14px -6px rgba(20,48,79,.4);white-space:nowrap;
+  }
+  .ai-fab{
+    pointer-events:auto;width:62px;height:62px;border-radius:50%;padding:3px;
+    border:1px solid #cddbea;background:#fff;cursor:pointer;line-height:0;
+    box-shadow:0 8px 24px -8px rgba(20,48,79,.5);
+  }
+  .ai-fab:hover{border-color:#2b6094;}
+  .ai-fab img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
+
+  .ai-panel{
+    position:fixed;right:16px;bottom:92px;z-index:70;
+    width:min(392px, calc(100vw - 32px));
+    max-height:min(620px, calc(100vh - 128px));
+    display:flex;flex-direction:column;overflow:hidden;
+    background:#fff;border:1px solid #d7e2ee;border-radius:14px;
+    box-shadow:0 24px 60px -18px rgba(16,40,66,.45);
+  }
+  .ai-panel[hidden]{display:none;}
+  .ai-panel-head{
+    flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:11px 12px;
+    background:linear-gradient(160deg,#2b6094,#1d4368);color:#fff;
+  }
+  .ai-panel-av{
+    flex:0 0 auto;width:40px;height:40px;border-radius:50%;object-fit:cover;
+    border:2px solid rgba(255,255,255,.65);display:block;
+  }
+  .ai-panel-id{flex:1 1 auto;min-width:0;}
+  .ai-panel-id b{display:block;font-size:14px;line-height:1.35;font-weight:680;}
+  .ai-panel-role{display:block;font-size:11.5px;opacity:.94;margin-top:1px;}
+  .ai-panel-x{
+    flex:0 0 auto;width:32px;height:32px;padding:0;line-height:1;cursor:pointer;
+    border-radius:9px;border:1px solid rgba(255,255,255,.5);
+    background:rgba(255,255,255,.14);color:#fff;font-size:13px;font-family:inherit;
+  }
+  .ai-panel-x:hover{background:rgba(255,255,255,.28);}
+
+  .ai-panel-log{
+    flex:1 1 auto;min-height:120px;overflow-y:auto;overscroll-behavior:contain;
+    padding:13px 12px;display:flex;flex-direction:column;gap:9px;background:#f8fafc;
+  }
+  .ai-msg{display:flex;max-width:100%;}
+  .ai-msg.is-me{justify-content:flex-end;}
+  .ai-bub{
+    max-width:84%;padding:9px 12px;border-radius:13px;font-size:13px;line-height:1.75;
+    background:#fff;border:1px solid #e0e5ea;color:var(--ink);
+    box-shadow:0 1px 2px rgba(16,40,66,.05);overflow-wrap:anywhere;
+  }
+  .ai-msg.is-ai .ai-bub{border-bottom-left-radius:5px;}
+  .ai-msg.is-me .ai-bub{
+    background:#2b6094;border-color:#2b6094;color:#fff;border-bottom-right-radius:5px;
+  }
+  .ai-bub b{font-weight:660;}
+  .ai-msg.is-ai .ai-bub b{color:#1d4368;}
+  .ai-bub code{
+    font-family:var(--mono);font-size:11.5px;background:#f2f5f9;
+    border:1px solid #e0e5ea;border-radius:4px;padding:1px 4px;color:var(--ink-2);
+  }
+
+  .ai-panel-quick{
+    flex:0 0 auto;display:flex;flex-wrap:wrap;gap:6px;padding:9px 12px;
+    border-top:1px solid #eef1f4;background:#fff;max-height:104px;overflow-y:auto;
+  }
+  .ai-q{
+    font-family:inherit;font-size:12px;font-weight:600;padding:6px 11px;
+    border-radius:999px;border:1px solid #cddbea;background:#f2f7fc;color:#2b6094;cursor:pointer;
+  }
+  .ai-q:hover{background:#e4eefa;border-color:#2b6094;}
+
+  .ai-panel-form{
+    flex:0 0 auto;display:flex;gap:8px;padding:10px 12px;
+    border-top:1px solid #eef1f4;background:#fff;
+  }
+  .ai-in{
+    flex:1 1 auto;min-width:0;font-family:inherit;font-size:13px;padding:9px 11px;
+    border:1px solid #d7e2ee;border-radius:9px;color:var(--ink);background:#fff;
+  }
+  .ai-in:focus{outline:2px solid #2b6094;outline-offset:1px;border-color:#2b6094;}
+  .ai-send{
+    flex:0 0 auto;font-family:inherit;font-size:13px;font-weight:640;padding:9px 15px;
+    border-radius:9px;border:1px solid #1d4368;background:#2b6094;color:#fff;cursor:pointer;
+  }
+  .ai-send:hover{background:#1d4368;}
+
+  .ai-panel-foot{
+    flex:0 0 auto;padding:9px 12px 11px;border-top:1px solid #eef1f4;
+    background:#fbfcfe;max-height:132px;overflow-y:auto;
+  }
+  .ai-panel-hon{margin:0 0 5px;font-size:11.5px;line-height:1.65;color:#8a4f04;font-weight:600;}
+  .ai-panel-disc{margin:0;font-size:11px;line-height:1.7;color:var(--ink-2);}
+
+  /* 讓浮動按鈕落在頁尾留白區，不壓住最後一段文字。 */
+  main{padding-bottom:88px;}
+
+  @media (max-width:760px){
+    .ai-strip .ai-av{width:62px;height:62px;}
+    .ai-strip .ai-id h2{font-size:16.5px;}
+  }
+  @media (max-width:520px){
+    .ai-fab-wrap{right:12px;bottom:12px;}
+    .ai-panel{
+      left:0;right:0;bottom:0;width:auto;
+      max-height:calc(100vh - 10px);border-radius:14px 14px 0 0;border-bottom:0;
+    }
+    .ai-fab-hint{display:none;}
+    .ai-bub{max-width:88%;}
+  }
+  @media (max-width:400px){
+    .ai-strip .ai-av{width:56px;height:56px;}
+    .ai-strip .ai-id h2{font-size:15px;}
+    .ai-cta-note{font-size:11.5px;}
+  }
 </style>
 </head>
 <body>
@@ -759,9 +898,9 @@
   <!-- ================= 宇程君（韭齡多年的虛擬分析失）每日市場評論 =================
        內容由 scripts/analyst.py 依當日證交所實際資料、以固定規則自動產生；
        無隨機成分、無寫死的市場數字 → 每日快照更新時文字會跟著變。 -->
-  <!--SNAP:AIANALYST--><section class="card ai-card" aria-labelledby="ai-t">
+  <!--SNAP:AIANALYST--><section class="card ai-card ai-strip" aria-labelledby="ai-t">
     <div class="ai-head">
-      <img class="ai-av" src="assets/yu_cheng_jun_avatar.png" width="88" height="88"
+      <img class="ai-av" src="assets/yu_cheng_jun_avatar.png" width="72" height="72"
            alt="「韭經考驗的台股戰士-宇程君」角色頭像（AI 生成虛擬角色）" decoding="async">
       <div class="ai-id">
         <h2 id="ai-t">韭經考驗的台股戰士-宇程君</h2>
@@ -777,6 +916,7 @@
         <b class="ai-mood-v">冷到結霜</b>
         <span class="ai-mood-meter" role="img" aria-label="市場氛圍分數 23.8 分，滿分 100 分"><i style="width:23.8%"></i></span>
         <span class="ai-mood-n num">23.8 / 100</span>
+        <span class="ai-mood-src">啟發式分數（權重 35/30/20/15）・<span class="ai-not">不是</span>市場共識或預測值</span>
       </div>
     </div>
 
@@ -785,19 +925,70 @@
       <cite>— 宇程君（韭齡多年的虛擬分析失）</cite>
     </blockquote>
 
-    <ul class="ai-points">
+    <ul class="ai-points is-compact">
       <li><b class="lb">大盤力道</b> 加權指數收 <b>46,969.87</b> 點（−1,655.96 點／<b>−3.41%</b>）；上市股票 <b>200</b> 家上漲（含漲停 4 家）、<b>805</b> 家下跌（含跌停 21 家）、<b>72</b> 家持平，上漲家數占 <b>18.6%</b>。全市場（含 ETF、權證等）漲停 10 家、跌停 186 家，集中市場成交金額 <b>14,357.55</b> 億元。</li>
       <li><b class="lb">均線與交叉</b> 收盤 <b>46,969.87</b> 點位於 MA5（48,510.48）<b>之下</b>、MA20（48,041.24）<b>之下</b>，排列為 <b>均線糾結（多空未明）</b>；近期歷史區間內最近一次均線交叉為 <b>2026/09/21 的黃金交叉（當日收 47,718.84 點）</b>（全期共 12 筆，走勢圖 60 日區間內 3 筆）。</li>
       <li><b class="lb">台積電 2330</b> 收 <b>2,440.00</b> 元（−50.00 元／−2.01%），成交量 <b>58,487</b> 張、成交金額 <b>1,426.30</b> 億元，表現較大盤<b>強</b> 1.40 個百分點。</li>
-      <li><b class="lb">族群與個股</b> 漲幅榜首 <b>2380 虹光</b>（+9.94%，收 17.15 元），漲幅前十名中以 <b>電子（其他）</b> 共 <b>4</b> 檔最多；跌幅榜首 <b>1710 東聯</b>（−10.00%，收 18.00 元），跌幅前十名中以 <b>電子（其他）</b> 共 <b>4</b> 檔最多。族群歸類係<b>依股票代號區間粗略判定</b>，非證交所官方產業別。</li>
-      <li><b class="lb">成交量能</b> 最近交易日成交金額為前 20 個交易日均量的 <b>156.1%</b>（量能放大）；指數 下跌 配合量能變化，屬 <b class="down">價跌量增，賣壓相對沉重</b>。（量能比較採走勢圖同一 FMTQIK 序列，避免跨端點單位差異。）</li>
-      <li><b class="lb">氛圍計分（可複核）</b> 指數漲跌 <b>0</b>／100（權重 35%）＋漲跌家數比 <b>0</b>／100（30%）＋量能變化 <b>100</b>／100（20%）＋均線排列 <b>25</b>／100（15%）＝ 合計 <b>23.8</b> 分，對應等級「<b>冷到結霜</b>」。此為本頁自訂的啟發式分數，<b>不是</b>市場共識、機率或預測值。</li>
+      <li><b class="lb">族群與量能</b> 漲幅榜首 <b>2380 虹光</b>（+9.94%，收 17.15 元），漲幅前十名中以 <b>電子（其他）</b> 共 <b>4</b> 檔最多；跌幅榜首 <b>1710 東聯</b>（−10.00%，收 18.00 元），跌幅前十名中以 <b>電子（其他）</b> 共 <b>4</b> 檔最多。最近交易日成交金額為前 20 個交易日均量的 <b>156.1%</b>（量能放大）；指數 下跌 配合量能變化，屬 <b class="down">價跌量增，賣壓相對沉重</b>。（量能比較採走勢圖同一 FMTQIK 序列，避免跨端點單位差異。）族群歸類係<b>依股票代號區間粗略判定</b>，非證交所官方產業別。</li>
     </ul>
 
     <p class="ai-risk"><b>宇程君碎念：</b>市場氛圍偏冷，弱勢股容易持續破底，不宜任意攤平；今日有 21 檔跌停，賣壓相對集中；MA5 高於 MA20，中期均線結構偏多（均線皆為落後指標）；成交金額明顯放大，短線換手激烈。我這輩子被套的次數比看對的次數多得多，所以我的每一句話都請當成「參考」，不要當成「指令」。</p>
 
-    <p class="ai-src"><b>這個角色與這段文字是怎麼來的：</b>「韭經考驗的台股戰士-宇程君」是 <b>AI 生成的虛擬角色</b>，也就是本站標示的<b>韭齡多年的虛擬分析失</b>；不是真人。本區塊文字由 <code>scripts/analyst.py</code> 於每日自動更新時，依當日自證交所實際抓取的數字，以<b>固定規則</b>產生（無隨機成分、無寫死的市場數字；同一份資料重跑會得到完全相同的文字）。氛圍分數的四個分項與權重皆列於上方供複核。資料日期 <b>2026/10/15</b>。</p>
+    <div class="ai-cta-row">
+      <button class="ai-open" id="ai-open" type="button" aria-haspopup="dialog" aria-controls="ai-panel">
+        跟我聊兩句（5 個當日問題已備好）→
+      </button>
+      <span class="ai-cta-note">完整解讀請點右下角頭像，開啟對話視窗</span>
+    </div>
+
+    <p class="ai-src"><b>這個角色與這些文字是怎麼來的：</b>「韭經考驗的台股戰士-宇程君」是 <b>AI 生成的虛擬角色</b>，也就是本站標示的<b>韭齡多年的虛擬分析失</b>；不是真人。入口條與對話視窗的文字皆由 <code>scripts/analyst.py</code> 於每日自動更新時，依當日自證交所實際抓取的數字，以<b>固定規則</b>產生（無隨機成分、無寫死的市場數字；同一份資料重跑會得到完全相同的文字）。氛圍分數的四個分項與權重皆列於上方供複核。資料日期 <b>2026/10/15</b>。</p>
   </section><!--/SNAP:AIANALYST-->
+
+  <!--SNAP:AI_CHAT--><div class="ai-fab-wrap">
+  <button class="ai-fab" id="ai-fab" type="button"
+          aria-label="開啟「韭經考驗的台股戰士-宇程君」對話視窗" aria-haspopup="dialog"
+          aria-expanded="false" aria-controls="ai-panel">
+    <img src="assets/yu_cheng_jun_avatar.png" width="56" height="56" alt=""
+         aria-hidden="true" decoding="async">
+    <span class="ai-fab-tx">宇程君</span>
+  </button>
+</div>
+
+<div class="ai-panel" id="ai-panel" role="dialog" aria-modal="true"
+     aria-labelledby="ai-panel-t" hidden>
+  <div class="ai-panel-head">
+    <img class="ai-panel-av" src="assets/yu_cheng_jun_avatar.png" width="44" height="44"
+         alt="" aria-hidden="true" decoding="async">
+    <div class="ai-panel-id">
+      <b id="ai-panel-t">韭經考驗的台股戰士-宇程君</b>
+      <span class="ai-panel-role">韭齡多年的虛擬分析失</span>
+    </div>
+    <button class="ai-panel-x" id="ai-panel-x" type="button" aria-label="關閉對話視窗">
+      <span aria-hidden="true">✕</span>
+    </button>
+  </div>
+
+  <div class="ai-panel-log" id="ai-log" role="log" aria-live="polite"
+       aria-relevant="additions text" aria-label="與宇程君的對話內容"></div>
+
+  <div class="ai-panel-quick" id="ai-quick" role="group" aria-label="常見問題"></div>
+
+  <form class="ai-panel-form" id="ai-form" autocomplete="off">
+    <label class="sr-only" for="ai-in">輸入想問宇程君的問題</label>
+    <input class="ai-in" id="ai-in" type="text" name="q" value=""
+           placeholder="問我：大盤現在怎樣？" maxlength="120">
+    <button class="ai-send" id="ai-send" type="submit">送出</button>
+  </form>
+
+  <div class="ai-panel-foot">
+    <p class="ai-panel-hon" id="ai-panel-hon"></p>
+    <p class="ai-panel-disc" id="ai-panel-disc"></p>
+  </div>
+</div><!--/SNAP:AI_CHAT-->
+
+  <script>
+  /*SNAP:AI_CHAT_DATA*/var AI_CHAT_DATA={"character":"韭經考驗的台股戰士-宇程君","data_date":"2026/10/15","disclaimer":"本對話所有內容僅供資訊參考，不構成任何投資建議、要約或推薦。數字取自臺灣證券交易所公開資料，可能因交易所更正、延遲或傳輸因素而與實際情形有差異，投資人應以臺灣證券交易所及公開資訊觀測站公告為準。","fallback":"這題我聽不太懂，我只有小學畢業的選股智慧，別考我太難的。你可以試著問我：大盤現在怎樣？、台積電 2330 均線怎麼看？、今天漲幅排行有什麼？、今天跌幅排行有什麼？、給我風險提醒。（我懂的關鍵字：大盤／指數、台積電／2330、均線／黃金交叉／死亡交叉、漲幅排行、跌幅排行、成交量能、風險提醒、免責聲明。）","greeting":"我是「韭經考驗的台股戰士-宇程君」，韭齡多年的虛擬分析失。我不是真人，只會照著當日證交所的公開數字講話。<br><br>先給你今天的重點：今天加權指數收 46,969.87 點，−1,655.96 點（−3.41%）；上市股票 200 家上漲、805 家下跌，集中市場成交金額 14,357.55 億元。被套牢那麼多次，我最大的收穫是學會：不要在恐慌裡做決定。<br><br>你可以點下面的問題，或直接打字問我。","honesty":"宇程君是 AI 生成的虛擬角色（本頁標示為「韭齡多年的虛擬分析失」），不是真人。","numbers":{"amt":"14,357.55","chg":"−1,655.96","close":"46,969.87","down":"805","flat":"72","ma20":"48,041.24","ma5":"48,510.48","mood":"23.8","mood_label":"冷到結霜","pct":"−3.41%","tsmc":"2,440.00","up":"200"},"quick":[{"label":"大盤現在怎樣？","topic":"market"},{"label":"台積電 2330 均線怎麼看？","topic":"tsmc"},{"label":"今天漲幅排行有什麼？","topic":"gain"},{"label":"今天跌幅排行有什麼？","topic":"lose"},{"label":"給我風險提醒","topic":"risk"}],"replies":{"disclaimer":"本對話所有內容僅供資訊參考，不構成任何投資建議、要約或推薦。數字取自臺灣證券交易所公開資料，可能因交易所更正、延遲或傳輸因素而與實際情形有差異，投資人應以臺灣證券交易所及公開資訊觀測站公告為準。另外，宇程君是 AI 生成的虛擬角色（本頁標示為「韭齡多年的虛擬分析失」），不是真人。","gain":"漲幅前十名（母體為上市普通股，依收盤漲跌價差百分比由高至低）：1. <b>2380 虹光<\/b> +9.94%（收 17.15）；2. <b>2033 佳大<\/b> +9.90%（收 54.40）；3. <b>6269 台郡<\/b> +9.87%（收 74.60）；4. <b>2424 隴華<\/b> +9.65%（收 14.20）；5. <b>2429 銘旺科<\/b> +9.30%（收 38.20）。族群上以 <b>電子（其他）<\/b>（共 4 檔）最多，此歸類係<b>依股票代號區間粗略判定<\/b>，非證交所官方產業別。","lose":"跌幅前十名（母體為上市普通股，依收盤漲跌價差百分比由低至高）：1. <b>1710 東聯<\/b> −10.00%（收 18.00）；2. <b>2360 致茂<\/b> −10.00%（收 2,025.00）；3. <b>3518 柏騰<\/b> −9.99%（收 41.45）；4. <b>6831 邁科<\/b> −9.98%（收 428.50）；5. <b>6515 穎崴<\/b> −9.97%（收 5,055.00）。族群上以 <b>電子（其他）<\/b>（共 4 檔）最多，此歸類係<b>依股票代號區間粗略判定<\/b>，非證交所官方產業別。","ma":"收盤 <b>46,969.87<\/b> 點位於 MA5（48,510.48）<b>之下<\/b>、MA20（48,041.24）<b>之下<\/b>，排列為 <b>均線糾結（多空未明）<\/b>；近期歷史區間內最近一次均線交叉為 <b>2026/09/21 的黃金交叉（當日收 47,718.84 點）<\/b>（全期共 12 筆，走勢圖 60 日區間內 3 筆）。均線是落後指標，盤整時容易反覆交叉產生假訊號。","market":"加權指數收 <b>46,969.87<\/b> 點（−1,655.96 點／<b>−3.41%<\/b>）；上市股票 <b>200<\/b> 家上漲（含漲停 4 家）、<b>805<\/b> 家下跌（含跌停 21 家）、<b>72<\/b> 家持平，上漲家數占 <b>18.6%<\/b>。全市場（含 ETF、權證等）漲停 10 家、跌停 186 家，集中市場成交金額 <b>14,357.55<\/b> 億元。被套牢那麼多次，我最大的收穫是學會：不要在恐慌裡做決定。","mood":"指數漲跌 <b>0<\/b>／100（權重 35%）＋漲跌家數比 <b>0<\/b>／100（30%）＋量能變化 <b>100<\/b>／100（20%）＋均線排列 <b>25<\/b>／100（15%）＝ 合計 <b>23.8<\/b> 分，對應等級「<b>冷到結霜<\/b>」。此為本頁自訂的啟發式分數，<b>不是<\/b>市場共識、機率或預測值。","risk":"<b>宇程君碎念：<\/b>市場氛圍偏冷，弱勢股容易持續破底，不宜任意攤平；今日有 21 檔跌停，賣壓相對集中；MA5 高於 MA20，中期均線結構偏多（均線皆為落後指標）；成交金額明顯放大，短線換手激烈。我這輩子被套的次數比看對的次數多得多，所以我的每一句話都請當成「參考」，不要當成「指令」。","tsmc":"台積電 2330 收 <b>2,440.00<\/b> 元（−50.00 元／−2.01%），成交量 <b>58,487<\/b> 張、成交金額 <b>1,426.30<\/b> 億元，表現較大盤<b>強<\/b> 1.40 個百分點。把它跟大盤放一起看：收盤 <b>46,969.87<\/b> 點位於 MA5（48,510.48）<b>之下<\/b>、MA20（48,041.24）<b>之下<\/b>，排列為 <b>均線糾結（多空未明）<\/b>；近期歷史區間內最近一次均線交叉為 <b>2026/09/21 的黃金交叉（當日收 47,718.84 點）<\/b>（全期共 12 筆，走勢圖 60 日區間內 3 筆）。","volume":"最近交易日成交金額為前 20 個交易日均量的 <b>156.1%<\/b>（量能放大）；指數 下跌 配合量能變化，屬 <b class=\"down\">價跌量增，賣壓相對沉重<\/b>。（量能比較採走勢圖同一 FMTQIK 序列，避免跨端點單位差異。）"},"role_label":"韭齡多年的虛擬分析失","source_note":"本對話內容由 <code>scripts/analyst.py<\/code> 於每日自動更新時，依當日自證交所實際抓取的數字，以<b>固定規則<\/b>產生（無隨機成分、無寫死的市場數字）。資料日期 2026/10/15。"};/*SNAP:/AI_CHAT_DATA*/
+  </script>
 
   <!-- ================= 走勢圖 ================= -->
   <section class="card" aria-labelledby="ch-t">
@@ -1751,6 +1942,157 @@
     timer = setTimeout(function(){ if(!document.hidden) refresh(); else schedule(); }, AUTO_MS);
   }
 
+  /* ---------------------------------------------------------------
+     宇程君：對話視窗（右下角浮動按鈕 ＋ 彈窗）
+     - 所有回覆文字來自 SNAP:AI_CHAT_DATA 的當日資料，不在前端硬寫內容。
+     - 關鍵字比對在前端重做一次（與 analyst.match_topic 相同的規則順序），
+       只決定要用哪一個已備妥的答案，不會產生新的數字。
+     --------------------------------------------------------------- */
+  var CHAT = (function(){
+    var KEYS = [
+      ['disclaimer', ['免責','投資建議','風險聲明','聲明','disclaimer','法律']],
+      ['risk',       ['風險','停損','注意','提醒','小心','危險']],
+      ['tsmc',       ['2330','台積電','台積','護國神山','tsmc']],
+      ['gain',       ['漲幅','漲停','最強','紅盤','上漲排行']],
+      ['lose',       ['跌幅','跌停','最弱','綠盤','下跌排行']],
+      ['volume',     ['成交量','成交金額','量能','量縮','量增']],
+      ['ma',         ['均線','ma5','ma20','黃金交叉','死亡交叉','交叉','月線']],
+      ['mood',       ['氛圍','情緒','氣氛','分數','指標']],
+      ['market',     ['大盤','指數','加權','行情','盤勢','今天','現在','概況']]
+    ];
+    var D = null, panel, fab, log, quick, input, form, opener, lastFocus = null;
+
+    function el(id){ return document.getElementById(id); }
+
+    function load(){
+      var o = (typeof AI_CHAT_DATA !== 'undefined') ? AI_CHAT_DATA : null;
+      return (o && o.replies && o.character) ? o : null;
+    }
+
+    function match(text){
+      var s = String(text || '').trim().toLowerCase();
+      if(!s) return null;
+      for(var i = 0; i < KEYS.length; i++){
+        var ws = KEYS[i][1];
+        for(var j = 0; j < ws.length; j++){ if(s.indexOf(ws[j]) !== -1) return KEYS[i][0]; }
+      }
+      return null;
+    }
+
+    function bubble(who, html){
+      var row = document.createElement('div');
+      row.className = 'ai-msg ' + (who === 'me' ? 'is-me' : 'is-ai');
+      var b = document.createElement('div');
+      b.className = 'ai-bub';
+      b.innerHTML = html;
+      row.appendChild(b);
+      log.appendChild(row);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function ask(text, topic){
+      bubble('me', esc(text));
+      var t = topic || match(text);
+      bubble('ai', (t && D.replies[t]) ? D.replies[t] : D.fallback);
+    }
+
+    function isOpen(){ return !!panel && !panel.hidden; }
+
+    function open(){
+      if(!panel || isOpen()) return;
+      lastFocus = document.activeElement;
+      panel.hidden = false;
+      fab.setAttribute('aria-expanded', 'true');
+      if(input) input.focus();
+    }
+
+    function close(){
+      if(!panel || !isOpen()) return;
+      panel.hidden = true;
+      fab.setAttribute('aria-expanded', 'false');
+      var back = (lastFocus && document.contains(lastFocus)) ? lastFocus : fab;
+      if(back && back.focus) back.focus();
+      lastFocus = null;
+    }
+
+    function init(){
+      D = load();
+      panel = el('ai-panel'); fab = el('ai-fab'); log = el('ai-log');
+      quick = el('ai-quick'); input = el('ai-in'); form = el('ai-form');
+      opener = el('ai-open');
+
+      /* 資料不存在（建置異常或被無 JS 環境載入）→ 收掉入口，不留壞掉的 UI。 */
+      if(!D || !panel || !fab || !log || !form){
+        if(fab && fab.parentNode) fab.parentNode.style.display = 'none';
+        if(panel) panel.hidden = true;
+        return;
+      }
+
+      var t = el('ai-panel-t'), r = el('ai-panel-role');
+      if(t) t.textContent = D.character;
+      if(r) r.textContent = D.role_label;
+      var hon = el('ai-panel-hon'), disc = el('ai-panel-disc');
+      if(hon) hon.innerHTML = '<b>角色說明：</b>' + D.honesty;
+      if(disc) disc.innerHTML = '<b>免責聲明：</b>' + D.disclaimer;
+      if(fab) fab.setAttribute('aria-label', '開啟「' + D.character + '」對話視窗');
+
+      bubble('ai', D.greeting);
+
+      var qs = D.quick || [];
+      for(var i = 0; i < qs.length; i++){
+        (function(item){
+          var b = document.createElement('button');
+          b.type = 'button'; b.className = 'ai-q';
+          b.textContent = item.label;
+          b.addEventListener('click', function(){ ask(item.label, item.topic); });
+          quick.appendChild(b);
+        })(qs[i]);
+      }
+
+      form.addEventListener('submit', function(ev){
+        ev.preventDefault();
+        var v = input.value;
+        if(!String(v).trim()) return;
+        input.value = '';
+        ask(v, null);
+      });
+
+      fab.addEventListener('click', function(){ if(isOpen()) close(); else open(); });
+      var bx = el('ai-panel-x');
+      if(bx) bx.addEventListener('click', close);
+      if(opener) opener.addEventListener('click', function(){ open(); });
+
+      /* Esc 關閉 */
+      document.addEventListener('keydown', function(ev){
+        if((ev.key === 'Escape' || ev.keyCode === 27) && isOpen()){
+          ev.preventDefault(); close();
+        }
+      });
+
+      /* Tab 在彈窗內循環（aria-modal="true" 的行為要求） */
+      panel.addEventListener('keydown', function(ev){
+        if(ev.key !== 'Tab') return;
+        var all = panel.querySelectorAll('button,input,[href],[tabindex]:not([tabindex="-1"])');
+        var list = [], i;
+        for(i = 0; i < all.length; i++){ if(!all[i].disabled) list.push(all[i]); }
+        if(!list.length) return;
+        var first = list[0], last = list[list.length - 1];
+        if(ev.shiftKey && document.activeElement === first){ ev.preventDefault(); last.focus(); }
+        else if(!ev.shiftKey && document.activeElement === last){ ev.preventDefault(); first.focus(); }
+      });
+
+      /* 點彈窗外部關閉（僅桌機；手機為貼底滿寬彈窗，點外不易發生） */
+      document.addEventListener('click', function(ev){
+        if(!isOpen() || window.innerWidth <= 520) return;
+        var n = ev.target;
+        while(n){ if(n === panel || n === fab || n === opener) return; n = n.parentNode; }
+        close();
+      });
+    }
+
+    return { init: init, open: open, close: close, match: match };
+  })();
+
   /* ---------- wiring ---------- */
   var br = $('btn-refresh');
   if(br) br.addEventListener('click', function(){ refresh(); });
@@ -1768,6 +2110,8 @@
 
   setBadge();
   /*SNAP:JS_STATINIT*/setStatus('', '<span id="status-text">目前顯示 <b>靜態快照</b>（內建，2026/10/15 13:30 收盤）— 點右上角「重新整理」取得最新報價</span>');/*SNAP:/JS_STATINIT*/
+
+  CHAT.init();
 
   setTimeout(function(){ refresh(); }, 1200);
 })();
