@@ -1,5 +1,5 @@
 {
-  "captured_at_taipei": "2026/10/15 14:02:26",
+  "captured_at_taipei": "2026/10/15 19:05:41",
   "data_date": "2026/10/15",
   "files": {
     "fmtqik/202505.json": {
@@ -139,7 +139,7 @@
       "path": "/rwd/zh/afterTrading/FMTQIK"
     },
     "fmtqik/202610.json": {
-      "bytes": 1287,
+      "bytes": 1374,
       "params": {
         "date": "20261001",
         "response": "json"
@@ -154,7 +154,7 @@
       "path": "/rwd/zh/TAIEX/MI_5MINS_HIST"
     },
     "mi_index_ms.json": {
-      "bytes": 1566,
+      "bytes": 1738,
       "params": {
         "date": "20261015",
         "response": "json",
@@ -163,7 +163,7 @@
       "path": "/rwd/zh/afterTrading/MI_INDEX"
     },
     "stock_day_all.csv": {
-      "bytes": 137949,
+      "bytes": 138393,
       "params": {
         "response": "json"
       },

@@ -34,6 +34,8 @@ import urllib.error
 import urllib.request
 from datetime import date, datetime, timedelta, timezone
 
+import analyst
+
 # --------------------------------------------------------------------------
 # 常數：座標系統完全沿用 v5（viewBox 0 0 1000 420，60 點等距）
 # --------------------------------------------------------------------------
@@ -942,6 +944,12 @@ def build_regions(cfg: dict) -> dict[str, str]:
     R["HTML_STATUS"] = (f'<span id="status-text">目前顯示 <b>靜態快照</b>（內建，{ad} 13:30 收盤）'
                         f'— 點右上角「重新整理」取得最新報價</span>')
     R["HTML_LASTUPD"] = (f'<b class="upd" id="last-updated">{cfg["fetched"]}</b>')
+    # --- 宇程君（AI 角色評論）--------------------------------------------------
+    # 由 scripts/analyst.py 依當日實際抓到的資料，以固定規則（門檻判斷＋模板）產生。
+    # 無隨機成分、無時間相依、無寫死的市場數字 → 同一份資料重跑文字逐字元相同。
+    # 角色為 AI 生成，非真人分析師，非投資建議（頁面區塊內已明示）。
+    R["AIANALYST"] = analyst.build(cfg, f0=f0, f2=f2, pct=pct, pts=pts, esc=esc)
+
     R["JS_SNAPAT"] = f"var SNAPSHOT_AT = '{cfg['fetched']}';"
     R["JS_STATINIT"] = f"setStatus('', '{R['HTML_STATUS']}');"
     return R

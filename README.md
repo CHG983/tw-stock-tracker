@@ -32,7 +32,10 @@ https://<你的帳號>.github.io/tw-stock-tracker/
 │   ├── v5/index.html       # v5：+ MA5／MA20 黃金交叉／死亡交叉標示
 │   └── v6/index.html       # v6：+ 每日自動更新快照（與根目錄 index.html 同內容）
 ├── scripts/
-│   └── update_snapshot.py  # 抓取 TWSE 公開資料並重寫 index.html 的內建快照
+│   ├── update_snapshot.py  # 抓取 TWSE 公開資料並重寫 index.html 的內建快照
+│   └── analyst.py          # 「韭經考驗的台股戰士-宇程君」每日 AI 角色評論產生器
+├── assets/
+│   └── yu_cheng_jun_avatar.png  # 宇程君角色頭像（AI 生成插圖，隨 repo 版控）
 ├── tests/
 │   ├── fixtures/           # 從 TWSE 實際擷取的原始回應樣本（讓測試可離線重播）
 │   ├── capture_fixtures.py # 重新擷取樣本（只連網一次，手動執行）
@@ -229,7 +232,7 @@ python3 -m unittest tests.test_update_snapshot.TestVerifyOutputGuards -v  # 只�
 
 | 情境 | 驗證重點 |
 |---|---|
-| **正常交易日** | 24 組 SNAP 區塊全部由本次資料重建（以哨兵字串證明）、輸出含 `<svg>` wrapper／折線／量柱／交叉標記、數字與樣本逐一相符 |
+| **正常交易日** | 25 組 SNAP 區塊全部由本次資料重建（以哨兵字串證明）、輸出含 `<svg>` wrapper／折線／量柱／交叉標記、數字與樣本逐一相符 |
 | **非交易日／假日** | 資料未變 → `CHANGED=0`、**不寫檔**、檔案位元組不變、時間戳沿用 |
 | **缺資料** | 任一端點空陣列／null／缺欄位／HTTP 500／timeout／空回應／HTML 錯誤頁 → **非 0 結束且原檔位元組完全不變**，且不留暫存檔 |
 | **資料格式異常** | 千分位逗號、空字串、`--`、Unicode 負號、非數字、HTML 標籤、欄位數不足、除以零 → 個股層級「排除」而非崩潰；**單一壞列不得讓整支程式失敗**（`TestToleratedMalformedRows`） |
@@ -240,6 +243,7 @@ python3 -m unittest tests.test_update_snapshot.TestVerifyOutputGuards -v  # 只�
 | **寫檔前閘門** | `verify_output()` 的每一條防護分支都必須真的 raise：空白區塊、`idx-val`／`kpi-amt` 非數字、輸出含 `None`／`undefined`／`{{`、區塊過短、未閉合 HTML 註解、`<script>` 內出現 HTML marker、SVG 缺 wrapper／`role="img"`／`viewBox`／`<title>`／`area-f`／`line-ma20`／`cx-dot`／`v-down`（`TestVerifyOutputGuards`） |
 | **純函式邊界** | `n2()` 對空字串／`--`／`N/A`／`nan`／`None`／list／dict 皆回 `None`，對千分位／Unicode 負號／HTML 標籤／百分比／`0` 正確解析；`sma()` 窗口未滿回 `None`；`axis_layout()` 對全平序列仍能覆蓋；`vol_layout(0)` 不除以零；`_parse_cnt()` 處理缺值與 `1,234(56)` 格式（`TestHelperEdgeCases`） |
 | **故障注入無死碼** | 每個定義的故障注入都必須被至少一個測試引用（`test_no_unused_fault_names`），防止日後新增故障卻忘了接上測試 |
+| **宇程君角色文字** | 同一份 `cfg` 重跑必須逐位元組相同、且把時鐘移到隔天仍不得改變（證明無 `random`／`datetime.now` 相依）；改指數或改量能必須使文字改變（證明數字非寫死）；輸出必須含當日指數、漲跌家數、成交金額、MA5／MA20、交叉筆數、2330、漲跌幅榜首等真實數字；必須含「AI 生成角色／非真人分析師／非投資建議」等誠實標示（`TestAnalyst*`） |
 
 ### 重新擷取樣本
 
@@ -248,6 +252,46 @@ python3 -m unittest tests.test_update_snapshot.TestVerifyOutputGuards -v  # 只�
 ```bash
 python3 tests/capture_fixtures.py
 ```
+
+> ⚠️ **重要不變量：**`tests/fixtures/` 與版控中的 `index.html` 必須描述**同一個交易日**。
+> 整份測試套件預設「版控的 index.html 已是 fixtures 的重播結果」，因此
+> `clean_run()`（離線重播）跑完後必須**不改變檔案內容**（`CHANGED=0`）。
+> 若以**即時**資料（`python3 scripts/update_snapshot.py`）更新 index.html，
+> 卻沒有同時重新擷取 fixtures，那麼 fixtures 會停在較早的交易日，
+> 重播就會改寫頁面 —— 這會讓 `test_dry_run_never_writes`、
+> `test_force_meta_writes_timestamp_without_data_change` 與
+> `TestToleratedMalformedRows` 一併失敗（2026-10-15 實測即發生此情況）。
+> 正確順序：**先重擷取 fixtures → 再以 fixtures 重播產生 index.html → 最後跑測試**。
+>
+> ```bash
+> python3 tests/capture_fixtures.py          # 1) 更新樣本（連網）
+> python3 -c "                              # 2) 以樣本重播產生 index.html（離線）
+> import sys; sys.path.insert(0,'tests'); sys.path.insert(0,'scripts')
+> import _harness as H
+> with H.FakeAPI(): H.run_cli(['--file','index.html'])
+> "
+> python3 -m unittest discover -s tests -t .   # 3) 應為全綠
+> ```
+>
+> 正式站仍由 GitHub Actions 以**即時**資料每日更新 index.html（見 `update-snapshot.yml`），
+> 該流程與上面的樣本重播互不衝突：CI 在更新前先跑測試，測試永遠用樣本、不連網。
+
+---
+
+## 🎭 宇程君（AI 生成角色）
+
+頁面上的「韭經考驗的台股戰士-宇程君」是 **AI 生成的虛擬角色**，**不是真人、不是分析師**。
+
+- 每段文字由 `scripts/analyst.py` 於每日自動更新時，依當日自證交所實際抓到的數字，
+  以**固定規則（門檻判斷＋模板）**產生：**無隨機成分、無時間相依、無寫死的市場數字**。
+  同一份資料重跑必定得到逐字元相同的文字（由 `TestAnalystDeterminism` 守住）。
+- 引用內容包含：加權指數收盤與漲跌、成交金額、漲跌家數、MA5／MA20 與最近一次均線交叉、
+  台積電 2330、漲幅／跌幅榜首與族群分布、量能變化。
+- 頁面上的「市場氛圍分數（0–100）」是本頁**自訂的啟發式分數**，由四個分項加權而成
+  （指數漲跌 35%、漲跌家數比 30%、量能變化 20%、均線排列 15%）；四個分項值與權重
+  都直接顯示在頁面上供複核。它**不是**市場共識、不是機率、也不是預測值。
+- 族群歸類係**依股票代號區間粗略判定**，非證交所官方產業別（頁面已標示）。
+- 頭像為 AI 生成插圖，存於 `assets/yu_cheng_jun_avatar.png`，**不依賴任何外部圖片連結**。
 
 ---
 

@@ -702,15 +702,15 @@ class TestMalformedStockRows(unittest.TestCase):
 
 
 # ==========================================================================
-# 6. 正常交易日：24 組區塊全部更新、輸出結構完整
+# 6. 正常交易日：25 組區塊全部更新、輸出結構完整
 # ==========================================================================
 class TestNormalTradingDay(unittest.TestCase):
     def setUp(self):
         self.out = baseline_out()
 
-    # ---- 24 組 marker 全部由本次資料重建 ------------------------------
-    def test_all_24_regions_are_rewritten_from_live_data(self):
-        """把 24 個區塊內容全換成哨兵，重跑後哨兵必須全部消失。"""
+    # ---- 25 組 marker 全部由本次資料重建 ------------------------------
+    def test_all_25_regions_are_rewritten_from_live_data(self):
+        """把 25 個區塊內容全換成哨兵，重跑後哨兵必須全部消失。"""
         sentinel = "ZZ__STALE__ZZ"
         corrupted = H.repo_index_html()
         for name in sorted(H.EXPECTED_REGIONS):
@@ -729,10 +729,10 @@ class TestNormalTradingDay(unittest.TestCase):
         self.assertEqual(survivors, [], f"以下區塊未被更新：{survivors}")
         self.assertNotIn(sentinel, out)
 
-    def test_expected_region_set_is_24(self):
-        self.assertEqual(len(H.EXPECTED_REGIONS), 24)
+    def test_expected_region_set_is_25(self):
+        self.assertEqual(len(H.EXPECTED_REGIONS), 25)
 
-    def test_source_has_all_24_markers(self):
+    def test_source_has_all_25_markers(self):
         src = H.repo_index_html()
         for name in sorted(H.EXPECTED_REGIONS):
             self.assertIsNotNone(us._region_body(src, name), f"index.html 缺 marker {name}")
@@ -1798,6 +1798,187 @@ class TestHelperEdgeCases(unittest.TestCase):
         self.assertEqual(us.sgn(0), "flat")
         self.assertEqual(us.pts(None), "0.00")
         self.assertEqual(us.pct(None), "0.00%")
+
+
+# ==========================================================================
+# 16. 宇程君（AI 生成角色）每日評論：scripts/analyst.py
+# ==========================================================================
+# 這一組測試守住整個角色功能的核心承諾：**文字完全由當日資料決定**。
+# 若 analyst.py 偷讀了 datetime.now()、random、或任何寫死的市場數字，
+# 「同一份資料重跑文字必須逐字元相同」這條就會失敗 —— 而該條正是
+# 讓『資料未變 → CHANGED=0 → 不建立空 commit』得以成立的基礎。
+# ==========================================================================
+sys.path.insert(0, os.path.join(H.ROOT, "scripts"))
+import analyst  # noqa: E402
+
+
+def _analyst_cfg() -> dict:
+    """在樣本（fixtures）下取得真正的 cfg，再據以產生角色文字。"""
+    with H.FakeAPI():
+        return us.collect()
+
+
+def _analyst_html(cfg=None) -> str:
+    cfg = cfg if cfg is not None else _analyst_cfg()
+    return analyst.build(cfg, f0=us.f0, f2=us.f2, pct=us.pct,
+                         pts=us.pts, esc=us.esc)
+
+
+class TestAnalystDeterminism(unittest.TestCase):
+    """角色文字必須是資料的純函式（無隨機、無時鐘相依）。"""
+
+    def test_same_cfg_yields_byte_identical_output(self):
+        cfg = _analyst_cfg()
+        self.assertEqual(_analyst_html(cfg), _analyst_html(cfg),
+                         "同一份 cfg 重跑必須逐位元組相同（不可有隨機成分）")
+
+    def test_output_is_stable_across_a_real_clock_change(self):
+        """把時鐘移到隔天，文字仍須完全相同 —— 證明沒有讀 datetime.now()。"""
+        cfg = _analyst_cfg()
+        before = _analyst_html(cfg)
+        with H.freeze_now(H.ref_dt(23, 4, 5)):
+            after = _analyst_html(cfg)
+        self.assertEqual(before, after,
+                         "角色文字不得隨系統時間改變（僅能取決於資料）")
+
+    def test_no_market_numbers_are_hardcoded(self):
+        """改一個輸入值，輸出必須跟著變 —— 證明數字不是寫死的文案。"""
+        a = _analyst_html()
+        cfg = _analyst_cfg()
+        cfg["today_close"] = cfg["today_close"] + 500.0
+        b = _analyst_html(cfg)
+        self.assertNotEqual(a, b, "指數改了，角色文字必須跟著改")
+
+    def test_changed_volume_changes_the_verdict(self):
+        a = _analyst_html()
+        cfg = _analyst_cfg()
+        cfg["win"][-1]["amt"] = cfg["win"][-1]["amt"] * 0.5
+        b = _analyst_html(cfg)
+        self.assertNotEqual(a, b, "量能改了，角色文字必須跟著改")
+
+    def test_mood_score_is_bounded_and_labelled(self):
+        cfg = _analyst_cfg()
+        a = analyst.analyze(cfg)
+        self.assertGreaterEqual(a["mood"], 0.0)
+        self.assertLessEqual(a["mood"], 100.0)
+        self.assertIn(a["tier_key"], {"hot", "warm", "mid", "cool", "cold"})
+        self.assertTrue(a["tier_label"])
+
+    def test_mood_weights_sum_to_one(self):
+        self.assertAlmostEqual(sum(analyst.MOOD_WEIGHTS.values()), 1.0, places=9)
+
+    def test_all_tiers_have_catchphrases(self):
+        for _lo, key, _label in analyst.MOOD_TIERS:
+            self.assertTrue(analyst.CATCHPHRASES.get(key),
+                            f"氛圍等級 {key} 缺少口頭禪")
+
+
+class TestAnalystReferencesRealData(unittest.TestCase):
+    """輸出必須引用當日真實數字，而非泛泛之談。"""
+
+    def setUp(self):
+        self.cfg = _analyst_cfg()
+        self.html = _analyst_html(self.cfg)
+
+    def test_quotes_the_index_close_and_change(self):
+        self.assertIn(us.f2(self.cfg["today_close"]), self.html)
+        self.assertIn(us.pts(self.cfg["today_close"] - self.cfg["prev_close"]),
+                      self.html)
+
+    def test_quotes_breadth_and_turnover(self):
+        mkt = self.cfg["mkt"]
+        self.assertIn(us.f0(mkt["up"]), self.html)
+        self.assertIn(us.f0(mkt["down"]), self.html)
+        self.assertIn(us.f2(mkt["total_amt"] / 1e8), self.html)
+
+    def test_quotes_tsmc_2330(self):
+        self.assertIn(us.f2(self.cfg["tsmc"]["close"]), self.html)
+
+    def test_quotes_moving_averages_and_crossovers(self):
+        self.assertIn(us.f2(self.cfg["win_ma5"][-1]), self.html)
+        self.assertIn(us.f2(self.cfg["win_ma20"][-1]), self.html)
+        self.assertIn(str(len(self.cfg["crosses_all"])), self.html)
+
+    def test_quotes_top_gainer_and_loser(self):
+        g = self.cfg["gain"][0]
+        l = self.cfg["lose"][0]
+        self.assertIn(us.esc(g["code"]), self.html)
+        self.assertIn(us.esc(g["name"]), self.html)
+        self.assertIn(us.esc(l["code"]), self.html)
+        self.assertIn(us.esc(l["name"]), self.html)
+
+
+class TestAnalystHonesty(unittest.TestCase):
+    """角色必須誠實標示自己是 AI、非真人、非投資建議。"""
+
+    def setUp(self):
+        self.html = _analyst_html()
+
+    def test_states_ai_generated_and_not_a_person(self):
+        for phrase in ("AI 生成角色", "非真人分析師", "非投資建議"):
+            self.assertIn(phrase, self.html, f"缺少誠實標示：{phrase}")
+        self.assertIn("不是真人、不是分析師", self.html)
+
+    def test_discloses_how_text_is_generated(self):
+        self.assertIn("固定規則", self.html)
+        self.assertIn("無隨機成分", self.html)
+        self.assertIn("analyst.py", self.html)
+
+    def test_mood_is_labelled_heuristic_not_a_forecast(self):
+        self.assertIn("啟發式分數", self.html)
+        self.assertIn("不是", self.html)
+
+    def test_sector_classification_is_disclosed_as_approximate(self):
+        self.assertIn("依股票代號區間粗略判定", self.html)
+        self.assertIn("非證交所官方產業別", self.html)
+
+    def test_avatar_is_local_not_external(self):
+        self.assertIn('src="assets/yu_cheng_jun_avatar.png"', self.html)
+        self.assertNotIn("http://", self.html)
+        self.assertNotIn("https://", self.html)
+
+    def test_character_name_is_present(self):
+        self.assertIn(analyst.CHARACTER, self.html)
+
+
+class TestAnalystSectorMap(unittest.TestCase):
+    def test_sector_lookup_covers_common_codes(self):
+        self.assertIn("半導體", analyst.sector_of("2330"))
+        self.assertIn("金融", analyst.sector_of("2881"))
+        self.assertIn("航運", analyst.sector_of("2603"))
+        self.assertEqual(analyst.sector_of("9999"), "其他")
+
+    def test_sector_of_handles_garbage(self):
+        self.assertEqual(analyst.sector_of(""), "其他")
+        self.assertEqual(analyst.sector_of("ABC"), "其他")
+        self.assertEqual(analyst.sector_of(None), "其他")
+
+    def test_dominant_sector_is_deterministic(self):
+        recs = [{"code": "2330"}, {"code": "2317"}, {"code": "2603"}]
+        first = analyst.dominant_sector(recs)
+        for _ in range(5):
+            self.assertEqual(analyst.dominant_sector(recs), first)
+
+    def test_dominant_sector_on_empty(self):
+        self.assertEqual(analyst.dominant_sector([]), ("無", 0, 0))
+
+
+class TestAnalystBlockIsWiredIntoThePage(unittest.TestCase):
+    """角色區塊必須真的被注入 index.html，且頁尾 marker 完整。"""
+
+    def test_region_is_registered(self):
+        self.assertIn("AIANALYST", H.EXPECTED_REGIONS)
+
+    def test_rendered_page_contains_the_block(self):
+        body = region_body(baseline_out(), "AIANALYST")
+        self.assertIn(analyst.CHARACTER, body)
+        self.assertIn("assets/yu_cheng_jun_avatar.png", body)
+        self.assertIn("ai-card", body)
+
+    def test_avatar_asset_exists_in_repo(self):
+        p = os.path.join(H.ROOT, "assets", "yu_cheng_jun_avatar.png")
+        self.assertTrue(os.path.isfile(p), "角色頭像必須隨 repo 一起版控")
+        self.assertGreater(os.path.getsize(p), 2000)
 
 
 if __name__ == "__main__":
