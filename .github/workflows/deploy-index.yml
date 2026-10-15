@@ -1,0 +1,55 @@
+name: Deploy index.html from URL
+
+# 由具備寫入權限的人手動觸發：從指定的公開 URL 抓取新版的 index.html，
+# 驗證內容後 commit 回 main（GitHub Pages 會自動重新部署）。
+# 用途：部署單一檔案過大、無法透過 API 內嵌內容的版本。
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL of the new index.html to deploy"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-index
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch and validate
+        run: |
+          set -euo pipefail
+          curl -fsSL "${{ inputs.url }}" -o /tmp/new_index.html
+          size="$(wc -c < /tmp/new_index.html)"
+          echo "downloaded bytes: $size"
+          if [ "$size" -lt 200000 ]; then echo "::error::file too small ($size)"; exit 1; fi
+          if ! grep -q "fg-gauge-svg" /tmp/new_index.html; then echo "::error::Fear & Greed gauge missing"; exit 1; fi
+          if ! grep -q "FEAR & GREED\|恐懼貪婪" /tmp/new_index.html; then echo "::error::Fear & Greed heading missing"; exit 1; fi
+          echo "validation passed"
+
+      - name: Install and commit
+        run: |
+          set -euo pipefail
+          mkdir -p versions/v7
+          cp /tmp/new_index.html index.html
+          cp /tmp/new_index.html versions/v7/index.html
+          git config user.name  "Teamily Agent"
+          git config user.email "agent@teamily.ai"
+          git add index.html versions/v7/index.html
+          if git diff --cached --quiet; then
+            echo "no changes to commit"
+          else
+            git commit -m "feat: add Fear & Greed Index (恐懼貪婪指數) to dashboard"
+            git push
+          fi
+          echo "=== deployed index.html sha256 ==="
+          sha256sum index.html
