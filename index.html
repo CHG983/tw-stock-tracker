@@ -2345,8 +2345,9 @@
     function quoteHtml(it){
       if(it.close == null) return '<span class="nodata">無當日資料</span>';
       var d = dirOf(it.chg);
+      /* pct 於 payload 已是含 % 的字串（如 −2.01%），不可再補 % */
       return '<span class="' + d + '">' + esc(it.close) + '</span> ' +
-             '<span class="' + d + '">' + esc(it.pct) + '%</span>';
+             '<span class="' + d + '">' + esc(it.pct) + '</span>';
     }
 
     function detailHtml(it){
@@ -2356,7 +2357,7 @@
       var d = dirOf(it.chg);
       return '收盤 <b>' + esc(it.close) + '</b>／漲跌 <span class="' + d + '">' +
              esc(it.chg) + '</span>／幅度 <span class="' + d + '">' + esc(it.pct) +
-             '%</span>／成量 ' + esc(it.vol) + ' 張／成交金額 ' +
+             '</span>／成量 ' + esc(it.vol) + ' 張／成交金額 ' +
              esc(it.amt) + ' 億元';
     }
 

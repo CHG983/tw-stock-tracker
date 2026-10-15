@@ -2693,6 +2693,25 @@ class TestStockSearchAndIndustryFilter(unittest.TestCase):
         block = self.src[i:i + 7000]
         self.assertIn("code + ' ' + name + ' ' + industry", block)
 
+    def test_search_result_quote_has_no_double_percent(self):
+        """payload 的 pct 已含 %；前端若再補一次會出現 '−2.01%%'（實測踩到的缺陷）。"""
+        i = self.src.index("var FILTER = (function()")
+        block = self.src[i:i + 8000]
+        self.assertNotIn("esc(it.pct) + '%'", block)
+        self.assertIn("esc(it.pct) + '</span>'", block)
+        # payload 本身的 pct 必須是含 % 的字串，且負號為 U+2212（與頁面其他區塊一致）
+        m = re.search(r'var UNIVERSE_DATA=(\{.*?\});?/\*SNAP:/UNIVERSE_DATA\*/', self.out, re.S)
+        payload = json.loads(m.group(1))
+        seen = [r for r in payload["s"] if r[5]]
+        self.assertTrue(seen)
+        for r in seen:
+            self.assertTrue(r[5].endswith("%"), r[5])
+            self.assertEqual(r[5].count("%"), 1, r[5])
+        negs = [r for r in seen if r[5].startswith("\u2212")]
+        self.assertTrue(negs, "應有負向個股以驗證負號字元")
+        for r in negs:
+            self.assertNotIn("-", r[5], "負號必須是 U+2212，不是 ASCII hyphen")
+
     def test_search_shows_no_data_instead_of_fabricating(self):
         """取不到當日報價時必須顯示「無當日資料」，不得編造數字。"""
         i = self.src.index("var FILTER = (function()")
