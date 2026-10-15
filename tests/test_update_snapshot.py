@@ -732,10 +732,10 @@ class TestNormalTradingDay(unittest.TestCase):
         self.assertEqual(survivors, [], f"以下區塊未被更新：{survivors}")
         self.assertNotIn(sentinel, out)
 
-    def test_expected_region_set_is_27(self):
-        self.assertEqual(len(H.EXPECTED_REGIONS), 27)
+    def test_expected_region_set_is_28(self):
+        self.assertEqual(len(H.EXPECTED_REGIONS), 28)
 
-    def test_source_has_all_27_markers(self):
+    def test_source_has_all_28_markers(self):
         src = H.repo_index_html()
         for name in sorted(H.EXPECTED_REGIONS):
             self.assertIsNotNone(us._region_body(src, name), f"index.html 缺 marker {name}")
@@ -2523,21 +2523,21 @@ class TestStockSearchAndIndustryFilter(unittest.TestCase):
     def test_filter_is_live_not_submit_based(self):
         """必須以 input/change 即時過濾，不得依賴送出鈕。"""
         i = self.src.index("var FILTER = (function()")
-        block = self.src[i:i + 2600]
+        block = self.src[i:i + 8000]
         self.assertIn("addEventListener('input'", block)
         self.assertIn("addEventListener('change'", block)
         self.assertNotIn("form", block.lower().replace("format", ""))
 
     def test_filter_covers_all_four_blocks(self):
         i = self.src.index("var FILTER = (function()")
-        block = self.src[i:i + 2600]
+        block = self.src[i:i + 8000]
         for el_id in ("list-gain", "list-lose", "list-tsmc", "rank-list"):
             self.assertIn(f"$('{el_id}')", block, f"篩選未涵蓋 {el_id}")
 
     def test_filter_has_empty_state_and_clear(self):
         i = self.src.index("var FILTER = (function()")
-        block = self.src[i:i + 2600]
-        self.assertIn("empty.hidden = shown !== 0", block, "空狀態切換邏輯缺失")
+        block = self.src[i:i + 8000]
+        self.assertIn("empty.hidden = n !== 0", block, "空狀態切換邏輯缺失")
         self.assertIn("sf-clear", block, "清除鈕未接線")
         self.assertIn("Escape", block, "Esc 清除未實作")
 
@@ -2594,7 +2594,7 @@ class TestStockSearchAndIndustryFilter(unittest.TestCase):
         """輸入產業名（如「半導體」）也要能找到該產業的股票 —— 排行列只顯示
         代號與名稱，產業別僅存在於 data-industry，故比對字串必須併入產業別。"""
         i = self.src.index("var FILTER = (function()")
-        block = self.src[i:i + 2600]
+        block = self.src[i:i + 8000]
         self.assertIn("(el.textContent || '') + ' ' + industry", block)
 
     def test_filter_ui_is_static_and_outside_snap_regions(self):
@@ -2613,36 +2613,100 @@ class TestStockSearchAndIndustryFilter(unittest.TestCase):
             self.assertIn("height:44px", self.src[i:i + 260], f"{sel} 觸控高度不足")
 
     def test_industry_note_is_honest_about_source(self):
-        """頁面必須說明產業來源；若為官方來源則不需『粗略』字樣。"""
-        self.assertIn("上市公司基本資料", self.src)
+        """產業歸類為粗略判定，頁面必須誠實標明非證交所官方產業別。"""
+        self.assertIn("粗略判定", self.src)
+        self.assertIn("非證交所官方產業別", self.src)
         self.assertIn("未分類", self.src)
 
-    # ---- 搜尋範圍誠實性（2026-10-15 除錯）----
-    def test_search_scope_is_stated_as_the_rendered_lists(self):
-        """搜尋只涵蓋頁面上已渲染的榜單列（漲幅／跌幅前十、2330、成交金額排行），
-        並非全市場 1,079 檔母體。文案必須誠實說明範圍，否則使用者輸入
-        「中華電信」「鴻海」等不在榜單的個股會得到 0 筆而誤以為網站壞掉。"""
-        self.assertIn("搜尋榜單中的代號或名稱", self.src, "placeholder 未說明搜尋範圍")
-        self.assertIn("在下方榜單中", self.src, "sr-only 標籤未說明搜尋範圍")
-        self.assertIn("搜尋與篩選僅涵蓋下方榜單已顯示的股票", self.src, "sf-note 未說明搜尋範圍")
+    # ---- 全市場搜尋（2026-10-16 擴充）----
+    def test_search_scope_is_stated_as_the_full_market(self):
+        """搜尋範圍已擴為全市場上市普通股，文案必須誠實說明，且不得再殘留
+        舊版「只涵蓋下方榜單」的誤導字樣。"""
+        self.assertIn("搜尋全市場代號或名稱", self.src, "placeholder 未說明全市場範圍")
+        self.assertIn("搜尋全市場上市普通股", self.src, "sr-only 標籤未說明全市場範圍")
+        self.assertIn("搜尋範圍為", self.src, "sf-note 未說明搜尋範圍")
+        self.assertIn("全市場上市普通股", self.src, "sf-note 未標明全市場")
+        # 舊版誤導文案必須完全消失
+        self.assertNotIn("搜尋榜單中的代號或名稱", self.src)
+        self.assertNotIn("在下方榜單中", self.src)
+        self.assertNotIn("搜尋與篩選僅涵蓋下方榜單已顯示的股票", self.src)
 
-    def test_empty_state_explains_scope_not_absence(self):
-        """空結果文案必須說明「不在榜單中」而非「該股不存在」，避免誤導。"""
+    def test_empty_state_is_clear_and_actionable(self):
+        """空結果文案必須清楚並提示下一步（換關鍵字或清除搜尋）。"""
         i = self.src.index('id="sf-empty"')
         block = self.src[i:i + 400]
-        self.assertIn("只涵蓋下方榜單已顯示的股票", block)
-        self.assertIn("並非該股不存在", block)
+        self.assertIn("找不到符合的股票", block)
+        self.assertIn("清除搜尋", block)
 
     def test_meta_count_labels_the_denominator_as_the_list(self):
-        """計數分母必須標明是「本頁榜單」而非全市場母體。"""
+        """未搜尋時，計數分母仍標明是「本頁榜單」。"""
         i = self.src.index("if(meta) meta.innerHTML")
-        self.assertIn("本頁榜單共", self.src[i:i + 200])
+        self.assertIn("本頁榜單共", self.src[i:i + 400])
 
-    def test_search_does_not_claim_full_market_coverage(self):
-        """搜尋 UI 不得再暗示涵蓋全市場（舊文案的誤導來源）。"""
-        i = self.src.index('class="stock-filter"')
-        block = self.src[i:i + 3000]
-        self.assertNotIn("以股票代號或名稱關鍵字搜尋，例如 2330、台積、鴻海、半導體", block)
+    def test_universe_payload_is_embedded_and_complete(self):
+        """UNIVERSE_DATA 必須內嵌於頁面，且涵蓋全市場上市普通股（含當日無成交者）。"""
+        m = re.search(r'var UNIVERSE_DATA=(\{.*?\});?/\*SNAP:/UNIVERSE_DATA\*/', self.out, re.S)
+        self.assertIsNotNone(m, "找不到 UNIVERSE_DATA")
+        payload = json.loads(m.group(1))
+        self.assertIn("inds", payload)
+        self.assertIn("s", payload)
+        self.assertGreaterEqual(len(payload["s"]), 1000, "universe 檔數過少")
+        # 每列：代號、名稱、產業索引、收盤、漲跌、幅度、量、額
+        for row in payload["s"]:
+            self.assertEqual(len(row), 8)
+            self.assertRegex(row[0], r"^\d{4}$")
+            self.assertIsInstance(row[2], int)
+            self.assertLess(row[2], len(payload["inds"]))
+        # 台積電必須在內，且產業為半導體業
+        ts = [r for r in payload["s"] if r[0] == "2330"]
+        self.assertEqual(len(ts), 1)
+        self.assertEqual(payload["inds"][ts[0][2]], "半導體業")
+
+    def test_universe_includes_untraded_stocks_with_null_quote(self):
+        """當日無成交者仍須在 universe 內，且報價欄位為 null（不得補 0 或沿用前一日）。"""
+        m = re.search(r'var UNIVERSE_DATA=(\{.*?\});?/\*SNAP:/UNIVERSE_DATA\*/', self.out, re.S)
+        payload = json.loads(m.group(1))
+        nulls = [r for r in payload["s"] if r[3] is None]
+        self.assertTrue(nulls, "universe 應包含當日無成交（無收盤價）的個股")
+        for r in nulls:
+            self.assertIsNone(r[4]); self.assertIsNone(r[5])
+            self.assertIsNone(r[6]); self.assertIsNone(r[7])
+
+    def test_universe_payload_is_a_pure_function_of_data(self):
+        """同一份資料重跑必須逐位元組相同（不讀時間、不用隨機數）。"""
+        cfg = us.collect.__wrapped__ if hasattr(us.collect, "__wrapped__") else None
+        # 直接以 fixture 重跑兩次，比對 UNIVERSE_DATA 區塊
+        _, _, _, a1 = clean_run()
+        _, _, _, a2 = clean_run()
+        r1 = region_body(a1.decode(), "UNIVERSE_DATA")
+        r2 = region_body(a2.decode(), "UNIVERSE_DATA")
+        self.assertEqual(r1, r2)
+
+    def test_search_results_block_exists(self):
+        """搜尋結果區塊與其子元素必須存在。"""
+        for el_id in ("sf-results", "sfr-head", "sfr-list", "sfr-more", "sf-uni-n"):
+            self.assertIn(f'id="{el_id}"', self.src, f"缺少搜尋結果元素 {el_id}")
+
+    def test_search_matches_code_name_and_industry(self):
+        """前端比對必須同時涵蓋代號、名稱與產業別。"""
+        i = self.src.index("var FILTER = (function()")
+        block = self.src[i:i + 7000]
+        self.assertIn("code + ' ' + name + ' ' + industry", block)
+
+    def test_search_shows_no_data_instead_of_fabricating(self):
+        """取不到當日報價時必須顯示「無當日資料」，不得編造數字。"""
+        i = self.src.index("var FILTER = (function()")
+        block = self.src[i:i + 7000]
+        self.assertIn("無當日資料", block)
+        self.assertIn("不以前一日或 0 代替", block)
+
+    def test_search_has_scroll_cap_and_more_hint(self):
+        """結果過長時必須限制顯示數量並提示。"""
+        i = self.src.index("var FILTER = (function()")
+        block = self.src[i:i + 7000]
+        self.assertIn("CAP", block)
+        self.assertIn("僅顯示前", block)
+        self.assertIn("max-height", self.src[self.src.index(".sfr-list{"):self.src.index(".sfr-list{") + 200])
 
 
 if __name__ == "__main__":

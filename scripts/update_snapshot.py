@@ -73,7 +73,7 @@ MINUS = "\u2212"                        # U+2212，頁面統一使用的負號
 
 # 位於 <script> 內的區塊必須用 JS 區塊註解標記：HTML 註解（<!-- -->）在
 # <script> 內會被瀏覽器視為「單行註解」，會把整個 JS 敘述註解掉而使頁面失效。
-JS_REGIONS = {"JS_SNAPAT", "JS_STATINIT", "AI_CHAT_DATA"}
+JS_REGIONS = {"JS_SNAPAT", "JS_STATINIT", "AI_CHAT_DATA", "UNIVERSE_DATA"}
 
 TZ_TAIPEI = timezone(timedelta(hours=8))
 
@@ -224,6 +224,65 @@ def rank_universe(rows: list[list[str]]) -> list[dict]:
                     "pct": chg / prev * 100.0, "vol": vol, "amt": amt,
                     "open": n2(r[5]), "high": n2(r[6]), "low": n2(r[7])})
     return out
+
+
+def universe_rows(rows: list[list[str]]) -> list[dict]:
+    """上市普通股母體（**含**當日無成交／無收盤價者）。
+
+    排除規則與 rank_universe 完全相同（非 4 碼、0xxx ETF/ETN、名稱結尾 -DR 之
+    TDR），但**不**套用「必須有可用報價」這一條 —— 那些股票仍存在於市場上，
+    只是當日無成交。保留它們，前端才能誠實顯示「無當日資料」，而不是讓它們
+    從搜尋結果中憑空消失。
+    """
+    out: list[dict] = []
+    for r in rows:
+        if not r or len(r) < 10:
+            continue
+        code = str(r[1] or "").strip()
+        name = str(r[2] or "").strip()
+        if not re.fullmatch(r"\d{4}", code):
+            continue
+        if re.fullmatch(r"0\d{3}", code):
+            continue
+        if re.search(r"-DR$", name):
+            continue
+        vol, amt, close, chg = n2(r[3]), n2(r[4]), n2(r[8]), n2(r[9])
+        prev = (close - chg) if (close is not None and chg is not None) else None
+        quoted = (vol is not None and vol > 0 and close is not None
+                  and chg is not None and prev is not None and prev > 0)
+        out.append({"code": code, "name": name, "quoted": quoted,
+                    "close": close, "chg": chg, "prev": prev,
+                    "pct": (chg / prev * 100.0) if quoted else None,
+                    "vol": vol, "amt": amt})
+    return out
+
+
+def build_universe_payload(cfg: dict) -> str:
+    """全市場搜尋用的資料：代號／名稱／產業別／當日報價。
+
+    以「陣列 + 產業別索引」壓縮（1,081 檔約 68 KB），避免把產業別名稱重複
+    1,081 次。純函式：只依 cfg，不讀系統時間、不用隨機數 —— 同一份資料重跑
+    逐位元組相同。
+
+    當日無成交者，報價欄位一律輸出 null（前端顯示「無當日資料」），
+    **不補 0、不沿用前一日**，以免用假數字冒充即時報價。
+    """
+    rows = universe_rows(cfg["rows"])
+    inds = sorted({analyst.STOCK_INDUSTRY.get(u["code"], analyst.UNCLASSIFIED)
+                   for u in rows})
+    idx = {n: i for i, n in enumerate(inds)}
+    data: list[list] = []
+    for u in rows:
+        i = idx[analyst.STOCK_INDUSTRY.get(u["code"], analyst.UNCLASSIFIED)]
+        if u["quoted"]:
+            data.append([u["code"], u["name"], i, f2(u["close"]), pts(u["chg"]),
+                         pct(u["pct"]), f"{u['vol'] / 1000:,.0f}",
+                         f"{u['amt'] / 1e8:,.2f}"])
+        else:
+            data.append([u["code"], u["name"], i, None, None, None, None, None])
+    payload = {"date": cfg["date"], "inds": inds, "s": data}
+    return ("var UNIVERSE_DATA="
+            + json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + ";")
 
 
 def _parse_cnt(s) -> tuple[int | None, int | None]:
@@ -972,6 +1031,8 @@ def build_regions(cfg: dict) -> dict[str, str]:
 
     R["JS_SNAPAT"] = f"var SNAPSHOT_AT = '{cfg['fetched']}';"
     R["JS_STATINIT"] = f"setStatus('', '{R['HTML_STATUS']}');"
+    # 全市場搜尋資料（代號／名稱／產業別／當日報價），供前端搜尋結果區塊比對。
+    R["UNIVERSE_DATA"] = build_universe_payload(cfg)
     return R
 
 
