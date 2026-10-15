@@ -262,9 +262,30 @@ def in_window_crosses() -> list[dict]:
 # 1. 樣本完整性（其餘測試的結論都建立在此）
 # ==========================================================================
 class TestFixtures(unittest.TestCase):
-    def test_meta_lists_fourteen_months(self):
+    def test_fixture_months_cover_window_at_reference_now(self):
+        """守門測試：在樣本參考時刻下，程式會請求的月份必須完全落在樣本內。
+
+        這正是 2026-10-01 起 CI 連續失敗 16 天的直接防護 —— 該次失敗純粹是
+        「執行測試的日曆日」推進到樣本涵蓋範圍之外（多了 202610），與程式邏輯無關。
+        若日曆月跨過樣本擷取月，本測試會失敗；修法是重跑 capture_fixtures.py。
+        """
+        n = us.HISTORY_MONTHS
+        t = H.ref_now().date()
+        need = []
+        for back in range(n - 1, -1, -1):
+            y, m = t.year, t.month - back
+            while m <= 0:
+                m += 12
+                y -= 1
+            need.append(f"{y}{m:02d}")
+        have = set(H.meta()["months"])
+        missing = [m for m in need if m not in have]
+        self.assertEqual(missing, [], f"樣本缺少月份 {missing}；請重跑 capture_fixtures.py")
+        self.assertEqual(len(H.meta()["months"]), n)
+
+    def test_meta_lists_expected_months(self):
         m = H.meta()
-        self.assertEqual(len(m["months"]), 14)
+        self.assertEqual(len(m["months"]), us.HISTORY_MONTHS)
         self.assertRegex(m["data_date"], r"^\d{4}/\d{2}/\d{2}$")
 
     def test_every_fixture_file_present(self):
@@ -274,7 +295,7 @@ class TestFixtures(unittest.TestCase):
     def test_stock_day_all_shape(self):
         rows = list(csv.reader(io.StringIO(H.read_fixture("stock_day_all.csv"))))
         self.assertGreaterEqual(len(rows), 500)
-        self.assertEqual(rows[1][0], "1150924")
+        self.assertEqual(rows[1][0], H.roc_from_ad(H.data_date()))
         self.assertGreaterEqual(len(rows[0]), 10)
 
     def test_mi_index_has_stat_and_breadth_tables(self):
@@ -298,7 +319,8 @@ class TestFixtures(unittest.TestCase):
 
     def test_history_is_long_enough_for_ma20_in_window(self):
         h = history()
-        self.assertEqual(h[-1]["date"], H.data_date())
+        # 端點非同步時，程式驗證的最後一日是 FMTQIK 的最後交易日（可能較 STOCK_DAY_ALL 舊一日）。
+        self.assertEqual(h[-1]["date"], H.fmtqik_last_date())
         self.assertGreaterEqual(len(h), us.HISTORY_DAYS + 19)
 
     def test_mi_5mins_hist_covers_data_date(self):
@@ -325,7 +347,7 @@ class TestFetch(unittest.TestCase):
                 mock.patch.object(us.time, "sleep", lambda *_: None):
             txt = us.fetch(PATH_STOCK, {"response": "json"})
         self.assertGreater(calls["n"], 2)
-        self.assertIn("1150924", txt)
+        self.assertIn(H.roc_from_ad(H.data_date()), txt)
 
     def test_gives_up_after_three_attempts(self):
         calls = {"n": 0}
@@ -388,9 +410,9 @@ class TestFetch(unittest.TestCase):
         self.assertEqual(path, PATH_STOCK)
         self.assertEqual(params, {"response": "json"})
 
-    def test_index_history_requests_fourteen_months(self):
+    def test_index_history_requests_expected_months(self):
         """月份推算必須與樣本一致，否則樣本無法重播。"""
-        with H.freeze_now(datetime(2026, 9, 24, 21, 0, 0, tzinfo=TZ)):
+        with H.freeze_now(H.ref_now()):
             api = H.FakeAPI()
             with api:
                 rows = us.get_index_history()
@@ -846,8 +868,12 @@ class TestNormalTradingDay(unittest.TestCase):
         self.assertAlmostEqual(sum(ws), 100.0, places=1)
 
     def test_breadth_totals_are_consistent(self):
+        """頁面上的漲跌平三家數總和，必須等於 MI_INDEX 樣本解析出的同一總和。"""
+        body = region_body(self.out, "BREADTH")
+        nums = [int(re.search(rf'id="br-{k}">([\d,]+)<', body).group(1).replace(",", ""))
+                for k in ("up", "down", "flat")]
         s = ref_market_stats()
-        self.assertEqual(s["up"] + s["down"] + s["flat"], 1072)
+        self.assertEqual(sum(nums), int(s["up"]) + int(s["down"]) + int(s["flat"]))
 
     def test_breadth_and_date_regions_populated(self):
         self.assertGreater(len(region_body(self.out, "BRDATE").strip()), 10)
@@ -908,11 +934,17 @@ class TestNormalTradingDay(unittest.TestCase):
         self.assertAlmostEqual(float(m.group(1).replace("\u2212", "-")), exp["pct"], places=2)
 
     def test_rankbar_contains_exactly_the_two_top_ten_lists(self):
-        # 比較圖 = 漲幅前十 + 2330 台積電 + 跌幅前十（共 21 筆）。
-        # 全圖依漲跌幅「遞減」排序，故跌幅段為跌幅榜（由低到高）的反序。
+        # 比較圖 = 漲幅前十 + 跌幅前十 + 2330 台積電（代號去重）。
+        # 全圖依「漲跌幅遞減、同幅依代號遞增」排序（與程式內同一排序鍵）。
+        # 不得用 reversed(跌幅榜) 推導：反轉會把同幅的代號順序一起翻掉。
+        seen, uq = set(), []
+        tsmc = next(x for x in ref_universe() if x["code"] == "2330")
+        for r in ref_top10() + ref_bottom10() + [tsmc]:
+            if r["code"] not in seen:
+                seen.add(r["code"])
+                uq.append(r)
+        want = [x["code"] for x in sorted(uq, key=lambda x: (-x["pct"], x["code"]))]
         codes = parse_rankbar_codes(self.out)
-        want = ([x["code"] for x in ref_top10()] + ["2330"]
-                + [x["code"] for x in reversed(ref_bottom10())])
         self.assertEqual(len(codes), 21)
         self.assertEqual(codes, want)
         pcts = [float(p) for p in re.findall(r'data-pct="(-?[\d.]+)"',
@@ -1044,7 +1076,7 @@ class TestTimestampLogic(unittest.TestCase):
         _, p, _, _ = clean_run()
         before = H.read_bytes(p)
         old = re.search(r"var SNAPSHOT_AT = '([^']*)'", before.decode()).group(1)
-        frozen = datetime(2026, 9, 24, 20, 30, 0, tzinfo=TZ)
+        frozen = H.ref_dt(20, 30, 0)
         with H.FakeAPI(), H.freeze_now(frozen):
             r = H.run_cli(["--file", p])
         self.assertEqual(r.rc, 0)
@@ -1058,7 +1090,7 @@ class TestTimestampLogic(unittest.TestCase):
         text = re.sub(r'(id="idx-val">)[\d,.]+', r"\g<1>99,999.99",
                       H.repo_index_html())
         p = temp_html(text)
-        frozen = datetime(2026, 9, 24, 21, 15, 30, tzinfo=TZ)
+        frozen = H.ref_dt(21, 15, 30)
         stamp = frozen.strftime("%Y/%m/%d %H:%M:%S")
         with H.FakeAPI(), H.freeze_now(frozen):
             r = H.run_cli(["--file", p])
@@ -1068,11 +1100,11 @@ class TestTimestampLogic(unittest.TestCase):
         out = open(p, encoding="utf-8").read()
         self.assertIn(f"var SNAPSHOT_AT = '{stamp}';", out)
         self.assertIn(stamp, out)
-        self.assertIn("48,024.60", out, "應以本次抓到的真實數值覆蓋錯誤值")
+        self.assertIn(f"{H.ref_verified_close():,.2f}", out, "應以本次抓到的真實數值覆蓋錯誤值")
 
     def test_force_meta_writes_timestamp_without_data_change(self):
         _, p, before, _ = clean_run()
-        frozen = datetime(2026, 9, 24, 22, 5, 9, tzinfo=TZ)
+        frozen = H.ref_dt(22, 5, 9)
         stamp = frozen.strftime("%Y/%m/%d %H:%M:%S")
         with H.FakeAPI(), H.freeze_now(frozen):
             r = H.run_cli(["--file", p, "--force-meta"])
@@ -1260,7 +1292,7 @@ class TestCrossoverIntegration(unittest.TestCase):
         got = parse_cx_rows(self.out)
         self.assertEqual([(g["date"], g["kind"]) for g in got],
                          [(e["date"], e["kind"]) for e in reversed(self.exp)])
-        self.assertEqual(len(got), 14)
+        self.assertEqual(len(got), len(self.exp))
 
     def test_list_is_newest_first(self):
         dates = [r["date"] for r in parse_cx_rows(self.out)]

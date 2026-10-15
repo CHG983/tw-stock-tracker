@@ -41,6 +41,12 @@ import update_snapshot as us  # noqa: E402
 
 TZ_TAIPEI = timezone(timedelta(hours=8))
 
+# 樣本檔的參考「現在」。所有月份推算（update_snapshot.get_index_history 的近 14 個月窗口、
+# capture_fixtures.months_back）都必須以樣本擷取當下為基準，而不是執行測試的當天；
+# 否則每跨一個月，窗口就會多要一個 fixtures 沒有的月份，測試便會因為與程式邏輯無關的
+# 日曆因素整批失敗（2026-10-01 起連續 16 天的 CI 全紅即為此故）。
+REF_NOW = datetime(2026, 9, 24, 21, 0, 0, tzinfo=TZ_TAIPEI)
+
 # 24 組 SNAP 區塊（build_regions 回傳鍵集合）
 EXPECTED_REGIONS = {
     "TITLE", "HEROTAG", "IDXROW", "KPIS", "BREADTH", "BRDATE", "SVG", "CHARTSUB",
@@ -70,9 +76,89 @@ def meta() -> dict:
     return json.loads(read_fixture("meta.json"))
 
 
+def ref_now() -> datetime:
+    """樣本所對應的參考時刻。
+
+    優先採用 meta.json 記錄的擷取時間（captured_at_taipei），使樣本本身自帶時鐘；
+    若擷取日早於最後一筆樣本資料日，則以後者為準（至少擷取到 data_date 當天）。
+    """
+    m = meta()
+    try:
+        t = datetime.strptime(m["captured_at_taipei"], "%Y/%m/%d %H:%M:%S")
+    except (KeyError, ValueError):
+        t = REF_NOW
+    t = t.replace(tzinfo=TZ_TAIPEI)
+    try:
+        dd = datetime.strptime(m["data_date"], "%Y/%m/%d").replace(
+            hour=23, minute=59, second=59, tzinfo=TZ_TAIPEI)
+        t = max(t, dd)
+    except (KeyError, ValueError):
+        pass
+    return t
+
+
+@contextlib.contextmanager
+def frozen_now(moment: datetime | None = None):
+    """在「樣本參考時刻」下執行 update_snapshot，使月份推算與樣本一致。
+
+    update_snapshot.get_index_history() 以 datetime.now(TZ_TAIPEI) 推算近 14 個月，
+    但樣本檔固定涵蓋擷取當下的那 14 個月。若不在參考時刻下執行，測試結果會隨日曆漂移。
+    """
+    with freeze_now(moment if moment is not None else ref_now()):
+        yield
+
+
+@contextlib.contextmanager
+def freeze_if_unset():
+    """尚未凍結時間時，凍結至樣本參考時刻；已凍結則沿用（保留測試明確指定的時刻）。"""
+    if FrozenDatetime.fixed is not None:
+        yield
+        return
+    with freeze_now(ref_now()):
+        yield
+
+
 def data_date() -> str:
-    """樣本對應的資料日期（AD 格式）。"""
+    """樣本對應的資料日期（AD 格式，取自 STOCK_DAY_ALL 的日期欄位）。"""
     return meta()["data_date"]
+
+
+def roc_from_ad(ad: str) -> str:
+    """'2026/10/15' → '1151015'（STOCK_DAY_ALL 的民國日期欄位格式）。"""
+    y, m, d = ad.split("/")
+    return f"{int(y) - 1911:03d}{int(m):02d}{int(d):02d}"
+
+
+def fmtqik_last_date() -> str:
+    """樣本 FMTQIK 的最後一個交易日（AD）。
+
+    TWSE 的 STOCK_DAY_ALL 與 FMTQIK 由不同後端非同步更新，擷取當下可能各停在
+    不同交易日；update_snapshot 的收盤驗證以「兩者共同的最後交易日」為基準，
+    因此本函式回傳的日期才是程式實際會去 MI_5MINS_HIST 讀取的那一天。
+    """
+    last = None
+    for mo in meta()["months"]:
+        j = json.loads(read_fixture(os.path.join("fmtqik", f"{mo}.json")))
+        for r in (j.get("data") or []):
+            ad = us.roc_to_ad(r[0])
+            if last is None or ad > last:
+                last = ad
+    return last
+
+
+def ref_verified_close() -> float:
+    """程式會用來驗證、也會寫進頁面的收盤指數（MI_5MINS_HIST 於 FMTQIK 最後一日）。"""
+    j = json.loads(read_fixture("mi_5mins_hist.json"))
+    for r in j["data"]:
+        if us.roc_to_ad(r[0]) == fmtqik_last_date():
+            return float(r[4].replace(",", ""))
+    raise AssertionError("MI_5MINS_HIST 樣本缺少 FMTQIK 最後一日")
+
+
+def ref_dt(h: int = 21, mi: int = 0, s: int = 0) -> datetime:
+    """樣本資料日（STOCK_DAY_ALL 日期）當天的指定台北時刻。"""
+    y, mo, d = (int(x) for x in data_date().split("/"))
+    return datetime(y, mo, d, h, mi, s, tzinfo=TZ_TAIPEI)
 
 
 # --------------------------------------------------------------------------
@@ -122,8 +208,10 @@ def _f_fmt_drop_last_month(body, params):
 
 
 def _f_stock_duplicate_date(body, params):
-    """資料日期欄位格式錯誤 → roc_to_ad 應拋錯。"""
-    return body.replace('"1150924"', '"115/09/24"', 1)
+    """資料日期改成另一種民國寫法（1151015 → 115/10/15）→ 兩種寫法必須等價，不得失敗。"""
+    y, m, d = data_date().split("/")
+    slashed = f"{int(y) - 1911:03d}/{m}/{d}"
+    return body.replace(f'"{roc_from_ad(data_date())}"', f'"{slashed}"', 1)
 
 
 def _f_null_tables(body, params):
@@ -207,9 +295,10 @@ def _f_stock_bad_close(body, params):
 
 
 def _f_stock_bad_date(body, params):
+    """把資料列的民國日期改成無法解析的字串 → roc_to_ad 必須拋錯。"""
     rows = body.splitlines()
     if len(rows) > 1:
-        rows[1] = rows[1].replace('"1150924"', '"?BAD?"', 1)
+        rows[1] = rows[1].replace(f'"{roc_from_ad(data_date())}"', '"?BAD?"', 1)
     return "\n".join(rows) + "\n"
 
 
@@ -254,17 +343,22 @@ def _f_5min_empty(body, params):
 
 
 def _f_5min_bad_ohlc(body, params):
+    """把程式實際會讀取的那一列（FMTQIK 最後交易日）收盤改成無法解析的值。"""
     j = _as_json(body)
-    if j.get("data"):
-        j["data"][-1][4] = "--"
+    target = fmtqik_last_date()
+    for r in (j.get("data") or []):
+        if us.roc_to_ad(r[0]) == target:
+            r[4] = "--"
     return _dump(j)
 
 
 def _f_5min_shift_date(body, params):
-    """把最後一列日期改成別的日期 → 找不到當日資料。"""
+    """把程式實際會讀取的那一列日期搬走 → 找不到當日資料。"""
     j = _as_json(body)
-    if j.get("data"):
-        j["data"][-1][0] = "115/01/02"
+    target = fmtqik_last_date()
+    for r in (j.get("data") or []):
+        if us.roc_to_ad(r[0]) == target:
+            r[0] = "115/01/02"
     return _dump(j)
 
 
@@ -426,9 +520,14 @@ class FakeAPI:
         self._p2 = mock.patch.object(us.time, "sleep", lambda *_: None)
         self._p1.start()
         self._p2.start()
+        # 固定「現在」至樣本參考時刻，讓月份推算不隨日曆日漂移。
+        # 若外層已明確凍結時間（H.freeze_now），則沿用外層值。
+        self._frozen = freeze_if_unset()
+        self._frozen.__enter__()
         return self
 
     def __exit__(self, *exc):
+        self._frozen.__exit__(*exc)
         self._p2.stop()
         self._p1.stop()
         return False
@@ -519,6 +618,8 @@ def independent_history_from_fixtures() -> list[dict]:
     不使用 update_snapshot 的解析函式，以便交叉比對。"""
     acc: dict[str, dict] = {}
     for m in sorted(meta()["months"]):
+        # 只納入 FMTQIK 真的有回傳資料的月份：樣本擷取當下，當月可能尚無任何交易日
+        # （月初擷取）或只有部分交易日；update_snapshot 對空月份不會產生任何列。
         j = json.loads(read_fixture(os.path.join("fmtqik", f"{m}.json")))
         assert j["stat"] == "OK"
         for r in j["data"]:

@@ -19,8 +19,8 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import sys
+import time
 from datetime import datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -33,9 +33,13 @@ import update_snapshot as us  # noqa: E402
 TZ_TAIPEI = timezone(timedelta(hours=8))
 
 
-def months_back(n: int) -> list[tuple[int, int]]:
-    """與 update_snapshot.get_index_history() 相同的月份推算，確保樣本可重播。"""
-    today = datetime.now(TZ_TAIPEI).date()
+def months_back(n: int, today=None) -> list[tuple[int, int]]:
+    """與 update_snapshot.get_index_history() 相同的月份推算，確保樣本可重播。
+
+    n 一律取自 update_snapshot.HISTORY_MONTHS，不得在此寫死，否則樣本窗口
+    與程式實際請求的窗口會默默騗開。
+    """
+    today = today or datetime.now(TZ_TAIPEI).date()
     out = []
     for back in range(n - 1, -1, -1):
         y, m = today.year, today.month - back
@@ -46,9 +50,55 @@ def months_back(n: int) -> list[tuple[int, int]]:
     return out
 
 
+def cur_month_back(back: int) -> tuple[int, int]:
+    t = datetime.now(TZ_TAIPEI).date()
+    y, m = t.year, t.month - back
+    while m <= 0:
+        m += 12
+        y -= 1
+    return y, m
+
+
+def _fetch_aligned(max_attempts: int = 15, wait_s: float = 3.0):
+    """取得「兩端點日期對齊」的 STOCK_DAY_ALL 快照。
+
+    TWSE 的 STOCK_DAY_ALL 與 FMTQIK 由不同後端非同步更新，盤中可能出現
+     「一端已到當日、另一端尚停在前一交易日」的震盪狀態。若在該瞬間擷取樣本，
+    樣本會自相矛盾（data_date 與 FMTQIK 最後一日不同），讓整套測試因擷取時機
+    而非程式邏輯而失敗（2026-10-15 實測即撞上）。
+    因此先重試到兩者日期一致再寫檔。
+    """
+    txt = ad = None
+    for attempt in range(1, max_attempts + 1):
+        txt = us.fetch("/rwd/zh/afterTrading/STOCK_DAY_ALL", {"response": "json"})
+        import csv
+        import io
+        data = [r for r in list(csv.reader(io.StringIO(txt)))[1:] if r and len(r) >= 10]
+        ad = us.roc_to_ad(data[0][0])
+        ad2 = None
+        for back in (0, 1):
+            y, m = cur_month_back(back)
+            j = json.loads(us.fetch("/rwd/zh/afterTrading/FMTQIK",
+                                    {"date": f"{y}{m:02d}01", "response": "json"}))
+            rows = j.get("data") or []
+            if rows:
+                ad2 = us.roc_to_ad(rows[-1][0])
+                break
+        if ad == ad2:
+            print(f"  [sync] 第 {attempt} 次嘗試：兩端點均為 {ad}")
+            break
+        print(f"  [sync] 第 {attempt} 次嘗試：STOCK_DAY_ALL {ad} vs FMTQIK {ad2} → 重試",
+              file=sys.stderr)
+        time.sleep(wait_s)
+    else:
+        print(f"  [sync] 警告：{max_attempts} 次重試後仍未對齊（{ad} / {ad2}），仍繼續擷取",
+              file=sys.stderr)
+    return txt, ad
+
+
 def main() -> int:
     os.makedirs(FIX, exist_ok=True)
-    months = months_back(14)
+    months = months_back(us.HISTORY_MONTHS)
     meta: dict = {
         "captured_at_taipei": datetime.now(TZ_TAIPEI).strftime("%Y/%m/%d %H:%M:%S"),
         "source_base": us.BASE,
@@ -68,7 +118,7 @@ def main() -> int:
         print(f"  saved {name:34s} {len(text.encode('utf-8')):>9,d} bytes")
 
     print("[1/4] STOCK_DAY_ALL（全市場每日收盤行情，CSV）")
-    txt = us.fetch("/rwd/zh/afterTrading/STOCK_DAY_ALL", {"response": "json"})
+    txt, ad = _fetch_aligned()
     save("stock_day_all.csv", txt,
          "/rwd/zh/afterTrading/STOCK_DAY_ALL", {"response": "json"})
 
@@ -76,7 +126,6 @@ def main() -> int:
     import csv
     import io
     data = [r for r in list(csv.reader(io.StringIO(txt)))[1:] if r and len(r) >= 10]
-    ad = us.roc_to_ad(data[0][0])
     print(f"      資料日期 {ad}；資料列 {len(data):,d}")
     meta["data_date"] = ad
     meta["stock_day_all_rows"] = len(data)
@@ -86,7 +135,7 @@ def main() -> int:
     save("mi_index_ms.json", us.fetch("/rwd/zh/afterTrading/MI_INDEX", params),
          "/rwd/zh/afterTrading/MI_INDEX", params)
 
-    print("[3/4] FMTQIK（加權指數歷史日資料，14 個月）")
+    print("[3/4] FMTQIK（加權指數歷史日資料，{n} 個月）".format(n=us.HISTORY_MONTHS))
     os.makedirs(os.path.join(FIX, "fmtqik"), exist_ok=True)
     for y, m in months:
         p = {"date": f"{y}{m:02d}01", "response": "json"}

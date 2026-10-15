@@ -44,6 +44,10 @@ UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
 X0, X1 = 62.0, 984.0                    # x 範圍
 N_WINDOW = 60                           # 走勢圖交易日數
 HISTORY_DAYS = 260                      # 均線／交叉計算區間（交易日）
+# FMTQIK 要抓幾個月。不能只抓 14 個月：日曆月數不等於交易日數，2026-10 實測 14 個曆月
+# 只換到 271 個交易日，低於均線完整計所需的 279（HISTORY_DAYS + 19），每日更新因此直接失敗。
+# 18 個月約 356 個交易日，留有充足安全邊際。此值須與 tests/fixtures 的 months 一致。
+HISTORY_MONTHS = 18
 PRICE_LO_Y, PRICE_HI_Y = 240.8, 57.7    # 主圖最下／最上格線
 AREA_FLOOR_Y = 250.0
 VOL_BASE_Y = 380.0
@@ -280,10 +284,14 @@ def get_market_stats(ad_date: str) -> dict:
 
 
 def get_index_history() -> list[dict]:
-    """FMTQIK：近 14 個月加權指數歷史日資料。"""
+    """FMTQIK：近 HISTORY_MONTHS 個月的加權指數歷史日資料。
+
+    以「月」而非「交易日」向 TWSE 取資料，因此必須多抓幾個月，才能確保交易日數
+    達到 HISTORY_DAYS + 19（詳見 HISTORY_MONTHS 的說明）。
+    """
     today = datetime.now(TZ_TAIPEI).date()
     acc: dict[str, dict] = {}
-    for back in range(13, -1, -1):
+    for back in range(HISTORY_MONTHS - 1, -1, -1):
         y, m = today.year, today.month - back
         while m <= 0:
             m += 12
@@ -1069,15 +1077,23 @@ def collect() -> dict:
           f"持平 {mkt['mkt_flat']:,d}；股票 上漲 {mkt['up']:,d} / "
           f"下跌 {mkt['down']:,d} / 持平 {mkt['flat']:,d}")
 
-    print("[3/5] 抓取 FMTQIK（近 14 個月加權指數歷史）…")
+    print(f"[3/5] 抓取 FMTQIK（近 {HISTORY_MONTHS} 個月加權指數歷史）…")
     hist = get_index_history()
     hd = [r["date"] for r in hist]
     print(f"      → {len(hist):,d} 個交易日（{hd[0]} – {hd[-1]}）")
 
     print("[4/5] 抓取 MI_5MINS_HIST（當日開高低收）並做一致性驗證…")
-    ohlc = get_today_ohlc(ad)
+    # STOCK_DAY_ALL 與 FMTQIK／MI_5MINS_HIST 由 TWSE 非同步更新：盤中可能出現其中一端已到
+    # 當日、另一端尚停在前一交易日的情況（2026-10-15 13:5x 實測即撞上：STOCK_DAY_ALL 已到
+    # 10/15，FMTQIK 最後一日仍為 10/14），造成整支程式 direct 失敗。相差 1 個日曆日內視為
+    # 端點非同步的正常情況，此收盤交叉驗證一律以「兩者共有的最後交易日」為基準。
     if hd[-1] != ad:
-        raise RuntimeError(f"FMTQIK 最後一日 {hd[-1]} 與 STOCK_DAY_ALL 日期 {ad} 不一致")
+        gap = (ad_to_dt(ad) - ad_to_dt(hd[-1])).days
+        if gap != 1:
+            raise RuntimeError(f"FMTQIK 最後一日 {hd[-1]} 與 STOCK_DAY_ALL 日期 {ad} 不一致（相差 {gap} 日）")
+        print(f"      ! FMTQIK 最後一日 {hd[-1]} 較 STOCK_DAY_ALL 落後 {gap} 日（端點非同步更新），"
+              f"收盤驗證改用 {hd[-1]}")
+    ohlc = get_today_ohlc(hd[-1])
     if abs(hist[-1]["close"] - ohlc["close"]) > 0.005:
         raise RuntimeError(f"收盤指數不一致：FMTQIK {hist[-1]['close']} vs "
                            f"MI_5MINS_HIST {ohlc['close']}")

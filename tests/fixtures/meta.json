@@ -1,7 +1,31 @@
 {
-  "captured_at_taipei": "2026/09/25 00:47:41",
-  "data_date": "2026/09/24",
+  "captured_at_taipei": "2026/10/15 14:02:26",
+  "data_date": "2026/10/15",
   "files": {
+    "fmtqik/202505.json": {
+      "bytes": 2159,
+      "params": {
+        "date": "20250501",
+        "response": "json"
+      },
+      "path": "/rwd/zh/afterTrading/FMTQIK"
+    },
+    "fmtqik/202506.json": {
+      "bytes": 2242,
+      "params": {
+        "date": "20250601",
+        "response": "json"
+      },
+      "path": "/rwd/zh/afterTrading/FMTQIK"
+    },
+    "fmtqik/202507.json": {
+      "bytes": 2400,
+      "params": {
+        "date": "20250701",
+        "response": "json"
+      },
+      "path": "/rwd/zh/afterTrading/FMTQIK"
+    },
     "fmtqik/202508.json": {
       "bytes": 2242,
       "params": {
@@ -107,31 +131,39 @@
       "path": "/rwd/zh/afterTrading/FMTQIK"
     },
     "fmtqik/202609.json": {
-      "bytes": 2019,
+      "bytes": 2183,
       "params": {
         "date": "20260901",
         "response": "json"
       },
       "path": "/rwd/zh/afterTrading/FMTQIK"
     },
+    "fmtqik/202610.json": {
+      "bytes": 1287,
+      "params": {
+        "date": "20261001",
+        "response": "json"
+      },
+      "path": "/rwd/zh/afterTrading/FMTQIK"
+    },
     "mi_5mins_hist.json": {
-      "bytes": 1309,
+      "bytes": 813,
       "params": {
         "response": "json"
       },
       "path": "/rwd/zh/TAIEX/MI_5MINS_HIST"
     },
     "mi_index_ms.json": {
-      "bytes": 1726,
+      "bytes": 1566,
       "params": {
-        "date": "20260924",
+        "date": "20261015",
         "response": "json",
         "type": "MS"
       },
       "path": "/rwd/zh/afterTrading/MI_INDEX"
     },
     "stock_day_all.csv": {
-      "bytes": 136800,
+      "bytes": 137949,
       "params": {
         "response": "json"
       },
@@ -139,6 +171,9 @@
     }
   },
   "months": [
+    "202505",
+    "202506",
+    "202507",
     "202508",
     "202509",
     "202510",
@@ -152,8 +187,9 @@
     "202606",
     "202607",
     "202608",
-    "202609"
+    "202609",
+    "202610"
   ],
   "source_base": "https://www.twse.com.tw",
-  "stock_day_all_rows": 1380
+  "stock_day_all_rows": 1379
 }
