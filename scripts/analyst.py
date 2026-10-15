@@ -540,13 +540,14 @@ def build_chat_data(cfg: dict, *, f0, f2, pct, pts, esc) -> str:
 
 
 # --------------------------------------------------------------------------
-# 版面：入口條（SNAP:AIANALYST）
+# 版面：彈窗內的「今日完整分析」（SNAP:AIANALYST，位於聊天彈窗內）
 # --------------------------------------------------------------------------
-def render_html(a: dict, *, ad: str, f0, f2, pct, pts, esc) -> str:
-    """把分析結果輸出成 SNAP:AIANALYST 區塊內容（精簡入口條）。
+def render_brief(a: dict, *, ad: str, f0, f2, pct, pts, esc) -> str:
+    """把分析結果輸出成 SNAP:AIANALYST 區塊內容（彈窗內可收合的「今日完整分析」）。
 
-    完整互動改由右下角對話視窗承載，這裡保留角色身分、當日重點數字、
-    氛圍分數與誠實標示，作為頁面上的固定入口與無 JS 時的備援。
+    此區塊位於聊天彈窗內，因此**不再**輸出獨立的 <section> 卡片、頭像與「跟我聊兩句」
+    按鈕（彈窗標題列已有頭像、角色名稱與角色標籤）。內容包含：角色標籤、市場氛圍分數、
+    當日評語、分析要點、風險提醒與來源說明。
     格式化函式由呼叫端注入，確保與頁面其他數字使用完全相同的慣例。
     `ad` 為資料日期（AD 格式）。
     """
@@ -565,75 +566,62 @@ def render_html(a: dict, *, ad: str, f0, f2, pct, pts, esc) -> str:
     warns = "；".join(a["warns"][:4]) + "。" + RISK_CLOSER
 
     return (
-        '<section class="card ai-card ai-strip" aria-labelledby="ai-t">\n'
-        '    <div class="ai-head">\n'
-        '      <img class="ai-av" src="assets/yu_cheng_jun_avatar.png" width="72" height="72"\n'
-        '           alt="「韭經考驗的台股戰士-宇程君」角色頭像（AI 生成虛擬角色）" decoding="async">\n'
-        '      <div class="ai-id">\n'
-        '        <h2 id="ai-t">韭經考驗的台股戰士-宇程君</h2>\n'
-        '        <p class="ai-role">{lbl}・依當日證交所公開資料自動產生的市場評論</p>\n'
-        '        <p class="ai-badges">\n'
-        '          <span class="ai-badge">{lbl}</span>\n'
-        '          <span class="ai-badge">AI 生成虛擬角色</span>\n'
-        '          <span class="ai-badge is-warn">非投資建議</span>\n'
-        '        </p>\n'
-        '      </div>\n'
-        '      <div class="ai-mood is-{tk}">\n'
-        '        <span class="ai-mood-lb">市場氛圍</span>\n'
-        '        <b class="ai-mood-v">{tl}</b>\n'
-        '        <span class="ai-mood-meter" role="img" aria-label="市場氛圍分數 {mv} 分，滿分 100 分">'
+        '<p class="ai-brief-head">\n'
+        '  <span class="ai-badge">{lbl}</span>\n'
+        '  <span class="ai-badge">AI 生成虛擬角色</span>\n'
+        '  <span class="ai-badge is-warn">非投資建議</span>\n'
+        '</p>\n'
+        '<div class="ai-mood is-{tk}">\n'
+        '  <span class="ai-mood-lb">市場氛圍</span>\n'
+        '  <b class="ai-mood-v">{tl}</b>\n'
+        '  <span class="ai-mood-meter" role="img" aria-label="市場氛圍分數 {mv} 分，滿分 100 分">'
         '<i style="width:{mw}%"></i></span>\n'
-        '        <span class="ai-mood-n num">{mv} / 100</span>\n'
-        '        <span class="ai-mood-src">啟發式分數（權重 35/30/20/15）・<span class="ai-not">不是</span>市場共識或預測值</span>\n'
-        '      </div>\n'
-        '    </div>\n'
+        '  <span class="ai-mood-n num">{mv} / 100</span>\n'
+        '  <span class="ai-mood-src">啟發式分數（權重 35/30/20/15）・<span class="ai-not">不是</span>市場共識或預測值</span>\n'
+        '</div>\n'
         '\n'
-        '    <blockquote class="ai-quote">\n'
-        '      「{quote}」\n'
-        '      <cite>— 宇程君（{lbl}）</cite>\n'
-        '    </blockquote>\n'
+        '<blockquote class="ai-quote">\n'
+        '  「{quote}」\n'
+        '  <cite>— 宇程君（{lbl}）</cite>\n'
+        '</blockquote>\n'
         '\n'
-        '    <ul class="ai-points is-compact">\n'
+        '<ul class="ai-points">\n'
         '{li}\n'
-        '    </ul>\n'
+        '</ul>\n'
         '\n'
-        '    <p class="ai-risk"><b>宇程君碎念：</b>{warns}</p>\n'
+        '<p class="ai-risk"><b>宇程君碎念：</b>{warns}</p>\n'
         '\n'
-        '    <div class="ai-cta-row">\n'
-        '      <button class="ai-open" id="ai-open" type="button" aria-haspopup="dialog" aria-controls="ai-panel">\n'
-        '        跟我聊兩句（{nq} 個當日問題已備好）→\n'
-        '      </button>\n'
-        '      <span class="ai-cta-note">完整解讀請點右下角頭像，開啟對話視窗</span>\n'
-        '    </div>\n'
-        '\n'
-        '    <p class="ai-src"><b>這個角色與這些文字是怎麼來的：</b>'
+        '<p class="ai-src"><b>這個角色與這些文字是怎麼來的：</b>'
         '「{who}」是 <b>AI 生成的虛擬角色</b>，也就是本站標示的<b>{lbl}</b>；不是真人。'
-        '入口條與對話視窗的文字皆由 <code>scripts/analyst.py</code> 於每日自動更新時，'
+        '本彈窗的文字皆由 <code>scripts/analyst.py</code> 於每日自動更新時，'
         '依當日自證交所實際抓取的數字，以<b>固定規則</b>產生'
         '（無隨機成分、無寫死的市場數字；同一份資料重跑會得到完全相同的文字）。'
-        '氛圍分數的四個分項與權重皆列於上方供複核。資料日期 <b>{ad}</b>。</p>\n'
-        '  </section>'.format(
+        '氛圍分數的四個分項與權重皆列於上方供複核。資料日期 <b>{ad}</b>。</p>'.format(
             tk=a["tier_key"], tl=a["tier_label"],
             mv="{:.1f}".format(a["mood"]), mw="{:.1f}".format(a["mood"]),
             quote=f["quote"], li=li_html, warns=warns, who=CHARACTER,
-            lbl=ROLE_LABEL, nq=len(QUICK_REPLIES), ad=esc(ad))
+            lbl=ROLE_LABEL, ad=esc(ad))
     )
 
 
 def build(cfg: dict, *, f0, f2, pct, pts, esc) -> str:
-    """對外主入口：回傳 SNAP:AIANALYST 的區塊內容（精簡入口條）。"""
-    return render_html(analyze(cfg), ad=cfg["date"],
-                       f0=f0, f2=f2, pct=pct, pts=pts, esc=esc)
+    """對外主入口：回傳 SNAP:AIANALYST 的區塊內容（彈窗內的今日完整分析）。"""
+    return render_brief(analyze(cfg), ad=cfg["date"],
+                        f0=f0, f2=f2, pct=pct, pts=pts, esc=esc)
 
 
 # --------------------------------------------------------------------------
 # 版面：右下角浮動按鈕 ＋ 聊天彈窗（SNAP:AI_CHAT）
 # --------------------------------------------------------------------------
-def build_chat_ui() -> str:
+def build_chat_ui(brief_html: str = "", data_date: str = "") -> str:
     """回傳浮動按鈕與聊天彈窗外框（SNAP:AI_CHAT 區塊內容）。
 
     外框為靜態骨架；訊息內容全部由前端依 SNAP:AI_CHAT_DATA 的當日資料產生。
     角色名稱與標籤一律取自單一常數，換標籤時不必改這個函式。
+
+    `brief_html` 為「今日完整分析」的內容（由 render_brief 產生），會以
+    SNAP:AIANALYST 的 marker 對包住後嵌入彈窗內的可收合面板 —— 如此該區塊
+    仍留在 region 註冊表中（重播時 marker 仍存在），但頁面上不再有獨立區塊。
     """
     return (
         '<div class="ai-fab-wrap">\n'
@@ -660,6 +648,18 @@ def build_chat_ui() -> str:
         '    </button>\n'
         '  </div>\n'
         '\n'
+        '  <div class="ai-brief">\n'
+        '    <button class="ai-brief-tog" id="ai-brief-tog" type="button"\n'
+        '            aria-expanded="true" aria-controls="ai-brief-body">\n'
+        '      <span class="ai-brief-t">今日完整分析</span>\n'
+        '      <span class="ai-brief-d">資料日 {ad}</span>\n'
+        '      <span class="ai-brief-chev" aria-hidden="true">▾</span>\n'
+        '    </button>\n'
+        '    <div class="ai-brief-body" id="ai-brief-body">\n'
+        '<!--SNAP:AIANALYST-->{brief}<!--/SNAP:AIANALYST-->\n'
+        '    </div>\n'
+        '  </div>\n'
+        '\n'
         '  <div class="ai-panel-log" id="ai-log" role="log" aria-live="polite"\n'
         '       aria-relevant="additions text" aria-label="與宇程君的對話內容"></div>\n'
         '\n'
@@ -676,5 +676,7 @@ def build_chat_ui() -> str:
         '    <p class="ai-panel-hon" id="ai-panel-hon"></p>\n'
         '    <p class="ai-panel-disc" id="ai-panel-disc"></p>\n'
         '  </div>\n'
-        '</div>'.format(who=CHARACTER, lbl=ROLE_LABEL)
+        '</div>'.format(who=CHARACTER, lbl=ROLE_LABEL,
+                        ad=brief_html and data_date or data_date,
+                        brief=brief_html)
     )

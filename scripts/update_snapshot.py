@@ -948,9 +948,12 @@ def build_regions(cfg: dict) -> dict[str, str]:
     # 由 scripts/analyst.py 依當日實際抓到的資料，以固定規則（門檻判斷＋模板）產生。
     # 無隨機成分、無時間相依、無寫死的市場數字 → 同一份資料重跑文字逐字元相同。
     # 角色為 AI 生成的虛擬角色，頁面標示為「韭齡多年的虛擬分析失」，非投資建議（區塊內已明示）。
-    R["AIANALYST"] = analyst.build(cfg, f0=f0, f2=f2, pct=pct, pts=pts, esc=esc)
-    # 對話視窗：靜態外框（角色名稱／標籤取自 analyst.CHARACTER / ROLE_LABEL）
-    R["AI_CHAT"] = analyst.build_chat_ui()
+    # 「今日完整分析」不再獨立成頁面區塊，而是嵌入彈窗內的可收合面板。
+    # 注意：AIANALYST 的 marker 位於 AI_CHAT 的內容內，因此 AI_CHAT 必須先套用，
+    # 否則套用 AIANALYST 時頁面上還找不到它的 marker（apply_regions 依插入順序處理）。
+    brief = analyst.build(cfg, f0=f0, f2=f2, pct=pct, pts=pts, esc=esc)
+    R["AI_CHAT"] = analyst.build_chat_ui(brief_html=brief, data_date=ad)
+    R["AIANALYST"] = brief
     # 對話視窗的當日資料（quick replies、開場評語、關鍵字主題答案）
     R["AI_CHAT_DATA"] = analyst.build_chat_data(
         cfg, f0=f0, f2=f2, pct=pct, pts=pts, esc=esc)

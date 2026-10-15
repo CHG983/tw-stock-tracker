@@ -544,37 +544,20 @@
     .cx-flag{display:none;}
   }
 
-  /* ---------- 宇程君（韭齡多年的虛擬分析失） ---------- */
-  .ai-card{
-    background:linear-gradient(180deg,#fbfcfe 0%,#ffffff 150px);
-    border-color:#d7e2ee;
-  }
-  .ai-head{
-    display:grid;grid-template-columns:auto minmax(0,1fr) 190px;
-    gap:16px;align-items:center;margin-bottom:14px;
-  }
-  .ai-av{
-    width:88px;height:88px;border-radius:50%;object-fit:cover;display:block;
-    border:3px solid #fff;box-shadow:0 2px 10px -2px rgba(20,48,79,.28);
-    background:var(--surface-2);
-  }
-  .ai-id{min-width:0;}
-  .ai-id h2{margin:0 0 4px;font-size:20px;}
-  .ai-role{margin:0 0 8px;font-size:12.5px;color:var(--ink-2);}
-  .ai-badges{display:flex;flex-wrap:wrap;gap:6px;margin:0;}
+  /* ---------- 宇程君（韭齡多年的虛擬分析失）：彈窗內的「今日完整分析」 ---------- */
   .ai-badge{
-    display:inline-block;font-size:11.5px;font-weight:620;line-height:1;
-    padding:5px 9px;border-radius:999px;white-space:nowrap;
+    display:inline-block;font-size:11px;font-weight:620;line-height:1;
+    padding:4px 8px;border-radius:999px;white-space:nowrap;
     background:#eef3f9;color:#3a5a7d;border:1px solid #d7e2ee;
   }
   .ai-badge.is-warn{background:#fdf1ee;color:#9c3520;border-color:#f2d3cb;}
   .ai-mood{
     display:flex;flex-direction:column;gap:5px;align-items:flex-start;
-    padding:11px 13px;border-radius:var(--radius-s);
+    padding:10px 12px;border-radius:var(--radius-s);
     background:var(--surface-2);border:1px solid var(--line);
   }
   .ai-mood-lb{font-size:11px;color:var(--ink-2);font-weight:600;letter-spacing:.4px;}
-  .ai-mood-v{font-size:16px;font-weight:720;line-height:1.2;}
+  .ai-mood-v{font-size:15px;font-weight:720;line-height:1.2;}
   .ai-mood-meter{
     display:block;width:100%;height:7px;border-radius:99px;
     background:#e3e9f0;overflow:hidden;
@@ -588,24 +571,24 @@
   .ai-mood.is-cold .ai-mood-v{color:#0a6b3f;}  .ai-mood.is-cold .ai-mood-meter i{background:#0a7d43;}
 
   .ai-quote{
-    margin:0 0 14px;padding:13px 16px 13px 18px;
+    margin:10px 0 0;padding:10px 12px 10px 13px;
     background:#f6f9fc;border-left:3px solid var(--navy-3);
     border-radius:0 var(--radius-s) var(--radius-s) 0;
-    font-size:14.5px;line-height:1.85;color:var(--ink);
+    font-size:12.5px;line-height:1.8;color:var(--ink);
   }
   .ai-quote cite{
-    display:block;margin-top:7px;font-style:normal;
-    font-size:11.5px;color:var(--ink-2);
+    display:block;margin-top:6px;font-style:normal;
+    font-size:11px;color:var(--ink-2);
   }
-  .ai-points{list-style:none;margin:0;padding:0;display:grid;gap:9px;}
+  .ai-points{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:7px;}
   .ai-points li{
-    font-size:13.5px;line-height:1.85;color:var(--ink-2);
-    padding:11px 14px;background:var(--surface-2);
+    font-size:12px;line-height:1.8;color:var(--ink-2);
+    padding:9px 11px;background:var(--surface-2);
     border:1px solid var(--line-2);border-radius:var(--radius-s);
   }
   .ai-points li .lb{
-    display:inline-block;margin-right:9px;padding:2px 8px;border-radius:5px;
-    background:#e8eef5;color:#2b6094;font-size:11.5px;font-weight:680;
+    display:inline-block;margin-right:7px;padding:2px 7px;border-radius:5px;
+    background:#e8eef5;color:#2b6094;font-size:11px;font-weight:680;
     white-space:nowrap;vertical-align:1px;
   }
   .ai-points b{color:var(--ink);font-weight:660;}
@@ -613,47 +596,40 @@
   .ai-points b.down{color:var(--down);}
   .ai-points b.flat{color:var(--flat);}
   .ai-risk{
-    margin:13px 0 0;padding:11px 14px;font-size:12.5px;line-height:1.85;
+    margin:10px 0 0;padding:9px 11px;font-size:11.5px;line-height:1.8;
     background:#fdf8ee;border:1px solid #f0e0c2;border-radius:var(--radius-s);
     color:#6d5424;
   }
   .ai-risk b{color:#8a6516;}
   .ai-src{
-    margin:10px 0 0;padding-top:10px;font-size:11.5px;line-height:1.8;
+    margin:9px 0 0;padding-top:9px;font-size:11px;line-height:1.75;
     color:var(--ink-2);border-top:1px dashed var(--line);
   }
   .ai-src b{color:var(--ink-2);}
   .ai-src code{
-    font-family:var(--mono);font-size:11px;background:var(--surface-2);
+    font-family:var(--mono);font-size:10.5px;background:var(--surface-2);
     border:1px solid var(--line-2);border-radius:4px;padding:1px 5px;color:var(--ink-2);
   }
-  @media (max-width:760px){
-    .ai-head{grid-template-columns:auto minmax(0,1fr);gap:12px;}
-    .ai-av{width:66px;height:66px;}
-    .ai-id h2{font-size:17px;}
-    .ai-role{font-size:12px;}
-    .ai-mood{grid-column:1 / -1;align-items:stretch;}
-    .ai-mood-v{font-size:15px;}
-    .ai-quote{font-size:13.5px;padding:12px 13px 12px 14px;}
-    .ai-points li{font-size:13px;padding:10px 12px;}
-  }
-  @media (max-width:400px){
-    .ai-id h2{font-size:15.5px;}
-    .ai-av{width:58px;height:58px;}
-  }
-
-  /* ---------- 宇程君：精簡入口條 ---------- */
-  .ai-strip .ai-av{width:72px;height:72px;}
-  .ai-points.is-compact li{font-size:13px;line-height:1.8;padding:10px 12px;}
-  .ai-mood-src{font-size:11px;line-height:1.55;color:var(--ink-2);}
+  .ai-mood-src{font-size:10.5px;line-height:1.55;color:var(--ink-2);}
   .ai-not{color:#8a4f04;font-weight:660;}
-  .ai-cta-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0 0;}
-  .ai-open{
-    font-family:inherit;font-size:13px;font-weight:660;padding:10px 16px;
-    border-radius:9px;border:1px solid #1d4368;background:#2b6094;color:#fff;cursor:pointer;
+  .ai-brief-head{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 9px;}
+
+  /* 彈窗內的「今日完整分析」可收合面板 */
+  .ai-brief{flex:0 0 auto;border-bottom:1px solid #eef1f4;background:#fbfcfe;}
+  .ai-brief-tog{
+    width:100%;display:flex;align-items:center;gap:8px;padding:9px 12px;
+    background:none;border:0;cursor:pointer;font-family:inherit;text-align:left;
   }
-  .ai-open:hover{background:#1d4368;}
-  .ai-cta-note{font-size:12px;color:var(--ink-2);}
+  .ai-brief-tog:hover{background:#f2f7fc;}
+  .ai-brief-t{font-size:12.5px;font-weight:680;color:#1d4368;}
+  .ai-brief-d{font-size:11px;color:var(--ink-2);margin-left:auto;}
+  .ai-brief-chev{font-size:11px;color:#2b6094;transition:transform .15s;line-height:1;}
+  .ai-brief-tog[aria-expanded="false"] .ai-brief-chev{transform:rotate(-90deg);}
+  .ai-brief-body{
+    max-height:min(38vh,300px);overflow-y:auto;overscroll-behavior:contain;
+    padding:0 12px 12px;
+  }
+  .ai-brief-body[hidden]{display:none;}
 
   /* ---------- 宇程君：浮動按鈕 ＋ 聊天彈窗 ---------- */
   .sr-only{
@@ -763,8 +739,9 @@
   main{padding-bottom:88px;}
 
   @media (max-width:760px){
-    .ai-strip .ai-av{width:62px;height:62px;}
-    .ai-strip .ai-id h2{font-size:16.5px;}
+    .ai-quote{font-size:12px;padding:9px 11px 9px 12px;}
+    .ai-points li{font-size:11.5px;padding:8px 10px;}
+    .ai-brief-body{max-height:min(34vh,260px);}
   }
   @media (max-width:520px){
     .ai-fab-wrap{right:12px;bottom:12px;}
@@ -774,11 +751,7 @@
     }
     .ai-fab-hint{display:none;}
     .ai-bub{max-width:88%;}
-  }
-  @media (max-width:400px){
-    .ai-strip .ai-av{width:56px;height:56px;}
-    .ai-strip .ai-id h2{font-size:15px;}
-    .ai-cta-note{font-size:11.5px;}
+    .ai-brief-body{max-height:min(30vh,220px);}
   }
 </style>
 </head>
@@ -895,55 +868,8 @@
     </p><!--/SNAP:BREADTH-->
   </section>
 
-  <!-- ================= 宇程君（韭齡多年的虛擬分析失）每日市場評論 =================
-       內容由 scripts/analyst.py 依當日證交所實際資料、以固定規則自動產生；
-       無隨機成分、無寫死的市場數字 → 每日快照更新時文字會跟著變。 -->
-  <!--SNAP:AIANALYST--><section class="card ai-card ai-strip" aria-labelledby="ai-t">
-    <div class="ai-head">
-      <img class="ai-av" src="assets/yu_cheng_jun_avatar.png" width="72" height="72"
-           alt="「韭經考驗的台股戰士-宇程君」角色頭像（AI 生成虛擬角色）" decoding="async">
-      <div class="ai-id">
-        <h2 id="ai-t">韭經考驗的台股戰士-宇程君</h2>
-        <p class="ai-role">韭齡多年的虛擬分析失・依當日證交所公開資料自動產生的市場評論</p>
-        <p class="ai-badges">
-          <span class="ai-badge">韭齡多年的虛擬分析失</span>
-          <span class="ai-badge">AI 生成虛擬角色</span>
-          <span class="ai-badge is-warn">非投資建議</span>
-        </p>
-      </div>
-      <div class="ai-mood is-cold">
-        <span class="ai-mood-lb">市場氛圍</span>
-        <b class="ai-mood-v">冷到結霜</b>
-        <span class="ai-mood-meter" role="img" aria-label="市場氛圍分數 23.8 分，滿分 100 分"><i style="width:23.8%"></i></span>
-        <span class="ai-mood-n num">23.8 / 100</span>
-        <span class="ai-mood-src">啟發式分數（權重 35/30/20/15）・<span class="ai-not">不是</span>市場共識或預測值</span>
-      </div>
-    </div>
-
-    <blockquote class="ai-quote">
-      「今天加權指數收 46,969.87 點，−1,655.96 點（−3.41%）；上市股票 200 家上漲、805 家下跌，集中市場成交金額 14,357.55 億元。被套牢那麼多次，我最大的收穫是學會：不要在恐慌裡做決定。」
-      <cite>— 宇程君（韭齡多年的虛擬分析失）</cite>
-    </blockquote>
-
-    <ul class="ai-points is-compact">
-      <li><b class="lb">大盤力道</b> 加權指數收 <b>46,969.87</b> 點（−1,655.96 點／<b>−3.41%</b>）；上市股票 <b>200</b> 家上漲（含漲停 4 家）、<b>805</b> 家下跌（含跌停 21 家）、<b>72</b> 家持平，上漲家數占 <b>18.6%</b>。全市場（含 ETF、權證等）漲停 10 家、跌停 186 家，集中市場成交金額 <b>14,357.55</b> 億元。</li>
-      <li><b class="lb">均線與交叉</b> 收盤 <b>46,969.87</b> 點位於 MA5（48,510.48）<b>之下</b>、MA20（48,041.24）<b>之下</b>，排列為 <b>均線糾結（多空未明）</b>；近期歷史區間內最近一次均線交叉為 <b>2026/09/21 的黃金交叉（當日收 47,718.84 點）</b>（全期共 12 筆，走勢圖 60 日區間內 3 筆）。</li>
-      <li><b class="lb">台積電 2330</b> 收 <b>2,440.00</b> 元（−50.00 元／−2.01%），成交量 <b>58,487</b> 張、成交金額 <b>1,426.30</b> 億元，表現較大盤<b>強</b> 1.40 個百分點。</li>
-      <li><b class="lb">族群與量能</b> 漲幅榜首 <b>2380 虹光</b>（+9.94%，收 17.15 元），漲幅前十名中以 <b>電子（其他）</b> 共 <b>4</b> 檔最多；跌幅榜首 <b>1710 東聯</b>（−10.00%，收 18.00 元），跌幅前十名中以 <b>電子（其他）</b> 共 <b>4</b> 檔最多。最近交易日成交金額為前 20 個交易日均量的 <b>156.1%</b>（量能放大）；指數 下跌 配合量能變化，屬 <b class="down">價跌量增，賣壓相對沉重</b>。（量能比較採走勢圖同一 FMTQIK 序列，避免跨端點單位差異。）族群歸類係<b>依股票代號區間粗略判定</b>，非證交所官方產業別。</li>
-    </ul>
-
-    <p class="ai-risk"><b>宇程君碎念：</b>市場氛圍偏冷，弱勢股容易持續破底，不宜任意攤平；今日有 21 檔跌停，賣壓相對集中；MA5 高於 MA20，中期均線結構偏多（均線皆為落後指標）；成交金額明顯放大，短線換手激烈。我這輩子被套的次數比看對的次數多得多，所以我的每一句話都請當成「參考」，不要當成「指令」。</p>
-
-    <div class="ai-cta-row">
-      <button class="ai-open" id="ai-open" type="button" aria-haspopup="dialog" aria-controls="ai-panel">
-        跟我聊兩句（5 個當日問題已備好）→
-      </button>
-      <span class="ai-cta-note">完整解讀請點右下角頭像，開啟對話視窗</span>
-    </div>
-
-    <p class="ai-src"><b>這個角色與這些文字是怎麼來的：</b>「韭經考驗的台股戰士-宇程君」是 <b>AI 生成的虛擬角色</b>，也就是本站標示的<b>韭齡多年的虛擬分析失</b>；不是真人。入口條與對話視窗的文字皆由 <code>scripts/analyst.py</code> 於每日自動更新時，依當日自證交所實際抓取的數字，以<b>固定規則</b>產生（無隨機成分、無寫死的市場數字；同一份資料重跑會得到完全相同的文字）。氛圍分數的四個分項與權重皆列於上方供複核。資料日期 <b>2026/10/15</b>。</p>
-  </section><!--/SNAP:AIANALYST-->
-
+  <!-- 宇程君（韭齡多年的虛擬分析失）已改為右下角聊天彈窗；
+       其「今日完整分析」由 scripts/analyst.py 產生，注入彈窗內的 SNAP:AIANALYST 區塊。 -->
   <!--SNAP:AI_CHAT--><div class="ai-fab-wrap">
   <button class="ai-fab" id="ai-fab" type="button"
           aria-label="開啟「韭經考驗的台股戰士-宇程君」對話視窗" aria-haspopup="dialog"
@@ -966,6 +892,45 @@
     <button class="ai-panel-x" id="ai-panel-x" type="button" aria-label="關閉對話視窗">
       <span aria-hidden="true">✕</span>
     </button>
+  </div>
+
+  <div class="ai-brief">
+    <button class="ai-brief-tog" id="ai-brief-tog" type="button"
+            aria-expanded="true" aria-controls="ai-brief-body">
+      <span class="ai-brief-t">今日完整分析</span>
+      <span class="ai-brief-d">資料日 2026/10/15</span>
+      <span class="ai-brief-chev" aria-hidden="true">▾</span>
+    </button>
+    <div class="ai-brief-body" id="ai-brief-body">
+<!--SNAP:AIANALYST--><p class="ai-brief-head">
+  <span class="ai-badge">韭齡多年的虛擬分析失</span>
+  <span class="ai-badge">AI 生成虛擬角色</span>
+  <span class="ai-badge is-warn">非投資建議</span>
+</p>
+<div class="ai-mood is-cold">
+  <span class="ai-mood-lb">市場氛圍</span>
+  <b class="ai-mood-v">冷到結霜</b>
+  <span class="ai-mood-meter" role="img" aria-label="市場氛圍分數 23.8 分，滿分 100 分"><i style="width:23.8%"></i></span>
+  <span class="ai-mood-n num">23.8 / 100</span>
+  <span class="ai-mood-src">啟發式分數（權重 35/30/20/15）・<span class="ai-not">不是</span>市場共識或預測值</span>
+</div>
+
+<blockquote class="ai-quote">
+  「今天加權指數收 46,969.87 點，−1,655.96 點（−3.41%）；上市股票 200 家上漲、805 家下跌，集中市場成交金額 14,357.55 億元。被套牢那麼多次，我最大的收穫是學會：不要在恐慌裡做決定。」
+  <cite>— 宇程君（韭齡多年的虛擬分析失）</cite>
+</blockquote>
+
+<ul class="ai-points">
+      <li><b class="lb">大盤力道</b> 加權指數收 <b>46,969.87</b> 點（−1,655.96 點／<b>−3.41%</b>）；上市股票 <b>200</b> 家上漲（含漲停 4 家）、<b>805</b> 家下跌（含跌停 21 家）、<b>72</b> 家持平，上漲家數占 <b>18.6%</b>。全市場（含 ETF、權證等）漲停 10 家、跌停 186 家，集中市場成交金額 <b>14,357.55</b> 億元。</li>
+      <li><b class="lb">均線與交叉</b> 收盤 <b>46,969.87</b> 點位於 MA5（48,510.48）<b>之下</b>、MA20（48,041.24）<b>之下</b>，排列為 <b>均線糾結（多空未明）</b>；近期歷史區間內最近一次均線交叉為 <b>2026/09/21 的黃金交叉（當日收 47,718.84 點）</b>（全期共 12 筆，走勢圖 60 日區間內 3 筆）。</li>
+      <li><b class="lb">台積電 2330</b> 收 <b>2,440.00</b> 元（−50.00 元／−2.01%），成交量 <b>58,487</b> 張、成交金額 <b>1,426.30</b> 億元，表現較大盤<b>強</b> 1.40 個百分點。</li>
+      <li><b class="lb">族群與量能</b> 漲幅榜首 <b>2380 虹光</b>（+9.94%，收 17.15 元），漲幅前十名中以 <b>電子（其他）</b> 共 <b>4</b> 檔最多；跌幅榜首 <b>1710 東聯</b>（−10.00%，收 18.00 元），跌幅前十名中以 <b>電子（其他）</b> 共 <b>4</b> 檔最多。最近交易日成交金額為前 20 個交易日均量的 <b>156.1%</b>（量能放大）；指數 下跌 配合量能變化，屬 <b class="down">價跌量增，賣壓相對沉重</b>。（量能比較採走勢圖同一 FMTQIK 序列，避免跨端點單位差異。）族群歸類係<b>依股票代號區間粗略判定</b>，非證交所官方產業別。</li>
+</ul>
+
+<p class="ai-risk"><b>宇程君碎念：</b>市場氛圍偏冷，弱勢股容易持續破底，不宜任意攤平；今日有 21 檔跌停，賣壓相對集中；MA5 高於 MA20，中期均線結構偏多（均線皆為落後指標）；成交金額明顯放大，短線換手激烈。我這輩子被套的次數比看對的次數多得多，所以我的每一句話都請當成「參考」，不要當成「指令」。</p>
+
+<p class="ai-src"><b>這個角色與這些文字是怎麼來的：</b>「韭經考驗的台股戰士-宇程君」是 <b>AI 生成的虛擬角色</b>，也就是本站標示的<b>韭齡多年的虛擬分析失</b>；不是真人。本彈窗的文字皆由 <code>scripts/analyst.py</code> 於每日自動更新時，依當日自證交所實際抓取的數字，以<b>固定規則</b>產生（無隨機成分、無寫死的市場數字；同一份資料重跑會得到完全相同的文字）。氛圍分數的四個分項與權重皆列於上方供複核。資料日期 <b>2026/10/15</b>。</p><!--/SNAP:AIANALYST-->
+    </div>
   </div>
 
   <div class="ai-panel-log" id="ai-log" role="log" aria-live="polite"
@@ -1960,7 +1925,7 @@
       ['mood',       ['氛圍','情緒','氣氛','分數','指標']],
       ['market',     ['大盤','指數','加權','行情','盤勢','今天','現在','概況']]
     ];
-    var D = null, panel, fab, log, quick, input, form, opener, lastFocus = null;
+    var D = null, panel, fab, log, quick, input, form, lastFocus = null;
 
     function el(id){ return document.getElementById(id); }
 
@@ -2019,8 +1984,6 @@
       D = load();
       panel = el('ai-panel'); fab = el('ai-fab'); log = el('ai-log');
       quick = el('ai-quick'); input = el('ai-in'); form = el('ai-form');
-      opener = el('ai-open');
-
       /* 資料不存在（建置異常或被無 JS 環境載入）→ 收掉入口，不留壞掉的 UI。 */
       if(!D || !panel || !fab || !log || !form){
         if(fab && fab.parentNode) fab.parentNode.style.display = 'none';
@@ -2060,7 +2023,16 @@
       fab.addEventListener('click', function(){ if(isOpen()) close(); else open(); });
       var bx = el('ai-panel-x');
       if(bx) bx.addEventListener('click', close);
-      if(opener) opener.addEventListener('click', function(){ open(); });
+
+      /* 「今日完整分析」面板收合（彈窗內） */
+      var bt = el('ai-brief-tog'), bb = el('ai-brief-body');
+      if(bt && bb){
+        bt.addEventListener('click', function(){
+          var openNow = bt.getAttribute('aria-expanded') !== 'false';
+          bt.setAttribute('aria-expanded', openNow ? 'false' : 'true');
+          if(openNow) bb.setAttribute('hidden', ''); else bb.removeAttribute('hidden');
+        });
+      }
 
       /* Esc 關閉 */
       document.addEventListener('keydown', function(ev){
@@ -2085,7 +2057,7 @@
       document.addEventListener('click', function(ev){
         if(!isOpen() || window.innerWidth <= 520) return;
         var n = ev.target;
-        while(n){ if(n === panel || n === fab || n === opener) return; n = n.parentNode; }
+        while(n){ if(n === panel || n === fab) return; n = n.parentNode; }
         close();
       });
     }

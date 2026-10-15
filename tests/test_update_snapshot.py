@@ -1949,7 +1949,12 @@ class TestAnalystHonesty(unittest.TestCase):
         self.assertNotIn("虛擬分析師", self.html)
 
     def test_avatar_is_local_not_external(self):
-        self.assertIn('src="assets/yu_cheng_jun_avatar.png"', self.html)
+        # 頭像已隨「今日完整分析」搬進彈窗（AI_CHAT），因此改檢查彈窗外框。
+        chat = analyst.build_chat_ui(brief_html=self.html, data_date="2026/10/15")
+        self.assertIn('src="assets/yu_cheng_jun_avatar.png"', chat)
+        self.assertNotIn("http://", chat)
+        self.assertNotIn("https://", chat)
+        # 分析內容本身不得引用任何外部資源
         self.assertNotIn("http://", self.html)
         self.assertNotIn("https://", self.html)
 
@@ -1988,8 +1993,23 @@ class TestAnalystBlockIsWiredIntoThePage(unittest.TestCase):
     def test_rendered_page_contains_the_block(self):
         body = region_body(baseline_out(), "AIANALYST")
         self.assertIn(analyst.CHARACTER, body)
-        self.assertIn("assets/yu_cheng_jun_avatar.png", body)
-        self.assertIn("ai-card", body)
+        self.assertIn("ai-brief-head", body)
+        # 已搬進彈窗：不再有獨立的卡片區塊與頭像
+        self.assertNotIn("ai-card", body)
+        self.assertNotIn("assets/yu_cheng_jun_avatar.png", body)
+
+    def test_brief_lives_inside_the_chat_popup(self):
+        """「今日完整分析」必須嵌在 AI_CHAT（彈窗）區塊內，頁面上不得再有獨立區塊。"""
+        out = baseline_out()
+        chat = region_body(out, "AI_CHAT")
+        self.assertIn("ai-brief-tog", chat)
+        self.assertIn("ai-brief-body", chat)
+        self.assertIn("<!--SNAP:AIANALYST-->", chat)
+        # 頁面本文（去掉 AI_CHAT 區塊後）不得再出現獨立的宇程君卡片
+        page_without_chat = out.replace(chat, "")
+        self.assertNotIn("ai-card", page_without_chat)
+        self.assertNotIn("ai-strip", page_without_chat)
+        self.assertNotIn('id="ai-open"', page_without_chat)
 
     def test_avatar_asset_exists_in_repo(self):
         p = os.path.join(H.ROOT, "assets", "yu_cheng_jun_avatar.png")
@@ -2303,6 +2323,24 @@ class TestChatIsWiredIntoThePage(unittest.TestCase):
         self.assertIn("@media (max-width:520px)", src)
         block = src[src.index("@media (max-width:520px)"):]
         self.assertIn("left:0;right:0;bottom:0", block)
+
+    def test_brief_panel_is_inside_the_popup_and_toggles(self):
+        """「今日完整分析」必須在彈窗內，且有可收合的切換鈕與前端接線。"""
+        body = region_body(self.out, "AI_CHAT")
+        for need in ('id="ai-brief-tog"', 'id="ai-brief-body"',
+                     'aria-controls="ai-brief-body"', "<!--SNAP:AIANALYST-->"):
+            self.assertIn(need, body, f"AI_CHAT 區塊缺少 {need}")
+        src = H.repo_index_html()
+        self.assertIn("ai-brief-tog", src, "前端缺少收合鈕接線")
+        self.assertIn("ai-brief-body", src, "前端缺少收合面板接線")
+
+    def test_removed_entry_strip_leaves_no_dangling_references(self):
+        """入口條移除後，前端不得再引用已不存在的 #ai-open 或舊樣式類別。"""
+        src = H.repo_index_html()
+        self.assertNotIn("el('ai-open')", src, "前端仍引用已移除的 #ai-open")
+        self.assertNotIn("opener", src, "前端仍殘留 opener 變數")
+        for gone in ("ai-card", "ai-strip", "ai-cta-row", "ai-open"):
+            self.assertNotIn(gone, src, f"index.html 仍殘留已移除的樣式／元素：{gone}")
 
 
 if __name__ == "__main__":
