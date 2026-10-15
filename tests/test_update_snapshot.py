@@ -21,6 +21,7 @@ test_update_snapshot.py — scripts/update_snapshot.py 的單元／整合測試�
 from __future__ import annotations
 
 import csv
+import inspect
 import io
 import json
 import os
@@ -38,6 +39,7 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
 import _harness as H  # noqa: E402
+import analyst  # noqa: E402
 import update_snapshot as us  # noqa: E402
 
 PATH_STOCK, PATH_MI, PATH_FMT, PATH_5MIN = (
@@ -2447,6 +2449,173 @@ class TestAnalystChatPopupUx(unittest.TestCase):
         self.assertNotIn("opener", src, "前端仍殘留 opener 變數")
         for gone in ("ai-card", "ai-strip", "ai-cta-row", "ai-open"):
             self.assertNotIn(gone, src, f"index.html 仍殘留已移除的樣式／元素：{gone}")
+
+
+class TestStockSearchAndIndustryFilter(unittest.TestCase):
+    """搜尋／產業篩選：資料層正確性 + 頁面 UI 契約（全部離線原始碼層驗證）。"""
+
+    def setUp(self):
+        _, _, _, self.out = clean_run()
+        self.out = self.out.decode()
+        self.src = H.repo_index_html()
+
+    # ---- 資料層 ----
+    def test_industry_table_is_static_no_network(self):
+        """產業對照必須是內建靜態表，模組不得再對產業端點發出任何抓取。"""
+        mod = inspect.getsource(us)
+        # 註解可文件化來源網址，但不得有任何實際抓取呼叫。
+        self.assertNotIn('fetch("/v1/opendata', mod, "仍對產業端點發出抓取")
+        self.assertNotIn("openapi.twse.com.tw/v1", mod.replace("#   * openapi.twse.com.tw/v1", ""))
+        self.assertEqual(
+            [l for l in mod.splitlines()
+             if "openapi" in l and not l.strip().startswith("#")], [],
+            "非註解行仍引用 openapi（代表仍有網路相依）")
+        self.assertGreater(len(us.STOCK_INDUSTRY), 100)
+
+    def test_industry_table_values_are_official_names(self):
+        """每個值都必須是證交所官方產業別名稱之一。"""
+        allowed = {
+            "水泥工業", "食品工業", "塑膠工業", "紡織纖維", "電機機械", "電器電纜",
+            "玻璃陶瓷", "造紙工業", "鋼鐵工業", "橡膠工業", "汽車工業", "電子工業",
+            "建材營造業", "航運業", "觀光餐旅", "金融保險業", "貿易百貨業", "綜合",
+            "其他業", "化學工業", "生技醫療業", "油電燃氣業", "半導體業",
+            "電腦及週邊設備業", "光電業", "通信網路業", "電子零組件業", "電子通路業",
+            "資訊服務業", "其他電子業", "文化創意業", "農業科技業", "綠能環保",
+            "數位雲端", "運動休閒", "居家生活",
+        }
+        bad = {k: v for k, v in us.STOCK_INDUSTRY.items() if v not in allowed}
+        self.assertEqual(bad, {}, f"出現非官方產業別名稱：{bad}")
+
+    def test_industry_of_falls_back_to_unclassified(self):
+        """查不到的代號一律『未分類』，不猜測。"""
+        self.assertEqual(us.industry_of("2330"), "半導體業")
+        self.assertEqual(us.industry_of("9999"), "未分類")
+        self.assertEqual(us.industry_of(""), "未分類")
+        self.assertEqual(us.industry_of(None), "未分類")
+
+    def test_every_rendered_row_carries_a_real_industry(self):
+        """頁面上每一列股票都必須有 data-industry，且不得為空或『未分類』。"""
+        rows = re.findall(r'data-code="(\d{4})"[^>]*?data-industry="([^"]*)"', self.out)
+        self.assertGreaterEqual(len(rows), 40, "股票列數異常")
+        blank = [c for c, i in rows if i in ("", us.UNCLASSIFIED)]
+        self.assertEqual(blank, [], f"以下代號沒有官方產業別：{blank}")
+
+    def test_displayed_codes_are_all_in_the_table(self):
+        """頁面會顯示的代號必須全部收錄在對照表內（否則會顯示未分類）。"""
+        codes = set(re.findall(r'data-code="(\d{4})"', self.out))
+        self.assertTrue(codes)
+        missing = sorted(c for c in codes if c not in us.STOCK_INDUSTRY)
+        self.assertEqual(missing, [], f"對照表缺這些代號：{missing}")
+
+    def test_tsmc_industry_is_data_driven(self):
+        """台積電產業不得再寫死『半導體』，必須由 industry_of() 產生。"""
+        self.assertIn('<em>半導體業</em>', self.out)
+        self.assertNotIn("<em>半導體</em>", self.out)
+
+    def test_rank_container_has_an_id_for_filtering(self):
+        self.assertIn('class="rank" id="rank-list"', self.out)
+
+    # ---- UI 契約 ----
+    def test_filter_controls_exist(self):
+        for el_id in ("sf-q", "sf-ind", "sf-clear", "sf-meta", "sf-empty"):
+            self.assertIn(f'id="{el_id}"', self.src, f"缺少篩選元素 {el_id}")
+
+    def test_filter_is_live_not_submit_based(self):
+        """必須以 input/change 即時過濾，不得依賴送出鈕。"""
+        i = self.src.index("var FILTER = (function()")
+        block = self.src[i:i + 2600]
+        self.assertIn("addEventListener('input'", block)
+        self.assertIn("addEventListener('change'", block)
+        self.assertNotIn("form", block.lower().replace("format", ""))
+
+    def test_filter_covers_all_four_blocks(self):
+        i = self.src.index("var FILTER = (function()")
+        block = self.src[i:i + 2600]
+        for el_id in ("list-gain", "list-lose", "list-tsmc", "rank-list"):
+            self.assertIn(f"$('{el_id}')", block, f"篩選未涵蓋 {el_id}")
+
+    def test_filter_has_empty_state_and_clear(self):
+        i = self.src.index("var FILTER = (function()")
+        block = self.src[i:i + 2600]
+        self.assertIn("empty.hidden = shown !== 0", block, "空狀態切換邏輯缺失")
+        self.assertIn("sf-clear", block, "清除鈕未接線")
+        self.assertIn("Escape", block, "Esc 清除未實作")
+
+    def test_filter_reapplied_after_live_refresh(self):
+        """即時更新後必須重套篩選，否則刷新會讓篩選失效。"""
+        i = self.src.index("function refresh()")
+        block = self.src[i:self.src.index("function schedule()")]
+        self.assertIn("FILTER.apply()", block)
+
+    def test_industry_map_ships_in_payload_for_live_refresh(self):
+        """產業對照必須隨 AI_CHAT_DATA 一起輸出，前端重整才補得回 data-industry。"""
+        m = re.search(r'var AI_CHAT_DATA=(\{.*?\});?/\*SNAP:/AI_CHAT_DATA\*/', self.out, re.S)
+        self.assertIsNotNone(m, "找不到 AI_CHAT_DATA")
+        payload = json.loads(m.group(1).replace("<\\/", "</"))
+        self.assertIn("industry", payload)
+        ind = payload["industry"]
+        self.assertEqual(ind["2330"], "半導體業")
+        # 頁面上每個代號都必須在 payload 內，否則刷新後會變「未分類」
+        for code in set(re.findall(r'data-code="(\d{4})"', self.out)):
+            self.assertIn(code, ind, f"payload 缺代號 {code}")
+
+    def test_refresh_paths_restore_industry_attribute(self):
+        """即時重整重建的列必須帶回 data-industry（否則篩選在刷新後失效）。"""
+        i = self.src.index("function rlRow")
+        self.assertIn("indOf(rec.code)", self.src[i:i + 700])
+        j = self.src.index("rh += '<div class=\"rk\"")
+        self.assertIn("indOf(rc.code)", self.src[j:j + 300])
+        k = self.src.index("function applyStock")
+        self.assertIn("setAttribute('data-industry'", self.src[k:k + 500])
+
+    def test_industry_lookup_has_single_source(self):
+        """對照表只能有一份定義處（analyst.py），update_snapshot 僅轉出。"""
+        self.assertIs(us.STOCK_INDUSTRY, analyst.STOCK_INDUSTRY)
+        src = inspect.getsource(us)
+        self.assertNotIn('"2330": "半導體業"', src, "update_snapshot 又抄了一份對照表")
+
+    def test_industry_map_has_no_personal_or_company_names(self):
+        """對照表只含代號→產業別，不得夾帶公司名稱或其他識別資訊。"""
+        for k, v in analyst.STOCK_INDUSTRY.items():
+            self.assertRegex(k, r"^\d{4}$")
+            self.assertNotIn("公司", v)
+            self.assertLessEqual(len(v), 12)
+
+    def test_hidden_attribute_actually_hides_rows(self):
+        """[hidden] 必須真的隱藏。列本身帶 display:grid/flex，會蓋掉瀏覽器預設的
+        [hidden]{display:none}，若不強制覆寫，切換 hidden 只改狀態、畫面不變。"""
+        self.assertIn("[hidden]{display:none !important;}", self.src)
+        # 受影響的元素確實自帶 display 規則（這正是需要覆寫的原因）
+        self.assertIn("display:grid", self.src[self.src.index(".rl-row{"):self.src.index(".rl-row{") + 200])
+        self.assertIn("display:grid", self.src[self.src.index(".rk{"):self.src.index(".rk{") + 120])
+        self.assertIn("display:grid", self.src[self.src.index(".stock-main{"):self.src.index(".stock-main{") + 120])
+
+    def test_keyword_search_also_matches_industry(self):
+        """輸入產業名（如「半導體」）也要能找到該產業的股票 —— 排行列只顯示
+        代號與名稱，產業別僅存在於 data-industry，故比對字串必須併入產業別。"""
+        i = self.src.index("var FILTER = (function()")
+        block = self.src[i:i + 2600]
+        self.assertIn("(el.textContent || '') + ' ' + industry", block)
+
+    def test_filter_ui_is_static_and_outside_snap_regions(self):
+        """篩選 UI 必須在任何 marker 之外（不屬於 SNAP 區塊）。"""
+        i = self.src.index('class="stock-filter"')
+        before = self.src[:i]
+        self.assertGreater(before.rindex("<!--/SNAP:"), before.rindex("<!--SNAP:"))
+        # 篩選 UI 所在的整段不得落在任何 region 之間
+        m = us._region_body(self.src, "RANKNOTE")
+        self.assertNotIn("stock-filter", m.group(0))
+
+    def test_filter_targets_are_large_enough_for_touch(self):
+        """手機觸控目標必須 >= 44px。"""
+        for sel in (".sf-q input{", ".sf-ind select{", ".sf-clear{"):
+            i = self.src.index(sel)
+            self.assertIn("height:44px", self.src[i:i + 260], f"{sel} 觸控高度不足")
+
+    def test_industry_note_is_honest_about_source(self):
+        """頁面必須說明產業來源；若為官方來源則不需『粗略』字樣。"""
+        self.assertIn("上市公司基本資料", self.src)
+        self.assertIn("未分類", self.src)
 
 
 if __name__ == "__main__":

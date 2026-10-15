@@ -43,6 +43,15 @@ BASE = "https://www.twse.com.tw"
 UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
+# --------------------------------------------------------------------------
+# 股票代號 → 產業別名稱（證交所官方產業別）
+# --------------------------------------------------------------------------
+# 唯一來源在 analyst.py（與 ROLE_LABEL 相同慣例），此處僅轉出，避免兩份對照漂移。
+# 它是**靜態分類表**、不是市場數字，因此不需要新增任何網路抓取或 fixture。
+STOCK_INDUSTRY = analyst.STOCK_INDUSTRY
+UNCLASSIFIED = analyst.UNCLASSIFIED
+industry_of = analyst.industry_of
+
 X0, X1 = 62.0, 984.0                    # x 範圍
 N_WINDOW = 60                           # 走勢圖交易日數
 HISTORY_DAYS = 260                      # 均線／交叉計算區間（交易日）
@@ -605,7 +614,8 @@ def svg_region(win, win_ma5, win_ma20, win_prev, crosses, ax, vl, rows) -> str:
 def rl_row(rank: int, r: dict) -> str:
     k = sgn(r["chg"])
     bar = min(100.0, abs(r["pct"]) / 10 * 100)
-    return (f'      <div class="rl-row" data-code="{esc(r["code"])}" data-pct="{r["pct"]:.2f}">'
+    return (f'      <div class="rl-row" data-code="{esc(r["code"])}" data-pct="{r["pct"]:.2f}"'
+            f' data-industry="{esc(industry_of(r["code"]))}">'
             f'<span class="rl-no num">{rank}</span>'
             f'<span class="rl-id"><span class="num">{esc(r["code"])}</span>'
             f'<b>{esc(r["name"])}</b></span>'
@@ -627,9 +637,10 @@ def tsmc_block(r: dict) -> str:
         '<span class="r">漲跌幅</span>\n'
         '          <span class="r">成交量</span><span class="r amt">成交金額</span>\n'
         '        </div>\n'
-        f'      <div class="stock" data-code="{esc(r["code"])}"><div class="stock-main">\n'
+        f'      <div class="stock" data-code="{esc(r["code"])}"'
+        f' data-industry="{esc(industry_of(r["code"]))}"><div class="stock-main">\n'
         f'        <span class="s-code num">{esc(r["code"])}</span>\n'
-        f'        <span class="s-name"><b>{esc(r["name"])}</b><em>半導體</em></span>\n'
+        f'        <span class="s-name"><b>{esc(r["name"])}</b><em>{esc(industry_of(r["code"]))}</em></span>\n'
         f'        <span class="s-price num {k}">{f2(r["close"])}</span>\n'
         f'        <span class="s-delta num {k}">{pts(r["chg"])}</span>\n'
         f'        <span class="s-pct"><span class="chip {k} num">{pct(r["pct"])}</span></span>\n'
@@ -649,7 +660,8 @@ def rank_bar(records: list[dict]) -> str:
         k = sgn(r["chg"])
         w = min(50.0, abs(r["pct"]) * 5)
         out.append(
-            f'      <div class="rk" data-code="{esc(r["code"])}" data-pct="{r["pct"]:.2f}">'
+            f'      <div class="rk" data-code="{esc(r["code"])}" data-pct="{r["pct"]:.2f}"'
+            f' data-industry="{esc(industry_of(r["code"]))}">'
             f'<span class="rk-id"><span>{esc(r["code"])}</span>{esc(r["name"])}</span>\n'
             f'        <span class="rk-track"><i class="{k}" style="width:{w:.2f}%"></i></span>\n'
             f'        <span class="rk-v num {k}">{pct(r["pct"])}</span></div>')
@@ -879,7 +891,7 @@ def build_regions(cfg: dict) -> dict[str, str]:
             seen.add(r["code"])
             uq.append(r)
     uq.sort(key=lambda x: (-x["pct"], x["code"]))
-    R["RANKBAR"] = '\n      <div class="rank">' + "\n" + rank_bar(uq) + "\n    </div>"
+    R["RANKBAR"] = '\n      <div class="rank" id="rank-list">' + "\n" + rank_bar(uq) + "\n    </div>"
 
     R["FOOTA"] = (
         '        <h3>資料時間</h3>\n'
