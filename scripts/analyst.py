@@ -653,7 +653,7 @@ def build_chat_ui() -> str:
         '         alt="" aria-hidden="true" decoding="async">\n'
         '    <div class="ai-panel-id">\n'
         '      <b id="ai-panel-t">{who}</b>\n'
-        '      <span class="ai-panel-role">{lbl}</span>\n'
+        '      <span class="ai-panel-role" id="ai-panel-role">{lbl}</span>\n'
         '    </div>\n'
         '    <button class="ai-panel-x" id="ai-panel-x" type="button" aria-label="關閉對話視窗">\n'
         '      <span aria-hidden="true">✕</span>\n'
