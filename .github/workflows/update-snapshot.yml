@@ -1,11 +1,20 @@
 name: Update snapshot
 
 # 每個交易日台股收盤後，自動抓取臺灣證券交易所公開資料並更新 index.html 的內建快照。
-# 台北時間（UTC+8）13:32 = UTC 05:32，週一至週五。
-# 排程貼近 13:30 收盤；若端點尚未釋出當日資料，本次不建立 commit，候下次執行自動補上。
+#
+# 兩個排程（台北時間 UTC+8，週一至週五）：
+#   1) 13:32 = UTC 05:32 —— 早班。收盤後先跑一次，資料一釋出就盡快更新。
+#      證交所盤後端點並非 13:30 收盤即同步（STOCK_DAY_ALL 約 13:52–13:54 才換日、
+#      MI_INDEX 更晚、三大法人 BFI82U 約 15:10 才公布），因此早班經常遇到
+#      「當日資料還沒出來」。此時帶 --allow-not-ready：視為「本次略過」，
+#      不寫檔、以 0 結束（workflow 保持綠燈），等保底排程再更新。
+#   2) 15:35 = UTC 07:35 —— 保底。三大法人公布弌執行，確保每天都能更新到
+#      最新交易日的完整資料。不帶 --allow-not-ready：資料不齊即失敗，
+#      以便及早發現真正的異常（端點改版、缺欄位、合計不符…）。
 on:
   schedule:
     - cron: "32 5 * * 1-5"
+    - cron: "35 7 * * 1-5"
   workflow_dispatch:
 
 # 需要寫入權限才能把更新後的 index.html 推回 main。
@@ -53,11 +62,22 @@ jobs:
       # 以非 0 結束且不寫入檔案，因此這個 step 失敗時 index.html 保持原樣。
       # 腳本結尾輸出 CHANGED=1 / CHANGED=0，代表「資料本身」是否有變更
       # （時間戳不計入），據以決定是否建立 commit。
+      #
+      # 早班（13:32）帶 --allow-not-ready：端點尚未釋出當日資料時視為「本次略過」，
+      # 不寫檔並以 0 結束（CHANGED=0 → 不建立 commit），讓 workflow 保持綠燈；
+      # 保底班（15:35）與手動觸發不帶此旗標，資料不齊即失敗。
       - name: Update snapshot from TWSE
         id: upd
         run: |
           set -euo pipefail
-          python3 scripts/update_snapshot.py --file index.html | tee /tmp/snapshot.log
+          extra=""
+          if [ "${{ github.event.schedule }}" = "32 5 * * 1-5" ]; then
+            extra="--allow-not-ready"
+            echo "早班排程（台北 13:32）：資料尚未釋出時將略過而不失敗。"
+          else
+            echo "保底排程／手動觸發：資料不齊即失敗。"
+          fi
+          python3 scripts/update_snapshot.py --file index.html $extra | tee /tmp/snapshot.log
           changed="$(sed -n 's/.*CHANGED=\([01]\).*/\1/p' /tmp/snapshot.log | tail -n1)"
           echo "changed=${changed:-0}" >> "$GITHUB_OUTPUT"
 
@@ -77,6 +97,7 @@ jobs:
           {
             echo "### TWSE 快照更新"
             echo ""
+            echo "- 觸發排程：\`${{ github.event.schedule || 'workflow_dispatch' }}\`"
             echo "- 資料變更：\`${{ steps.upd.outputs.changed || 'n/a' }}\`"
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
