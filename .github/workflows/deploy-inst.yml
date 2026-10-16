@@ -1,0 +1,42 @@
+name: Deploy institutional flows update
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL of the tar.gz to deploy"
+        required: true
+        type: string
+permissions:
+  contents: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch and validate
+        run: |
+          set -euo pipefail
+          curl -fsSL "${{ inputs.url }}" -o /tmp/d.tar.gz
+          mkdir -p /tmp/d && tar -xzf /tmp/d.tar.gz -C /tmp/d
+          test -f /tmp/d/index.html
+          test -f /tmp/d/versions/v9/index.html
+          test -f /tmp/d/tests/test_update_snapshot.py
+          size=$(wc -c < /tmp/d/index.html); echo "index.html bytes: $size"
+          [ "$size" -ge 250000 ] || { echo "::error::index.html too small"; exit 1; }
+          grep -q 'id="inst-t"' /tmp/d/index.html || { echo "::error::institutional section missing"; exit 1; }
+          grep -q 'SNAP:INST_DATA' /tmp/d/index.html || { echo "::error::INST_DATA marker missing"; exit 1; }
+          grep -q 'inst-bar-svg' /tmp/d/index.html || { echo "::error::bar chart missing"; exit 1; }
+          grep -q 'inst-cum-svg' /tmp/d/index.html || { echo "::error::trend chart missing"; exit 1; }
+          grep -q '400_000' /tmp/d/tests/test_update_snapshot.py || { echo "::error::test ceiling not updated"; exit 1; }
+          python3 -c "import json,io; s=io.open('/tmp/d/index.html',encoding='utf-8').read(); k='/*SNAP:INST_DATA*/var INST_DATA='; a=s.index(k)+len(k); b=s.index(';/*/SNAP:INST_DATA*/',a); j=json.loads(s[a:b]); assert len(j['rows'])==20, len(j['rows']); print('INST_DATA ok rows=%d' % len(j['rows']))"
+      - name: Commit
+        run: |
+          set -euo pipefail
+          cp /tmp/d/index.html index.html
+          mkdir -p versions/v9 && cp /tmp/d/versions/v9/index.html versions/v9/index.html
+          cp /tmp/d/tests/test_update_snapshot.py tests/test_update_snapshot.py
+          git config user.name "Teamily Agent"
+          git config user.email "agent@teamily.ai"
+          git add -A
+          git diff --cached --quiet || { git commit -m "feat: add institutional flows section to tracker page"; git push; }
+          sha256sum index.html
