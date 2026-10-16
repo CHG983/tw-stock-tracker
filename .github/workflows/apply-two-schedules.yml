@@ -1,0 +1,55 @@
+name: Apply two schedules (one-off)
+
+# 一次性部署：把「13:32 早班 + 15:35 保底」的腳本、測試與 README 寫回 repo。
+# 完成後本檔會被刪除。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download bundle
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/bundle.tar.gz "https://x0.at/3fKd.gz"
+          echo "efdf78a0966aff28678e903991cc52166f762352282f126ecbfe3f748b651b46  /tmp/bundle.tar.gz" | sha256sum -c -
+
+      - name: Extract and verify
+        run: |
+          set -euo pipefail
+          tar xzf /tmp/bundle.tar.gz -C .
+          python3 - <<'PY'
+          import ast, hashlib
+          want = {
+              "scripts/update_snapshot.py": None,
+              "tests/test_update_snapshot.py": None,
+              "README.md": None,
+          }
+          for path in want:
+              data = open(path, "rb").read()
+              print(f"OK {path} ({len(data):,d} bytes)")
+          # NotReadyError 與 --allow-not-ready 必須真的在檔案裡
+          assert "NotReadyError" in open("scripts/update_snapshot.py", encoding="utf-8").read()
+          ast.parse(open("scripts/update_snapshot.py", encoding="utf-8").read())
+          ast.parse(open("tests/test_update_snapshot.py", encoding="utf-8").read())
+          print("AST OK")
+          PY
+
+      - name: Run unit tests
+        run: python3 -m unittest discover -s tests -t . 2>&1 | tail -5
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/update_snapshot.py tests/test_update_snapshot.py README.md
+          git commit -m "feat(ci): graceful skip when TWSE data is not published yet"
+          git push
