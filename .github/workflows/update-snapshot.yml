@@ -1,10 +1,11 @@
 name: Update snapshot
 
 # 每個交易日台股收盤後，自動抓取臺灣證券交易所公開資料並更新 index.html 的內建快照。
-# 台北時間（UTC+8）15:30 = UTC 07:30，週一至週五。
+# 台北時間（UTC+8）13:32 = UTC 05:32，週一至週五。
+# 排程貼近 13:30 收盤；若端點尚未釋出當日資料，本次不建立 commit，候下次執行自動補上。
 on:
   schedule:
-    - cron: "30 7 * * 1-5"
+    - cron: "32 5 * * 1-5"
   workflow_dispatch:
 
 # 需要寫入權限才能把更新後的 index.html 推回 main。
