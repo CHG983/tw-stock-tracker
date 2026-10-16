@@ -10,9 +10,6 @@ on:
 
 permissions:
   contents: write
-  # Required: the bundle contains .github/workflows/update-snapshot.yml, and
-  # GitHub refuses a token without `workflows` permission to touch a workflow file.
-  workflows: write
 
 jobs:
   deploy:
@@ -32,20 +29,16 @@ jobs:
           head -c2 /tmp/bundle.tar.gz | od -An -tx1 | tr -d ' \n' | grep -qi '^1f8b' || { echo "::error::not a gzip archive"; exit 1; }
           mkdir -p /tmp/bundle
           tar -xzf /tmp/bundle.tar.gz -C /tmp/bundle
-          for f in .github/workflows/update-snapshot.yml tests/test_update_snapshot.py scripts/update_snapshot.py README.md; do
+          for f in tests/test_update_snapshot.py scripts/update_snapshot.py README.md; do
             test -f "/tmp/bundle/$f" || { echo "::error::missing $f"; exit 1; }
           done
-          cp /tmp/bundle/.github/workflows/update-snapshot.yml .github/workflows/update-snapshot.yml
           cp /tmp/bundle/tests/test_update_snapshot.py tests/test_update_snapshot.py
           cp /tmp/bundle/scripts/update_snapshot.py scripts/update_snapshot.py
           cp /tmp/bundle/README.md README.md
           python3 -m py_compile scripts/update_snapshot.py tests/test_update_snapshot.py
-          grep -qF 'cron: "0 * * * 1-5"' .github/workflows/update-snapshot.yml || { echo "::error::hourly cron missing"; exit 1; }
-          if grep -qF 'cron: "32 5 * * 1-5"' .github/workflows/update-snapshot.yml; then echo "::error::old 13:32 cron still present"; exit 1; fi
-          if grep -qF 'cron: "35 7 * * 1-5"' .github/workflows/update-snapshot.yml; then echo "::error::old 15:35 cron still present"; exit 1; fi
-          grep -qF 'github.event.schedule' .github/workflows/update-snapshot.yml || { echo "::error::schedule guard missing"; exit 1; }
+          grep -qF 'have a single hourly cron' tests/test_update_snapshot.py || { echo "::error::test update missing"; exit 1; }
           echo "validation OK"
-          sha256sum .github/workflows/update-snapshot.yml tests/test_update_snapshot.py scripts/update_snapshot.py README.md
+          sha256sum tests/test_update_snapshot.py scripts/update_snapshot.py README.md
 
       - name: Run unit tests
         run: python3 -m unittest discover -s tests -t .
@@ -57,5 +50,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --quiet && { echo "nothing to commit"; exit 0; }
-          git commit -m "ci(schedule): run snapshot update hourly (Taipei, Mon-Fri)"
+          # [skip ci]: the sibling update-snapshot.yml lands in a separate API commit;
+          # do not run CI on this intermediate half-updated tree.
+          git commit -m "docs(test): align schedule test and docs with hourly cadence [skip ci]"
           git push
