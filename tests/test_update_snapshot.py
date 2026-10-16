@@ -763,8 +763,10 @@ class TestNormalTradingDay(unittest.TestCase):
             self.assertNotIn(bad, blob, f"輸出含異常字串 {bad}")
 
     def test_written_size_reasonable(self):
+        # 上下界僅為「寫入是否完整、有無異常膨脹」的護欄，非產品規格；
+        # 隨頁面功能增加（如法人資金動向區塊）需一併調升上界。
         self.assertGreater(len(self.out), 80_000)
-        self.assertLess(len(self.out), 250_000)
+        self.assertLess(len(self.out), 400_000)
 
     # ---- SVG 繪製完整性 ----------------------------------------------
     def test_svg_wrapper_and_accessibility(self):

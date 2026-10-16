@@ -903,6 +903,47 @@
     .fg-comps{grid-template-columns:repeat(2,minmax(0,1fr));}
   }
   @media(max-width:520px){.fg-comps{grid-template-columns:1fr;}}
+
+  /* ---------- 法人資金動向（三大法人買賣超） ---------- */
+  .inst-card{margin-top:18px;}
+  .inst-actions{display:inline-flex;align-items:center;gap:8px;}
+  .inst-badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:640;
+    padding:3px 10px;border-radius:999px;border:1px solid var(--line-2);color:var(--ink-2);background:var(--surface-2);}
+  .inst-badge .d{width:7px;height:7px;border-radius:50%;background:#0a7d43;flex:0 0 auto;}
+  .inst-badge.is-live{color:#0a7d43;border-color:#0a7d43;background:#e8f6ee;}
+  .inst-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+  .inst-fig{border:1px solid var(--line);border-radius:12px;padding:12px 13px;background:var(--surface-2);}
+  .inst-fig-t{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}
+  .inst-fig-t b{font-size:13px;font-weight:660;}
+  .inst-fig-t span{font-size:11px;color:var(--ink-2);}
+  .inst-v{font-size:25px;font-weight:700;line-height:1.15;letter-spacing:.2px;}
+  .inst-v small{font-size:12px;font-weight:600;opacity:.75;margin-left:3px;}
+  .inst-meta{margin-top:7px;display:flex;flex-wrap:wrap;gap:6px 12px;font-size:11.5px;color:var(--ink-2);}
+  .inst-meta b{font-weight:650;}
+  .inst-charts{display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px;}
+  .inst-chartbox{border:1px solid var(--line);border-radius:12px;padding:12px 13px 6px;background:#fff;}
+  .inst-chartbox h3{margin:0 0 2px;font-size:12.5px;font-weight:660;letter-spacing:.1px;}
+  .inst-chartbox p{margin:0 0 4px;font-size:11px;color:var(--ink-2);line-height:1.6;}
+  .inst-svg{display:block;width:100%;height:auto;}
+  .inst-grid{stroke:#e8edf2;stroke-width:1;}
+  .inst-zero{stroke:#c9d3dc;stroke-width:1.2;stroke-dasharray:4 3;}
+  .inst-ax{font-size:10.5px;fill:#7b8896;}
+  .inst-bar{opacity:.92;}
+  .inst-area{fill:rgba(43,96,148,.14);}
+  .inst-line{fill:none;stroke:#2b6094;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round;}
+  .inst-last{stroke:#fff;stroke-width:1.6;}
+  .inst-legend{display:flex;flex-wrap:wrap;gap:10px;margin:2px 0 0;padding:0;list-style:none;font-size:11.5px;color:var(--ink-2);}
+  .inst-legend li{display:inline-flex;align-items:center;gap:5px;}
+  .inst-legend i{width:9px;height:9px;border-radius:2px;display:inline-block;}
+  .inst-note{margin:14px 0 0;font-size:11.5px;line-height:1.85;color:var(--ink-2);
+    border-top:1px dashed var(--line);padding-top:11px;}
+  .inst-note b{color:var(--ink-2);}
+  .inst-note code{font-family:var(--mono);font-size:10.5px;background:var(--surface-2);
+    border:1px solid var(--line-2);border-radius:4px;padding:0 4px;}
+  @media(max-width:860px){
+    .inst-cards{grid-template-columns:1fr;}
+    .inst-v{font-size:23px;}
+  }
 </style>
 </head>
 <body>
@@ -1070,6 +1111,158 @@
     <p class="fg-note" id="fg-note">
       <b>編製方式：</b>本指數為<b>本頁自行編製</b>的台股市場情緒指標（<b>非</b>官方或交易所發布之指數），以臺灣證券交易所公開資料計算 6 個分項後<b>等權平均</b>：動能（收盤相對 MA20）、波動（20 日年化波動度，越低越貪婪）、廣度（上漲家數 ÷（上漲＋下跌））、量能（成交金額相對 20 日均量，方向由 5 日漲跌決定）、槓桿（融資餘額 5 日變化）、法人（三大法人 5 日買賣超 ÷ 5 日成交金額）。各分項先映射為 0–100 分後平均為總分；分級為 0–24 極度恐懼、25–44 恐懼、45–55 中性、56–75 貪婪、76–100 極度貪婪。分項資料不足時不納入平均。<br>
       <b>即時更新：</b>點右上「更新」後，瀏覽器以 <code>fetch</code> 直接呼叫 <code>www.twse.com.tw</code> 之 MI_5MINS_HIST（指數歷史）、FMTQIK（成交金額）、MI_INDEX type=MS（漲跌家數）、MI_MARGN（融資餘額）、BFI82U（三大法人買賣超）等端點並重算；若連線失敗（離線或端點異常）則保留內建快照並標示，不會顯示空白或錯誤數字。歷史走勢線於更新時僅重算最新一日，過去各日沿用內建快照之計算值。
+    </p>
+  </section>
+
+  <!-- ================= 法人資金動向（三大法人買賣超）================= -->
+  <section class="card inst-card" aria-labelledby="inst-t">
+    <div class="card-head">
+      <h2 id="inst-t">法人資金動向 <span class="inst-en">Institutional Flows</span></h2>
+      <span class="sub" id="inst-sub">近 20 個交易日（2026/09/15 – 2026/10/15）·三大法人買賣超金額，單位：億元</span>
+      <span class="inst-actions">
+        <span class="inst-badge is-live" id="inst-mode"><span class="d" aria-hidden="true"></span><span id="inst-mode-text">內建快照</span></span>
+      </span>
+    </div>
+
+    <div class="inst-cards" id="inst-cards">
+      <div class="inst-fig">
+        <div class="inst-fig-t"><b>外資及陸資</b><span>不含外資自營商</span></div>
+        <div class="inst-v" id="inst-v-f" style="color:#0a7d43">−3025.6<small>億元</small></div>
+        <div class="inst-meta">
+          <span>20 日累計 <b id="inst-cum-f" style="color:#0a7d43">−4822.5</b> 億元</span>
+          <span>買超 <b>9</b> 日／賣超 <b>11</b> 日</span>
+        </div>
+      </div>
+      <div class="inst-fig">
+        <div class="inst-fig-t"><b>投信</b><span>國內股票型基金</span></div>
+        <div class="inst-v" id="inst-v-t" style="color:#d62b1c">+292.8<small>億元</small></div>
+        <div class="inst-meta">
+          <span>20 日累計 <b id="inst-cum-t" style="color:#d62b1c">+928.9</b> 億元</span>
+          <span>與外資<b>反向</b></span>
+        </div>
+      </div>
+      <div class="inst-fig">
+        <div class="inst-fig-t"><b>自營商</b><span>自行買賣＋避險</span></div>
+        <div class="inst-v" id="inst-v-d" style="color:#0a7d43">−958.2<small>億元</small></div>
+        <div class="inst-meta">
+          <span>20 日累計 <b id="inst-cum-d" style="color:#0a7d43">−1594.5</b> 億元</span>
+          <span>三大法人合計 <b id="inst-cum-a" style="color:#0a7d43">−5488.4</b> 億元</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="inst-charts">
+      <div class="inst-chartbox">
+        <h3>近 20 日三大法人買賣超</h3>
+        <p>每組三根長條依序為 外資／投信／自營商；軸上為買超、軸下為賣超，單位億元。</p>
+        <svg class="inst-svg" id="inst-bar-svg" viewBox="0 0 1000 200" role="img"
+             aria-label="近 20 個交易日三大法人買賣超長條圖，2026/10/15 外資賣超 3025.6 億元、投信買超 292.8 億元、自營商賣超 958.2 億元">
+          <title>近 20 個交易日三大法人買賣超（單位：億元）</title>
+          <line class="inst-grid" x1="46.0" y1="88.0" x2="974.0" y2="88.0"/>
+          <text class="inst-ax" x="38.0" y="91.5" text-anchor="end">3026</text>
+          <line class="inst-grid" x1="46.0" y1="119.0" x2="974.0" y2="119.0"/>
+          <text class="inst-ax" x="38.0" y="122.5" text-anchor="end">1513</text>
+          <line class="inst-grid" x1="46.0" y1="150.0" x2="974.0" y2="150.0"/>
+          <text class="inst-ax" x="38.0" y="153.5" text-anchor="end">0</text>
+          <line class="inst-grid" x1="46.0" y1="181.0" x2="974.0" y2="181.0"/>
+          <text class="inst-ax" x="38.0" y="184.5" text-anchor="end">-1513</text>
+          <line class="inst-grid" x1="46.0" y1="212.0" x2="974.0" y2="212.0"/>
+          <text class="inst-ax" x="38.0" y="215.5" text-anchor="end">-3026</text>
+          <rect class="inst-bar" x="50.2" y="150.0" width="10.2" height="12.8" fill="#0a7d43" rx="1"><title>09/15 外資 −627.0 億元</title></rect>
+          <rect class="inst-bar" x="64.1" y="150.0" width="10.2" height="0.6" fill="#0a7d43" rx="1"><title>09/15 投信 −19.9 億元</title></rect>
+          <rect class="inst-bar" x="78.0" y="150.0" width="10.2" height="2.9" fill="#0a7d43" rx="1"><title>09/15 自營 −142.1 億元</title></rect>
+          <rect class="inst-bar" x="96.6" y="150.0" width="10.2" height="3.7" fill="#0a7d43" rx="1"><title>09/16 外資 −179.8 億元</title></rect>
+          <rect class="inst-bar" x="110.5" y="147.8" width="10.2" height="2.2" fill="#d62b1c" rx="1"><title>09/16 投信 +106.5 億元</title></rect>
+          <rect class="inst-bar" x="124.4" y="150.0" width="10.2" height="2.7" fill="#0a7d43" rx="1"><title>09/16 自營 −129.7 億元</title></rect>
+          <rect class="inst-bar" x="143.0" y="147.5" width="10.2" height="2.5" fill="#d62b1c" rx="1"><title>09/17 外資 +121.9 億元</title></rect>
+          <rect class="inst-bar" x="156.9" y="147.6" width="10.2" height="2.4" fill="#d62b1c" rx="1"><title>09/17 投信 +117.0 億元</title></rect>
+          <rect class="inst-bar" x="170.8" y="149.7" width="10.2" height="0.6" fill="#d62b1c" rx="1"><title>09/17 自營 +15.8 億元</title></rect>
+          <rect class="inst-bar" x="189.4" y="132.2" width="10.2" height="17.8" fill="#d62b1c" rx="1"><title>09/18 外資 +869.9 億元</title></rect>
+          <rect class="inst-bar" x="203.3" y="148.3" width="10.2" height="1.7" fill="#d62b1c" rx="1"><title>09/18 投信 +81.5 億元</title></rect>
+          <rect class="inst-bar" x="217.2" y="145.0" width="10.2" height="5.0" fill="#d62b1c" rx="1"><title>09/18 自營 +243.0 億元</title></rect>
+          <rect class="inst-bar" x="235.8" y="145.8" width="10.2" height="4.2" fill="#d62b1c" rx="1"><title>09/21 外資 +204.8 億元</title></rect>
+          <rect class="inst-bar" x="249.7" y="149.1" width="10.2" height="0.9" fill="#d62b1c" rx="1"><title>09/21 投信 +46.0 億元</title></rect>
+          <rect class="inst-bar" x="263.6" y="145.3" width="10.2" height="4.7" fill="#d62b1c" rx="1"><title>09/21 自營 +227.3 億元</title></rect>
+          <rect class="inst-bar" x="282.2" y="140.7" width="10.2" height="9.3" fill="#d62b1c" rx="1"><title>09/22 外資 +453.2 億元</title></rect>
+          <rect class="inst-bar" x="296.1" y="150.0" width="10.2" height="0.6" fill="#0a7d43" rx="1"><title>09/22 投信 −3.7 億元</title></rect>
+          <rect class="inst-bar" x="310.0" y="146.8" width="10.2" height="3.2" fill="#d62b1c" rx="1"><title>09/22 自營 +158.5 億元</title></rect>
+          <rect class="inst-bar" x="328.6" y="142.4" width="10.2" height="7.6" fill="#d62b1c" rx="1"><title>09/23 外資 +373.1 億元</title></rect>
+          <rect class="inst-bar" x="342.5" y="150.0" width="10.2" height="1.0" fill="#0a7d43" rx="1"><title>09/23 投信 −47.6 億元</title></rect>
+          <rect class="inst-bar" x="356.4" y="148.8" width="10.2" height="1.2" fill="#d62b1c" rx="1"><title>09/23 自營 +58.2 億元</title></rect>
+          <rect class="inst-bar" x="375.0" y="150.0" width="10.2" height="6.8" fill="#0a7d43" rx="1"><title>09/24 外資 −329.6 億元</title></rect>
+          <rect class="inst-bar" x="388.9" y="150.0" width="10.2" height="2.6" fill="#0a7d43" rx="1"><title>09/24 投信 −128.2 億元</title></rect>
+          <rect class="inst-bar" x="402.8" y="149.7" width="10.2" height="0.6" fill="#d62b1c" rx="1"><title>09/24 自營 +13.4 億元</title></rect>
+          <rect class="inst-bar" x="421.4" y="150.0" width="10.2" height="12.8" fill="#0a7d43" rx="1"><title>09/29 外資 −625.8 億元</title></rect>
+          <rect class="inst-bar" x="435.3" y="149.9" width="10.2" height="0.6" fill="#d62b1c" rx="1"><title>09/29 投信 +5.8 億元</title></rect>
+          <rect class="inst-bar" x="449.2" y="150.0" width="10.2" height="3.4" fill="#0a7d43" rx="1"><title>09/29 自營 −164.0 億元</title></rect>
+          <rect class="inst-bar" x="467.8" y="143.7" width="10.2" height="6.3" fill="#d62b1c" rx="1"><title>09/30 外資 +308.6 億元</title></rect>
+          <rect class="inst-bar" x="481.7" y="148.3" width="10.2" height="1.7" fill="#d62b1c" rx="1"><title>09/30 投信 +82.9 億元</title></rect>
+          <rect class="inst-bar" x="495.6" y="149.7" width="10.2" height="0.6" fill="#d62b1c" rx="1"><title>09/30 自營 +12.4 億元</title></rect>
+          <rect class="inst-bar" x="514.2" y="145.5" width="10.2" height="4.5" fill="#d62b1c" rx="1"><title>10/01 外資 +219.4 億元</title></rect>
+          <rect class="inst-bar" x="528.1" y="148.8" width="10.2" height="1.2" fill="#d62b1c" rx="1"><title>10/01 投信 +58.7 億元</title></rect>
+          <rect class="inst-bar" x="542.0" y="149.7" width="10.2" height="0.6" fill="#d62b1c" rx="1"><title>10/01 自營 +16.6 億元</title></rect>
+          <rect class="inst-bar" x="560.6" y="149.5" width="10.2" height="0.6" fill="#d62b1c" rx="1"><title>10/02 外資 +26.2 億元</title></rect>
+          <rect class="inst-bar" x="574.5" y="148.8" width="10.2" height="1.2" fill="#d62b1c" rx="1"><title>10/02 投信 +57.7 億元</title></rect>
+          <rect class="inst-bar" x="588.4" y="149.6" width="10.2" height="0.6" fill="#d62b1c" rx="1"><title>10/02 自營 +20.3 億元</title></rect>
+          <rect class="inst-bar" x="607.0" y="135.3" width="10.2" height="14.7" fill="#d62b1c" rx="1"><title>10/05 外資 +719.0 億元</title></rect>
+          <rect class="inst-bar" x="620.9" y="150.0" width="10.2" height="1.1" fill="#0a7d43" rx="1"><title>10/05 投信 −52.9 億元</title></rect>
+          <rect class="inst-bar" x="634.8" y="147.8" width="10.2" height="2.2" fill="#d62b1c" rx="1"><title>10/05 自營 +109.5 億元</title></rect>
+          <rect class="inst-bar" x="653.4" y="150.0" width="10.2" height="1.4" fill="#0a7d43" rx="1"><title>10/06 外資 −66.6 億元</title></rect>
+          <rect class="inst-bar" x="667.3" y="150.0" width="10.2" height="2.9" fill="#0a7d43" rx="1"><title>10/06 投信 −142.6 億元</title></rect>
+          <rect class="inst-bar" x="681.2" y="149.6" width="10.2" height="0.6" fill="#d62b1c" rx="1"><title>10/06 自營 +17.2 億元</title></rect>
+          <rect class="inst-bar" x="699.8" y="150.0" width="10.2" height="2.7" fill="#0a7d43" rx="1"><title>10/07 外資 −130.4 億元</title></rect>
+          <rect class="inst-bar" x="713.7" y="150.0" width="10.2" height="0.7" fill="#0a7d43" rx="1"><title>10/07 投信 −33.2 億元</title></rect>
+          <rect class="inst-bar" x="727.6" y="150.0" width="10.2" height="1.6" fill="#0a7d43" rx="1"><title>10/07 自營 −78.0 億元</title></rect>
+          <rect class="inst-bar" x="746.2" y="150.0" width="10.2" height="15.5" fill="#0a7d43" rx="1"><title>10/08 外資 −758.5 億元</title></rect>
+          <rect class="inst-bar" x="760.1" y="149.4" width="10.2" height="0.6" fill="#d62b1c" rx="1"><title>10/08 投信 +30.1 億元</title></rect>
+          <rect class="inst-bar" x="774.0" y="150.0" width="10.2" height="3.8" fill="#0a7d43" rx="1"><title>10/08 自營 −187.3 億元</title></rect>
+          <rect class="inst-bar" x="792.6" y="150.0" width="10.2" height="10.7" fill="#0a7d43" rx="1"><title>10/12 外資 −522.0 億元</title></rect>
+          <rect class="inst-bar" x="806.5" y="148.5" width="10.2" height="1.5" fill="#d62b1c" rx="1"><title>10/12 投信 +71.4 億元</title></rect>
+          <rect class="inst-bar" x="820.4" y="150.0" width="10.2" height="2.9" fill="#0a7d43" rx="1"><title>10/12 自營 −142.9 億元</title></rect>
+          <rect class="inst-bar" x="839.0" y="150.0" width="10.2" height="33.9" fill="#0a7d43" rx="1"><title>10/13 外資 −1652.9 億元</title></rect>
+          <rect class="inst-bar" x="852.9" y="145.0" width="10.2" height="5.0" fill="#d62b1c" rx="1"><title>10/13 投信 +246.3 億元</title></rect>
+          <rect class="inst-bar" x="866.8" y="150.0" width="10.2" height="11.7" fill="#0a7d43" rx="1"><title>10/13 自營 −569.8 億元</title></rect>
+          <rect class="inst-bar" x="885.4" y="150.0" width="10.2" height="4.1" fill="#0a7d43" rx="1"><title>10/14 外資 −200.4 億元</title></rect>
+          <rect class="inst-bar" x="899.3" y="146.7" width="10.2" height="3.3" fill="#d62b1c" rx="1"><title>10/14 投信 +160.3 億元</title></rect>
+          <rect class="inst-bar" x="913.2" y="150.0" width="10.2" height="2.4" fill="#0a7d43" rx="1"><title>10/14 自營 −114.7 億元</title></rect>
+          <rect class="inst-bar" x="931.8" y="150.0" width="10.2" height="62.0" fill="#0a7d43" rx="1"><title>10/15 外資 −3025.6 億元</title></rect>
+          <rect class="inst-bar" x="945.7" y="144.0" width="10.2" height="6.0" fill="#d62b1c" rx="1"><title>10/15 投信 +292.8 億元</title></rect>
+          <rect class="inst-bar" x="959.6" y="150.0" width="10.2" height="19.6" fill="#0a7d43" rx="1"><title>10/15 自營 −958.2 億元</title></rect>
+          <text class="inst-ax" x="69.2" y="238.0" text-anchor="start">09/15</text>
+          <text class="inst-ax" x="254.8" y="238.0" text-anchor="middle">09/21</text>
+          <text class="inst-ax" x="486.8" y="238.0" text-anchor="middle">09/30</text>
+          <text class="inst-ax" x="718.8" y="238.0" text-anchor="middle">10/07</text>
+          <text class="inst-ax" x="950.8" y="238.0" text-anchor="end">10/15</text>
+        </svg>
+        <ul class="inst-legend"><li><i style="background:#2b6094"></i>外資及陸資</li><li><i style="background:#8a4f04"></i>投信</li><li><i style="background:#0a5f70"></i>自營商</li><li><i style="background:#d62b1c"></i>買超（正值）／<i style="background:#0a7d43"></i>賣超（負值）</li></ul>
+      </div>
+
+      <div class="inst-chartbox">
+        <h3>外資累計買賣超趨勢</h3>
+        <p>自 2026/09/15 起累計外資及陸資買賣超；線向下代表期間累計為賣超。</p>
+        <svg class="inst-svg" id="inst-cum-svg" viewBox="0 0 1000 200" role="img"
+             aria-label="外資累計買賣超趨勢，區間內累計 −4822.5 億元">
+          <title>外資及陸資累計買賣超（2026/09/15 – 2026/10/15，單位：億元）</title>
+          <line class="inst-zero" x1="46.0" y1="64.5" x2="974.0" y2="64.5"/>
+          <text class="inst-ax" x="38.0" y="161.5" text-anchor="end">-5585</text>
+          <text class="inst-ax" x="38.0" y="95.5" text-anchor="end">-1644</text>
+          <text class="inst-ax" x="38.0" y="29.5" text-anchor="end">2297</text>
+          <path class="inst-area" d="M46.0,158.0 L46.0 75.0 L94.8 78.0 L143.7 75.9 L192.5 61.4 L241.4 57.9 L290.2 50.3 L339.1 44.1 L387.9 49.6 L436.7 60.1 L485.6 54.9 L534.4 51.3 L583.3 50.8 L632.1 38.8 L680.9 39.9 L729.8 42.1 L778.6 54.8 L827.5 63.5 L876.3 91.2 L925.2 94.6 L974.0 145.2 L974.0,158.0 Z"/>
+          <polyline class="inst-line" id="inst-cum-line" points="46.0,75.0 94.8,78.0 143.7,75.9 192.5,61.4 241.4,57.9 290.2,50.3 339.1,44.1 387.9,49.6 436.7,60.1 485.6,54.9 534.4,51.3 583.3,50.8 632.1,38.8 680.9,39.9 729.8,42.1 778.6,54.8 827.5,63.5 876.3,91.2 925.2,94.6 974.0,145.2"/>
+          <circle class="inst-last" cx="974.0" cy="145.2" r="4.2" fill="#0a7d43"/>
+          <text class="inst-ax" x="46.0" y="184.0" text-anchor="start">09/15</text><text class="inst-ax" x="485.6" y="184.0" text-anchor="middle">09/30</text><text class="inst-ax" x="974.0" y="184.0" text-anchor="end">10/15</text>
+        </svg>
+      </div>
+    </div>
+
+    <p class="inst-note" id="inst-note">
+      <b>解讀：</b>近 20 個交易日三大法人合計<b>−5488.4</b> 億元，其中外資及陸資 <b>−4822.5</b> 億元（買超 9 日／賣超 11 日）、
+      投信 <b>+928.9</b> 億元、自營商 <b>−1594.5</b> 億元；區間內單日最大賣超為 <b>10/15 的 −3691.0 億元</b>。
+      <code>同步訊號</code> 外資與投信 <b>方向相反（外資賣超／投信買超）</b>。
+      <br>
+      <b>資料來源與說明：</b>數字取自臺灣證券交易所「三大法人買賣金額統計表」（<code>BFI82U</code>，交易日收盤後公布）與
+      <code>FMTQIK</code>（成交資訊），為<b>買賣超金額</b>（買進金額減賣出金額），不含外資自營商；正值為買超（紅）、負值為賣超（綠）。
+      頁面顯示<b>內建快照</b>（資料日期 2026/10/15），非即時報價；交易所可能更正數據，實際數字以交易所公告為準。本區塊僅為公開資料之整理，不構成投資建議。
     </p>
   </section>
 
@@ -2992,6 +3185,96 @@
   }
 })();
 </script>
+
+  <script>
+  /* ================= 法人資金動向：內建快照 + 前端重繪 ================= */
+  /*SNAP:INST_DATA*/var INST_DATA={"asOf":"20261015","rows":[{"d":"20260915","f":-627.0,"t":-19.9,"dl":-142.1,"tot":-789.0,"amt":6347.1,"ix":45511.49},{"d":"20260916","f":-179.8,"t":106.5,"dl":-129.7,"tot":-203.1,"amt":6759.7,"ix":45848.9},{"d":"20260917","f":121.9,"t":117.0,"dl":15.8,"tot":254.7,"amt":8666.2,"ix":46288.0},{"d":"20260918","f":869.9,"t":81.5,"dl":243.0,"tot":1194.5,"amt":11423.2,"ix":47180.75},{"d":"20260921","f":204.8,"t":46.0,"dl":227.3,"tot":478.0,"amt":8668.2,"ix":47718.84},{"d":"20260922","f":453.2,"t":-3.7,"dl":158.5,"tot":608.1,"amt":10787.8,"ix":47800.17},{"d":"20260923","f":373.1,"t":-47.6,"dl":58.2,"tot":383.8,"amt":8946.5,"ix":48157.29},{"d":"20260924","f":-329.6,"t":-128.2,"dl":13.4,"tot":-444.5,"amt":7755.9,"ix":48024.6},{"d":"20260929","f":-625.8,"t":5.8,"dl":-164.0,"tot":-784.1,"amt":8361.4,"ix":47631.96},{"d":"20260930","f":308.6,"t":82.9,"dl":12.4,"tot":403.9,"amt":9214.9,"ix":47940.13},{"d":"20261001","f":219.4,"t":58.7,"dl":16.6,"tot":294.6,"amt":8740.5,"ix":48353.49},{"d":"20261002","f":26.2,"t":57.7,"dl":20.3,"tot":104.2,"amt":9382.2,"ix":48475.74},{"d":"20261005","f":719.0,"t":-52.9,"dl":109.5,"tot":775.5,"amt":12110.4,"ix":49712.04},{"d":"20261006","f":-66.6,"t":-142.6,"dl":17.2,"tot":-192.0,"amt":10262.0,"ix":49822.55},{"d":"20261007","f":-130.4,"t":-33.2,"dl":-78.0,"tot":-241.6,"amt":9862.8,"ix":49806.37},{"d":"20261008","f":-758.5,"t":30.1,"dl":-187.3,"tot":-915.7,"amt":9245.1,"ix":49313.44},{"d":"20261012","f":-522.0,"t":71.4,"dl":-142.9,"tot":-593.5,"amt":8945.2,"ix":49301.96},{"d":"20261013","f":-1652.9,"t":246.3,"dl":-569.8,"tot":-1976.4,"amt":12018.6,"ix":48341.31},{"d":"20261014","f":-200.4,"t":160.3,"dl":-114.7,"tot":-154.8,"amt":9781.4,"ix":48625.83},{"d":"20261015","f":-3025.6,"t":292.8,"dl":-958.2,"tot":-3691.0,"amt":14357.6,"ix":46969.87}],"cumF":[-627.0,-806.8,-684.9,185.0,389.8,843.0,1216.1,886.5,260.7,569.3,788.7,814.9,1533.9,1467.3,1336.9,578.4,56.4,-1596.5,-1796.9,-4822.5]};/*/SNAP:INST_DATA*/
+  (function(){
+    "use strict";
+    var RED="#d62b1c", GREEN="#0a7d43", BLUE="#2b6094", GREY="#8a97a5";
+    var SER=[["f",-0.30],["t",0.0],["dl",0.30]];
+    var X0=46, X1=974, Y0=150, MID=62, CY0=158, CY1=26;
+    function col(v){ return v>0?RED:(v<0?GREEN:GREY); }
+    function sgn(v){ var s=Math.abs(v).toFixed(1); return (v>0?"+":(v<0?"\u2212":""))+s; }
+    function byId(i){ return document.getElementById(i); }
+    function el(t,a){ var e=document.createElementNS("http://www.w3.org/2000/svg",t),k;
+      for(k in a) e.setAttribute(k,a[k]); return e; }
+
+    function drawBars(svg,rows){
+      var old=svg.querySelectorAll(".inst-bar"); for(var q=0;q<old.length;q++) old[q].parentNode.removeChild(old[q]);
+      var n=rows.length, maxabs=0, i, s;
+      for(i=0;i<n;i++) for(s=0;s<3;s++) maxabs=Math.max(maxabs, Math.abs(rows[i][SER[s][0]]));
+      if(maxabs<=0) return;
+      var slot=(X1-X0)/n, bw=slot*0.22, lab=svg.querySelector("#inst-xlab");
+      if(lab) svg.removeChild(lab);
+      for(i=0;i<n;i++){
+        var cx=X0+slot*(i+0.5);
+        for(s=0;s<3;s++){
+          var v=rows[i][SER[s][0]], h=Math.abs(v)/maxabs*MID;
+          var x=cx+slot*SER[s][1]-bw/2, y=v>0?Y0-h:Y0;
+          var r=el("rect",{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),
+            height:Math.max(h,0.6).toFixed(1),fill:col(v),rx:1,"class":"inst-bar"});
+          var t=el("title",{}); t.textContent=rows[i].d.slice(4,6)+"/"+rows[i].d.slice(6,8)+" "+sgn(v)+" 億元";
+          r.appendChild(t); svg.appendChild(r);
+        }
+      }
+      var g=el("g",{id:"inst-xlab"});
+      [0,4,9,14,19].forEach(function(ix){
+        if(ix>=n) return;
+        var tx=el("text",{x:(X0+slot*(ix+0.5)).toFixed(1),y:(Y0+MID+26).toFixed(1),
+          "text-anchor":ix===0?"start":(ix===n-1?"end":"middle"),"class":"inst-ax"});
+        tx.textContent=rows[ix].d.slice(4,6)+"/"+rows[ix].d.slice(6,8); g.appendChild(tx);
+      });
+      svg.appendChild(g);
+    }
+
+    function drawCum(svg,rows,cum){
+      var n=rows.length, i, lo=0, hi=0;
+      for(i=0;i<n;i++){ lo=Math.min(lo,cum[i]); hi=Math.max(hi,cum[i]); }
+      if(hi-lo<1) hi=lo+1;
+      var pad=(hi-lo)*0.12; lo-=pad; hi+=pad;
+      function cy(v){ return CY0-(v-lo)/(hi-lo)*(CY0-CY1); }
+      var pts=[], d2="", s;
+      for(i=0;i<n;i++){
+        var x=X0+(X1-X0)*i/(n-1), y=cy(cum[i]);
+        pts.push([x,y]); d2+=(i?" L":"M")+x.toFixed(1)+" "+y.toFixed(1);
+      }
+      var ln=byId("inst-cum-line"); if(ln) ln.setAttribute("points", pts.map(function(p){return p[0].toFixed(1)+","+p[1].toFixed(1);}).join(" "));
+      var ar=svg.querySelector(".inst-area");
+      if(ar) ar.setAttribute("d","M"+X0.toFixed(1)+","+CY0.toFixed(1)+" L"+d2.slice(1)+" L"+X1.toFixed(1)+","+CY0.toFixed(1)+" Z");
+      var dt=svg.querySelector(".inst-last");
+      if(dt){ dt.setAttribute("cx",pts[n-1][0].toFixed(1)); dt.setAttribute("cy",pts[n-1][1].toFixed(1)); }
+    }
+
+    function render(d){
+      var rows=d.rows||[], cum=d.cumF||[];
+      if(rows.length<2) return;
+      var last=rows[rows.length-1];
+      var b=byId("inst-bar-svg"), c=byId("inst-cum-svg");
+      if(b) drawBars(b,rows);
+      if(c) drawCum(c,rows,cum);
+
+      var vf=byId("inst-v-f"), vt=byId("inst-v-t"), vd=byId("inst-v-d");
+      if(vf){ vf.textContent=sgn(last.f); vf.insertAdjacentHTML("beforeend","<small>億元</small>"); vf.style.color=col(last.f); }
+      if(vt){ vt.textContent=sgn(last.t); vt.insertAdjacentHTML("beforeend","<small>億元</small>"); vt.style.color=col(last.t); }
+      if(vd){ vd.textContent=sgn(last.dl); vd.insertAdjacentHTML("beforeend","<small>億元</small>"); vd.style.color=col(last.dl); }
+
+      var cf=0,ct=0,cd=0,ca=0, i;
+      for(i=0;i<rows.length;i++){ cf+=rows[i].f; ct+=rows[i].t; cd+=rows[i].dl; ca+=rows[i].tot; }
+      var z=byId("inst-cum-f"); if(z){ z.textContent=sgn(cf); z.style.color=col(cf); }
+      var z2=byId("inst-cum-t"); if(z2){ z2.textContent=sgn(ct); z2.style.color=col(ct); }
+      var z3=byId("inst-cum-d"); if(z3){ z3.textContent=sgn(cd); z3.style.color=col(cd); }
+      var z4=byId("inst-cum-a"); if(z4){ z4.textContent=sgn(ca); z4.style.color=col(ca); }
+      var sb=byId("inst-sub");
+      if(sb) sb.textContent="近 "+rows.length+" 個交易日（"+fmtD(rows[0].d)+" – "+fmtD(rows[rows.length-1].d)+"）·三大法人買賣超金額，單位：億元";
+      var bd=byId("inst-mode-text"); if(bd) bd.textContent="內建快照 · "+fmtD(d.asOf);
+    }
+    function fmtD(x){ return x.slice(0,4)+"/"+x.slice(4,6)+"/"+x.slice(6,8); }
+
+    function boot(){ render(INST_DATA); }
+    if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", boot); else boot();
+  })();
+  </script>
 </main>
 </body>
 </html>
