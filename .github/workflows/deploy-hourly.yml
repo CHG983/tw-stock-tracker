@@ -25,23 +25,27 @@ jobs:
       - name: Fetch and validate
         run: |
           set -euo pipefail
-          curl -fsSL "${{ inputs.url }}" -o /tmp/bundle.tar.gz
+          curl -fsSL -A "curl/8" "${{ inputs.url }}" -o /tmp/bundle.tar.gz
+          # must really be gzip, not an HTML error page
+          head -c2 /tmp/bundle.tar.gz | od -An -tx1 | tr -d ' \n' | grep -qi '^1f8b' || { echo "::error::not a gzip archive"; exit 1; }
           mkdir -p /tmp/bundle
           tar -xzf /tmp/bundle.tar.gz -C /tmp/bundle
           for f in .github/workflows/update-snapshot.yml tests/test_update_snapshot.py scripts/update_snapshot.py README.md; do
             test -f "/tmp/bundle/$f" || { echo "::error::missing $f"; exit 1; }
           done
-          # apply into the working tree, then validate the RESULT
           cp /tmp/bundle/.github/workflows/update-snapshot.yml .github/workflows/update-snapshot.yml
           cp /tmp/bundle/tests/test_update_snapshot.py tests/test_update_snapshot.py
           cp /tmp/bundle/scripts/update_snapshot.py scripts/update_snapshot.py
           cp /tmp/bundle/README.md README.md
-          python3 -c "import yaml;d=yaml.safe_load(open('.github/workflows/update-snapshot.yml'));print('crons:',d[True]['schedule'])"
+          # syntax checks (stdlib only)
           python3 -m py_compile scripts/update_snapshot.py tests/test_update_snapshot.py
-          grep -q 'cron: "0 \* \* \* 1-5"' .github/workflows/update-snapshot.yml || { echo "::error::hourly cron missing"; exit 1; }
-          ! grep -q 'cron: "32 5 \* \* 1-5"' .github/workflows/update-snapshot.yml || { echo "::error::old 13:32 cron still present"; exit 1; }
-          ! grep -q 'cron: "35 7 \* \* 1-5"' .github/workflows/update-snapshot.yml || { echo "::error::old 15:35 cron still present"; exit 1; }
+          # schedule assertions
+          grep -qF 'cron: "0 * * * 1-5"' .github/workflows/update-snapshot.yml || { echo "::error::hourly cron missing"; exit 1; }
+          if grep -qF 'cron: "32 5 * * 1-5"' .github/workflows/update-snapshot.yml; then echo "::error::old 13:32 cron still present"; exit 1; fi
+          if grep -qF 'cron: "35 7 * * 1-5"' .github/workflows/update-snapshot.yml; then echo "::error::old 15:35 cron still present"; exit 1; fi
+          grep -qF 'github.event.schedule' .github/workflows/update-snapshot.yml || { echo "::error::schedule guard missing"; exit 1; }
           echo "validation OK"
+          sha256sum .github/workflows/update-snapshot.yml tests/test_update_snapshot.py scripts/update_snapshot.py README.md
 
       - name: Run unit tests
         run: python3 -m unittest discover -s tests -t .
@@ -55,4 +59,3 @@ jobs:
           git diff --cached --quiet && { echo "nothing to commit"; exit 0; }
           git commit -m "ci(schedule): run snapshot update hourly (Taipei, Mon-Fri)"
           git push
-          sha256sum .github/workflows/update-snapshot.yml tests/test_update_snapshot.py scripts/update_snapshot.py README.md
