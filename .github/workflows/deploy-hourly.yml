@@ -36,7 +36,10 @@ jobs:
           cp /tmp/bundle/scripts/update_snapshot.py scripts/update_snapshot.py
           cp /tmp/bundle/README.md README.md
           python3 -m py_compile scripts/update_snapshot.py tests/test_update_snapshot.py
-          grep -qF 'have a single hourly cron' tests/test_update_snapshot.py || { echo "::error::test update missing"; exit 1; }
+          # the updated test must already expect the HOURLY cron
+          grep -qF 'cron: "0 * * * 1-5"' tests/test_update_snapshot.py || { echo "::error::test not updated for hourly"; exit 1; }
+          grep -qF 'def test_workflow_runs_hourly_with_flag_on_scheduled_runs' tests/test_update_snapshot.py || { echo "::error::renamed test missing"; exit 1; }
+          grep -qF '每小時' README.md || { echo "::error::README not updated"; exit 1; }
           echo "validation OK"
           sha256sum tests/test_update_snapshot.py scripts/update_snapshot.py README.md
 
