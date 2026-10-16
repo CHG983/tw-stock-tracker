@@ -2,6 +2,186 @@
   "captured_at_taipei": "2026/10/15 19:05:41",
   "data_date": "2026/10/15",
   "files": {
+    "bfi82u/20260915.json": {
+      "bytes": 1569,
+      "params": {
+        "dayDate": "20260915",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260916.json": {
+      "bytes": 1570,
+      "params": {
+        "dayDate": "20260916",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260917.json": {
+      "bytes": 1567,
+      "params": {
+        "dayDate": "20260917",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260918.json": {
+      "bytes": 1568,
+      "params": {
+        "dayDate": "20260918",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260921.json": {
+      "bytes": 1567,
+      "params": {
+        "dayDate": "20260921",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260922.json": {
+      "bytes": 1565,
+      "params": {
+        "dayDate": "20260922",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260923.json": {
+      "bytes": 1565,
+      "params": {
+        "dayDate": "20260923",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260924.json": {
+      "bytes": 1569,
+      "params": {
+        "dayDate": "20260924",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260929.json": {
+      "bytes": 1565,
+      "params": {
+        "dayDate": "20260929",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260930.json": {
+      "bytes": 1563,
+      "params": {
+        "dayDate": "20260930",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20261001.json": {
+      "bytes": 1566,
+      "params": {
+        "dayDate": "20261001",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20261002.json": {
+      "bytes": 1565,
+      "params": {
+        "dayDate": "20261002",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20261005.json": {
+      "bytes": 1567,
+      "params": {
+        "dayDate": "20261005",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20261006.json": {
+      "bytes": 1569,
+      "params": {
+        "dayDate": "20261006",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20261007.json": {
+      "bytes": 1570,
+      "params": {
+        "dayDate": "20261007",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20261008.json": {
+      "bytes": 1569,
+      "params": {
+        "dayDate": "20261008",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20261012.json": {
+      "bytes": 1567,
+      "params": {
+        "dayDate": "20261012",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20261013.json": {
+      "bytes": 1574,
+      "params": {
+        "dayDate": "20261013",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20261014.json": {
+      "bytes": 1570,
+      "params": {
+        "dayDate": "20261014",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20261015.json": {
+      "bytes": 1575,
+      "params": {
+        "dayDate": "20261015",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
     "fmtqik/202505.json": {
       "bytes": 2159,
       "params": {

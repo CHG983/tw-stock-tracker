@@ -42,8 +42,8 @@ import _harness as H  # noqa: E402
 import analyst  # noqa: E402
 import update_snapshot as us  # noqa: E402
 
-PATH_STOCK, PATH_MI, PATH_FMT, PATH_5MIN = (
-    H.PATH_STOCK, H.PATH_MI, H.PATH_FMT, H.PATH_5MIN)
+PATH_STOCK, PATH_MI, PATH_FMT, PATH_5MIN, PATH_BFI = (
+    H.PATH_STOCK, H.PATH_MI, H.PATH_FMT, H.PATH_5MIN, H.PATH_BFI)
 TZ = H.TZ_TAIPEI
 
 
@@ -109,7 +109,9 @@ def no_temps(path: str) -> bool:
 
 def fixture_files() -> list[str]:
     out = ["meta.json", "stock_day_all.csv", "mi_index_ms.json", "mi_5mins_hist.json"]
-    return out + [os.path.join("fmtqik", f"{m}.json") for m in H.meta()["months"]]
+    out += [os.path.join("fmtqik", f"{m}.json") for m in H.meta()["months"]]
+    out += [os.path.join("bfi82u", f"{d}.json") for d in H.inst_days()]
+    return out
 
 
 # ==========================================================================
@@ -553,6 +555,17 @@ FAILURE_CASES = [
     ("stock_json_null", PATH_STOCK, "json_null_body"),
     ("mi_data_null", PATH_MI, "mi_data_null"),
     ("fmt_short_row", PATH_FMT, "fmt_short_row"),
+    # --- 法人買賣超（BFI82U）：逐日端點。stat 非 OK、缺列、合計不符都必須失敗，
+    #     絕不得以 0 或前一日數字代替（那會讓圖表出現假數字）。 ---
+    ("bfi_stat_bad", PATH_BFI, "bfi_stat_bad"),
+    ("bfi_drop_foreign", PATH_BFI, "bfi_drop_foreign"),
+    ("bfi_drop_total", PATH_BFI, "bfi_drop_total"),
+    ("bfi_mismatch_total", PATH_BFI, "bfi_mismatch_total"),
+    ("bfi_bad_json", PATH_BFI, "bad_json"),
+    ("bfi_empty_body", PATH_BFI, "empty_body"),
+    ("bfi_html_error", PATH_BFI, "html_error"),
+    ("bfi_http500", PATH_BFI, "http_500"),
+    ("bfi_timeout", PATH_BFI, "timeout"),
 ]
 
 
@@ -711,9 +724,9 @@ class TestNormalTradingDay(unittest.TestCase):
     def setUp(self):
         self.out = baseline_out()
 
-    # ---- 25 組 marker 全部由本次資料重建 ------------------------------
-    def test_all_27_regions_are_rewritten_from_live_data(self):
-        """把 27 個區塊內容全換成哨兵，重跑後哨兵必須全部消失。"""
+    # ---- SNAP marker 全部由本次資料重建 ------------------------------
+    def test_all_29_regions_are_rewritten_from_live_data(self):
+        """把全部區塊內容全換成哨兵，重跑後哨兵必須全部消失。"""
         sentinel = "ZZ__STALE__ZZ"
         corrupted = H.repo_index_html()
         for name in sorted(H.EXPECTED_REGIONS):
@@ -732,10 +745,10 @@ class TestNormalTradingDay(unittest.TestCase):
         self.assertEqual(survivors, [], f"以下區塊未被更新：{survivors}")
         self.assertNotIn(sentinel, out)
 
-    def test_expected_region_set_is_28(self):
-        self.assertEqual(len(H.EXPECTED_REGIONS), 28)
+    def test_expected_region_set_is_29(self):
+        self.assertEqual(len(H.EXPECTED_REGIONS), 29)
 
-    def test_source_has_all_28_markers(self):
+    def test_source_has_all_29_markers(self):
         src = H.repo_index_html()
         for name in sorted(H.EXPECTED_REGIONS):
             self.assertIsNotNone(us._region_body(src, name), f"index.html 缺 marker {name}")
@@ -1457,6 +1470,7 @@ class TestNoNetwork(unittest.TestCase):
             us.fetch(PATH_MI, {"date": "20260924"})
             us.fetch(PATH_5MIN)
             us.fetch(PATH_FMT, {"date": "20260901"})
+            us.fetch(PATH_BFI, {"dayDate": H.inst_days()[-1]})
         self.assertEqual({api.parse(u)[0] for u in api.calls}, set(H.ALL_PATHS))
 
     def test_fetch_touches_only_the_twse_base(self):

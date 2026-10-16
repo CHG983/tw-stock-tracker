@@ -59,6 +59,9 @@ HISTORY_DAYS = 260                      # 均線／交叉計算區間（交易�
 # 只換到 271 個交易日，低於均線完整計所需的 279（HISTORY_DAYS + 19），每日更新因此直接失敗。
 # 18 個月約 356 個交易日，留有充足安全邊際。此值須與 tests/fixtures 的 months 一致。
 HISTORY_MONTHS = 18
+# 「法人資金動向」快照要重算幾個交易日。前端圖表固定以 20 個交易日為一組
+# （長條圖 60 根、外資累計線 20 點），故此值必須與頁面前端契約一致。
+INST_WINDOW = 20
 PRICE_LO_Y, PRICE_HI_Y = 240.8, 57.7    # 主圖最下／最上格線
 AREA_FLOOR_Y = 250.0
 VOL_BASE_Y = 380.0
@@ -73,7 +76,8 @@ MINUS = "\u2212"                        # U+2212，頁面統一使用的負號
 
 # 位於 <script> 內的區塊必須用 JS 區塊註解標記：HTML 註解（<!-- -->）在
 # <script> 內會被瀏覽器視為「單行註解」，會把整個 JS 敘述註解掉而使頁面失效。
-JS_REGIONS = {"JS_SNAPAT", "JS_STATINIT", "AI_CHAT_DATA", "UNIVERSE_DATA"}
+JS_REGIONS = {"JS_SNAPAT", "JS_STATINIT", "AI_CHAT_DATA", "UNIVERSE_DATA",
+              "INST_DATA"}
 
 TZ_TAIPEI = timezone(timedelta(hours=8))
 
@@ -399,6 +403,100 @@ def get_today_ohlc(ad_date: str) -> dict:
                 raise RuntimeError(f"MI_5MINS_HIST {ad_date} OHLC 無法解析：{r}")
             return {"open": o, "high": h, "low": l, "close": c}
     raise RuntimeError(f"MI_5MINS_HIST 找不到 {ad_date} 的資料")
+
+
+def inst_buy_sell(ad_date: str) -> dict | None:
+    """BFI82U：三大法人買賣金額統計表，回傳各法人買賣超（單位：元）。
+
+    非交易日或當日尚未公布時，TWSE 回傳 HTTP 200 但 ``stat != "OK"``；
+    此情況回傳 ``None``（＝該日無資料），由呼叫端與 FMTQIK 的交易日清單交叉確認，
+    絕不以 0 或前一日數字代替。端點異常（連線失敗、壞 JSON、缺列）則直接 raise，
+    讓整支程式失敗並保留原檔。
+    """
+    j = fetch_json("/rwd/zh/fund/BFI82U",
+                   {"dayDate": ad_date.replace("/", ""), "type": "day",
+                    "response": "json"})
+    if j.get("stat") != "OK":
+        return None
+    out: dict = {}
+    for r in (j.get("data") or []):
+        key = str(r[0])
+        val = n2(r[3]) if len(r) > 3 else None
+        if key.startswith("外資及陸資"):
+            out["foreign"] = val
+        elif key.startswith("投信"):
+            out["trust"] = val
+        elif key.startswith("自營商(自行"):
+            out["self"] = val
+        elif key.startswith("自營商(避險"):
+            out["hedge"] = val
+        elif key.startswith("合計"):
+            out["total"] = val
+    for k, label in (("foreign", "外資及陸資"), ("trust", "投信"),
+                     ("self", "自營商(自行買賣)"), ("hedge", "自營商(避險)"),
+                     ("total", "合計")):
+        if out.get(k) is None:
+            raise RuntimeError(f"BFI82U {ad_date} 缺少或無法解析「{label}」列")
+    # 自營商＝自行買賣＋避險，先以原始元相加，換算與四捨五入留到輸出階段。
+    out["dealer"] = out["self"] + out["hedge"]
+    return out
+
+
+def build_inst_snapshot(hist: list[dict]) -> dict:
+    """以 FMTQIK 的交易日為基準，逐日抓取 BFI82U，組成 INST_DATA 的內容。
+
+    - 交易日清單一律取自 FMTQIK（與頁面走勢圖同一來源），確保日期不錯位。
+    - BFI82U 無資料（stat != OK）→ 直接失敗：該日既在 FMTQIK 的交易日清單中，
+      就必須有買賣超統計；静默以 0 代替會讓圖表出現假數字。
+    - 抓滿 INST_WINDOW 日；可用交易日不足則失敗並保留原檔。
+    """
+    days = [r["date"] for r in hist]
+    if len(days) < INST_WINDOW:
+        raise RuntimeError(f"FMTQIK 交易日不足 {INST_WINDOW} 日（僅 {len(days)} 日）")
+    by_date = {r["date"]: r for r in hist}
+    rows: list[dict] = []
+    cum: list[float] = []
+    run = 0.0
+    for d in days[-INST_WINDOW:]:
+        g = inst_buy_sell(d)
+        if g is None:
+            raise RuntimeError(f"BFI82U {d} 無資料（該日為 FMTQIK 交易日，應有買賣超統計）")
+        f_yi = round(g["foreign"] / 1e8, 1)
+        t_yi = round(g["trust"] / 1e8, 1)
+        dl_yi = round(g["dealer"] / 1e8, 1)
+        tot_yi = round(g["total"] / 1e8, 1)
+        parts = round(f_yi + t_yi + dl_yi, 1)
+        if abs(parts - tot_yi) > 0.3:
+            raise RuntimeError(
+                f"BFI82U {d} 不一致：外資 {f_yi:+.1f} ＋ 投信 {t_yi:+.1f} ＋ "
+                f"自營商 {dl_yi:+.1f} ＝ {parts:+.1f}，但交易所「合計」為 {tot_yi:+.1f}")
+        # 累計以「已四捨五入的每日值」相加，與頁面前端顯示的每日數字一致。
+        run = round(run + f_yi, 1)
+        rows.append({"d": d.replace("/", ""), "f": f_yi, "t": t_yi, "dl": dl_yi,
+                     "tot": tot_yi, "amt": round(by_date[d]["amt"], 1),
+                     "ix": round(by_date[d]["close"], 2)})
+        cum.append(run)
+    return {"asOf": rows[-1]["d"], "rows": rows, "cumF": cum}
+
+
+def build_inst_payload(cfg: dict) -> str:
+    """法人資金動向的內建快照（INST_DATA），供頁面前端圖表重繪。
+
+    前端契約（與頁面內嵌 JS 完全一致）：
+        {"asOf":"YYYYMMDD",
+         "rows":[{"d","f","t","dl","tot","amt","ix"}],"cumF":[...]}
+
+    - ``d``   交易日（YYYYMMDD）
+    - ``f``／``t``／``dl``／``tot``  外資及陸資／投信／自營商／三大法人合計
+      買賣超（億元，1 位小數）；正為買超、負為賣超
+    - ``amt`` 成交金額（億元）、``ix`` 發行量加權股價指數收盤（點）
+    - ``cumF`` 外資買賣超累計（億元），逐日四捨五入後累加
+
+    純函式：只依 cfg，不讀系統時間、不用隨機數 —— 同一份資料重跑逐位元相同。
+    """
+    return ("var INST_DATA="
+            + json.dumps(cfg["inst"], ensure_ascii=False,
+                         separators=(",", ":")) + ";")
 
 
 # --------------------------------------------------------------------------
@@ -1033,6 +1131,8 @@ def build_regions(cfg: dict) -> dict[str, str]:
     R["JS_STATINIT"] = f"setStatus('', '{R['HTML_STATUS']}');"
     # 全市場搜尋資料（代號／名稱／產業別／當日報價），供前端搜尋結果區塊比對。
     R["UNIVERSE_DATA"] = build_universe_payload(cfg)
+    # 法人資金動向：由 BFI82U（三大法人買賣超）＋ FMTQIK（成交金額／指數）重算。
+    R["INST_DATA"] = build_inst_payload(cfg)
     return R
 
 
@@ -1090,7 +1190,8 @@ def verify_output(html: str, regions: dict[str, str]) -> None:
     for tag in ("None", "nan", "NaN", "undefined", "{{"):
         if tag in "".join(regions.values()):
             raise RuntimeError(f"輸出內容含異常字串：{tag}")
-    for region in ("SVG", "CXLIST", "LISTGAIN", "LISTLOSE", "LISTTSMC", "RANKBAR", "FOOTB"):
+    for region in ("SVG", "CXLIST", "LISTGAIN", "LISTLOSE", "LISTTSMC", "RANKBAR",
+                   "FOOTB", "INST_DATA"):
         body = _region_body(html, region)
         if not body or len(body.group(2).strip()) < 50:
             raise RuntimeError(f"{region} 內容過短或空白")
@@ -1157,23 +1258,23 @@ def atomic_write(path: str, text: str) -> None:
 # main
 # --------------------------------------------------------------------------
 def collect() -> dict:
-    print("[1/5] 抓取 STOCK_DAY_ALL（全市場每日收盤行情）…")
+    print("[1/6] 抓取 STOCK_DAY_ALL（全市場每日收盤行情）…")
     rows, ad = get_stock_day_all()
     print(f"      → {len(rows):,d} 檔，資料日期 {ad}")
 
-    print("[2/5] 抓取 MI_INDEX type=MS（成交金額、漲跌家數）…")
+    print("[2/6] 抓取 MI_INDEX type=MS（成交金額、漲跌家數）…")
     mkt = get_market_stats(ad)
     print(f"      → 總成交金額 {mkt['total_amt'] / 1e8:,.2f} 億元、"
           f"整體 上漲 {mkt['mkt_up']:,d} / 下跌 {mkt['mkt_down']:,d} / "
           f"持平 {mkt['mkt_flat']:,d}；股票 上漲 {mkt['up']:,d} / "
           f"下跌 {mkt['down']:,d} / 持平 {mkt['flat']:,d}")
 
-    print(f"[3/5] 抓取 FMTQIK（近 {HISTORY_MONTHS} 個月加權指數歷史）…")
+    print(f"[3/6] 抓取 FMTQIK（近 {HISTORY_MONTHS} 個月加權指數歷史）…")
     hist = get_index_history()
     hd = [r["date"] for r in hist]
     print(f"      → {len(hist):,d} 個交易日（{hd[0]} – {hd[-1]}）")
 
-    print("[4/5] 抓取 MI_5MINS_HIST（當日開高低收）並做一致性驗證…")
+    print("[4/6] 抓取 MI_5MINS_HIST（當日開高低收）並做一致性驗證…")
     # STOCK_DAY_ALL 與 FMTQIK／MI_5MINS_HIST 由 TWSE 非同步更新：盤中可能出現其中一端已到
     # 當日、另一端尚停在前一交易日的情況（2026-10-15 13:5x 實測即撞上：STOCK_DAY_ALL 已到
     # 10/15，FMTQIK 最後一日仍為 10/14），造成整支程式 direct 失敗。相差 1 個日曆日內視為
@@ -1217,7 +1318,7 @@ def collect() -> dict:
     c_win.sort(key=lambda x: x["wi"])
     lrows = assign_label_rows(c_win)
 
-    print("[5/5] 計算母體、漲跌幅排行與圖表座標 …")
+    print("[5/6] 計算母體、漲跌幅排行與圖表座標 …")
     uni = rank_universe(rows)
     if len(uni) < 100:
         raise RuntimeError(f"可用個股母體過少（{len(uni)} 檔）")
@@ -1235,6 +1336,14 @@ def collect() -> dict:
         raise RuntimeError(f"走勢圖區間成交金額不完整（{len(amts)}/{N_WINDOW}）")
     vl = vol_layout(max(amts))
 
+    print(f"[6/6] 抓取 BFI82U（近 {INST_WINDOW} 個交易日三大法人買賣超）…")
+    inst = build_inst_snapshot(hist)
+    last_inst = inst["rows"][-1]
+    print(f"      → {len(inst['rows'])} 個交易日（{inst['rows'][0]['d']} – {last_inst['d']}）；"
+          f"外資 {last_inst['f']:+,.1f}、投信 {last_inst['t']:+,.1f}、"
+          f"自營商 {last_inst['dl']:+,.1f}、合計 {last_inst['tot']:+,.1f} 億元；"
+          f"區間外資累計 {inst['cumF'][-1]:+,.1f} 億元")
+
     print(f"      → 母體 {len(uni):,d} 檔；漲幅首 {gain[0]['code']} "
           f"{gain[0]['pct']:+.2f}%；跌幅首 {lose[0]['code']} {lose[0]['pct']:+.2f}%；"
           f"2330 收 {tsmc['close']:,.2f}（{tsmc['pct']:+.2f}%）")
@@ -1248,7 +1357,8 @@ def collect() -> dict:
             "prev_ad": hist[-2]["date"], "win": win, "win_ma5": win_ma5,
             "win_ma20": win_ma20, "win_prev": win_prev, "crosses_all": c_all,
             "crosses_in_win": c_win, "label_rows": lrows, "uni_n": len(uni),
-            "gain": gain, "lose": lose, "tsmc": tsmc, "ax": ax, "vl": vl}
+            "gain": gain, "lose": lose, "tsmc": tsmc, "ax": ax, "vl": vl,
+            "inst": inst}
 
 
 def main() -> int:

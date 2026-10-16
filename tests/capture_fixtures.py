@@ -108,6 +108,7 @@ def main() -> int:
 
     def save(name: str, text: str, path: str, params: dict) -> None:
         full = os.path.join(FIX, name)
+        os.makedirs(os.path.dirname(full), exist_ok=True)
         with open(full, "w", encoding="utf-8") as f:
             f.write(text)
         meta["files"][name] = {
@@ -117,7 +118,11 @@ def main() -> int:
         }
         print(f"  saved {name:34s} {len(text.encode('utf-8')):>9,d} bytes")
 
-    print("[1/4] STOCK_DAY_ALL（全市場每日收盤行情，CSV）")
+    def read_fix(rel: str) -> str:
+        with open(os.path.join(FIX, rel), encoding="utf-8") as f:
+            return f.read()
+
+    print("[1/5] STOCK_DAY_ALL（全市場每日收盤行情，CSV）")
     txt, ad = _fetch_aligned()
     save("stock_day_all.csv", txt,
          "/rwd/zh/afterTrading/STOCK_DAY_ALL", {"response": "json"})
@@ -130,12 +135,12 @@ def main() -> int:
     meta["data_date"] = ad
     meta["stock_day_all_rows"] = len(data)
 
-    print("[2/4] MI_INDEX type=MS（成交金額、漲跌家數）")
+    print("[2/5] MI_INDEX type=MS（成交金額、漲跌家數）")
     params = {"date": ad.replace("/", ""), "type": "MS", "response": "json"}
     save("mi_index_ms.json", us.fetch("/rwd/zh/afterTrading/MI_INDEX", params),
          "/rwd/zh/afterTrading/MI_INDEX", params)
 
-    print("[3/4] FMTQIK（加權指數歷史日資料，{n} 個月）".format(n=us.HISTORY_MONTHS))
+    print("[3/5] FMTQIK（加權指數歷史日資料，{n} 個月）".format(n=us.HISTORY_MONTHS))
     os.makedirs(os.path.join(FIX, "fmtqik"), exist_ok=True)
     for y, m in months:
         p = {"date": f"{y}{m:02d}01", "response": "json"}
@@ -147,10 +152,31 @@ def main() -> int:
         save(os.path.join("fmtqik", f"{y}{m:02d}.json"), t,
              "/rwd/zh/afterTrading/FMTQIK", p)
 
-    print("[4/4] MI_5MINS_HIST（當月逐日開高低收）")
+    print("[4/5] MI_5MINS_HIST（當月逐日開高低收）")
     params = {"response": "json"}
     save("mi_5mins_hist.json", us.fetch("/rwd/zh/TAIEX/MI_5MINS_HIST", params),
          "/rwd/zh/TAIEX/MI_5MINS_HIST", params)
+
+    # BFI82U：三大法人買賣超（逐日查詢，每天一份樣本）。
+    # 交易日清單取自剛存下的 FMTQIK 樣本，確保與 update_snapshot 實際查詢的日期一致。
+    print(f"[5/5] BFI82U（近 {us.INST_WINDOW} 個交易日三大法人買賣超）")
+    days: list[str] = []
+    for m in meta["months"]:
+        j = json.loads(read_fix(m))
+        for r in (j.get("data") or []):
+            days.append(us.roc_to_ad(r[0]))
+    days = sorted(set(days))[-us.INST_WINDOW:]
+    if len(days) < us.INST_WINDOW:
+        print(f"      !! FMTQIK 樣本交易日不足 {us.INST_WINDOW} 日（僅 {len(days)} 日）", file=sys.stderr)
+        return 1
+    for d in days:
+        p = {"dayDate": d.replace("/", ""), "type": "day", "response": "json"}
+        t = us.fetch("/rwd/zh/fund/BFI82U", p)
+        if json.loads(t).get("stat") != "OK":
+            print(f"      !! BFI82U {p['dayDate']} stat 非 OK", file=sys.stderr)
+            return 1
+        save(os.path.join("bfi82u", f"{p['dayDate']}.json"), t,
+             "/rwd/zh/fund/BFI82U", p)
 
     with open(os.path.join(FIX, "meta.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=2, sort_keys=True)

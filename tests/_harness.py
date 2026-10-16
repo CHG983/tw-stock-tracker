@@ -21,6 +21,7 @@ import contextlib
 import io
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -47,7 +48,7 @@ TZ_TAIPEI = timezone(timedelta(hours=8))
 # 日曆因素整批失敗（2026-10-01 起連續 16 天的 CI 全紅即為此故）。
 REF_NOW = datetime(2026, 9, 24, 21, 0, 0, tzinfo=TZ_TAIPEI)
 
-# 27 組 SNAP 區塊（build_regions 回傳鍵集合）
+# 29 組 SNAP 區塊（build_regions 回傳鍵集合）
 # AIANALYST 為「韭經考驗的台股戰士-宇程君」（韭齡多年的虛擬分析失）的「今日完整分析」內容，
 # 已嵌入 AI_CHAT（右下角聊天彈窗）內的可收合面板，頁面上不再有獨立區塊。
 # AI_CHAT 為右下角浮動按鈕與聊天彈窗外框，AI_CHAT_DATA 為對話引擎的當日資料（JSON）。
@@ -56,6 +57,7 @@ EXPECTED_REGIONS = {
     "TITLE", "HEROTAG", "IDXROW", "KPIS", "BREADTH", "BRDATE", "SVG", "CHARTSUB",
     "MASTRIP", "CXLIST", "CXMKEY", "CXNOTE", "LISTGAIN", "LISTLOSE", "LISTTSMC",
     "RANKBAR", "RANKNOTE", "AIANALYST", "AI_CHAT", "AI_CHAT_DATA", "UNIVERSE_DATA",
+    "INST_DATA",
     "FOOTA", "FOOTB", "FOOTCOPY", "HTML_STATUS",
     "HTML_LASTUPD", "JS_SNAPAT", "JS_STATINIT",
 }
@@ -65,7 +67,8 @@ PATH_STOCK = "/rwd/zh/afterTrading/STOCK_DAY_ALL"
 PATH_MI = "/rwd/zh/afterTrading/MI_INDEX"
 PATH_FMT = "/rwd/zh/afterTrading/FMTQIK"
 PATH_5MIN = "/rwd/zh/TAIEX/MI_5MINS_HIST"
-ALL_PATHS = (PATH_STOCK, PATH_MI, PATH_FMT, PATH_5MIN)
+PATH_BFI = "/rwd/zh/fund/BFI82U"
+ALL_PATHS = (PATH_STOCK, PATH_MI, PATH_FMT, PATH_5MIN, PATH_BFI)
 
 
 def fixture_path(rel: str) -> str:
@@ -126,6 +129,16 @@ def freeze_if_unset():
 def data_date() -> str:
     """樣本對應的資料日期（AD 格式，取自 STOCK_DAY_ALL 的日期欄位）。"""
     return meta()["data_date"]
+
+
+def inst_days() -> list[str]:
+    """BFI82U 樣本涵蓋的交易日清單（YYYYMMDD，由 meta.json 的 files 鍵推得）。"""
+    out = []
+    for name in meta()["files"]:
+        m = re.fullmatch(r"bfi82u/(\d{8})\.json", name.replace(os.sep, "/"))
+        if m:
+            out.append(m.group(1))
+    return sorted(out)
 
 
 def roc_from_ad(ad: str) -> str:
@@ -389,6 +402,41 @@ def _f_fmt_short_row(body, params):
     return _dump(j)
 
 
+def _f_bfi_stat_bad(body, params):
+    """stat != OK（例如該日尚未公布買賣超）→ 必須失敗，不得以 0 或前一日數字代替。"""
+    j = _as_json(body)
+    j["stat"] = "很抱歉，沒有符合條件的資料!"
+    return _dump(j)
+
+
+def _f_bfi_drop_foreign(body, params):
+    """移除「外資及陸資」列 → 必須被視為缺欄位。"""
+    j = _as_json(body)
+    j["data"] = [r for r in (j.get("data") or [])
+                 if not str(r[0]).startswith("外資及陸資")]
+    return _dump(j)
+
+
+def _f_bfi_drop_total(body, params):
+    """移除「合計」列 → 必須被視為缺欄位。"""
+    j = _as_json(body)
+    j["data"] = [r for r in (j.get("data") or [])
+                 if not str(r[0]).startswith("合計")]
+    return _dump(j)
+
+
+def _f_bfi_mismatch_total(body, params):
+    """把「合計」改成與三個法人相加不符的值 → 必須被驗證擋下，不得寫入。
+
+    交易所數字偶會更正；靜默接受不一致的和會讓圖表同時顯示矛盾數字。
+    """
+    j = _as_json(body)
+    for r in (j.get("data") or []):
+        if str(r[0]).startswith("合計"):
+            r[3] = "-999,999,999,999"
+    return _dump(j)
+
+
 _FAULT_FUNCS = {
     "empty_body": _f_empty,
     "html_error": _f_html,
@@ -419,6 +467,10 @@ _FAULT_FUNCS = {
     "json_null_body": _f_json_null,
     "mi_data_null": _f_mi_data_null,
     "fmt_short_row": _f_fmt_short_row,
+    "bfi_stat_bad": _f_bfi_stat_bad,
+    "bfi_drop_foreign": _f_bfi_drop_foreign,
+    "bfi_drop_total": _f_bfi_drop_total,
+    "bfi_mismatch_total": _f_bfi_mismatch_total,
 }
 
 # 會直接拋出例外的故障
@@ -500,6 +552,13 @@ class FakeAPI:
             if m not in self._months:
                 raise AssertionError(f"樣本缺少月份 {m}；請重跑 capture_fixtures.py")
             return read_fixture(os.path.join("fmtqik", f"{m}.json"))
+        if path == PATH_BFI:
+            # BFI82U 為逐日查詢（dayDate=YYYYMMDD），每天一份樣本。
+            day = str(params.get("dayDate", "")).strip()
+            rel = os.path.join("bfi82u", f"{day}.json")
+            if not os.path.exists(fixture_path(rel)):
+                raise AssertionError(f"樣本缺少 BFI82U {day}；請重跑 capture_fixtures.py")
+            return read_fixture(rel)
         raise AssertionError(f"未預期的端點：{path}")
 
     # --- urlopen 替身 -------------------------------------------------
