@@ -617,10 +617,10 @@ class TestFaultInjection(unittest.TestCase):
 # 4b. 「端點尚未釋出當日資料」與 --allow-not-ready
 #
 # 證交所盤後端點並非 13:30 收盤即同步（STOCK_DAY_ALL 約 13:52–13:54、
-# 三大法人 BFI82U 約 15:10），因此 13:32 的早班排程必然經常遇到「當日資料
+# 三大法人 BFI82U 約 15:10），因此每小時的排程必然經常遇到「當日資料
 # 還沒出來」。這不是故障，必須與真正的錯誤區分：
 #   - 尚未釋出 + --allow-not-ready → 以 0 結束、不寫檔、CHANGED=0（本次略過）
-#   - 尚未釋出 + 無旗標            → 以非 0 結束（保底排程要能及早發現異常）
+#   - 尚未釋出 + 無旗標            → 以非 0 結束（手動觸發要能及早發現異常）
 #   - 真正的錯誤（HTTP 500…）      → 一律以非 0 結束，即使帶了旗標
 # ==========================================================================
 class TestNotReady(unittest.TestCase):
@@ -653,9 +653,9 @@ class TestNotReady(unittest.TestCase):
         self.assertIn("NOT-READY", r.err)
 
     def test_not_ready_still_fails_without_flag(self):
-        """未帶旗標（15:35 保底排程）時，尚未釋出仍必須失敗。"""
+        """未帶旗標（手動觸發）時，尚未釋出仍必須失敗。"""
         r, p, before = self._run({PATH_MI: "mi_stat_bad"}, [])
-        self.assertNotEqual(r.rc, 0, f"保底排程應失敗：{r.out}")
+        self.assertNotEqual(r.rc, 0, f"手動觸發應失敗：{r.out}")
         self.assertFalse(r.wrote)
         self.assertIsNone(r.changed)
         self.assertEqual(before, H.read_bytes(p))
@@ -683,17 +683,19 @@ class TestNotReady(unittest.TestCase):
         """NotReadyError 必須繼承 RuntimeError，既有「失敗即不寫檔」的保護才不變。"""
         self.assertTrue(issubclass(us.NotReadyError, RuntimeError))
 
-    def test_workflow_has_two_schedules_and_flag_only_on_early_one(self):
-        """workflow 必須有兩個 cron，且 --allow-not-ready 只掛在 13:32 早班。"""
+    def test_workflow_runs_hourly_with_flag_on_scheduled_runs(self):
+        """workflow 必須每小時跑一次（週一至週五），且 --allow-not-ready 掛在所有排程觸發。"""
         wf = os.path.join(H.ROOT, ".github", "workflows", "update-snapshot.yml")
         with open(wf, encoding="utf-8") as f:
             text = f.read()
-        self.assertIn('cron: "32 5 * * 1-5"', text, "缺少 13:32 早班排程")
-        self.assertIn('cron: "35 7 * * 1-5"', text, "缺少 15:35 保底排程")
-        self.assertIn("--allow-not-ready", text, "早班未帶 --allow-not-ready")
+        self.assertIn('cron: "0 * * * 1-5"', text, "缺少每小時排程")
+        # 舊的兩個固定時間排程應已移除。
+        self.assertNotIn('cron: "32 5 * * 1-5"', text, "舊的 13:32 排程仍存在")
+        self.assertNotIn('cron: "35 7 * * 1-5"', text, "舊的 15:35 排程仍存在")
+        self.assertIn("--allow-not-ready", text, "排程未帶 --allow-not-ready")
         # 旗標必須由排程字串條件決定，而非無條件套用。
         self.assertIn('github.event.schedule', text,
-                      "旗標應依觸發的排程決定，保底班不得帶旗標")
+                      "旗標應依觸發的排程決定，手動觸發不得帶旗標")
 
 
 def _make_fault_test(label: str, path: str, fault: str):

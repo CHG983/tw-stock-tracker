@@ -94,14 +94,14 @@ class NotReadyError(RuntimeError):
     """TWSE 端點尚未釋出「當日」資料（不是錯誤，只是還沒到公布時間）。
 
     證交所盤後統計端點並非 13:30 收盤即同步：STOCK_DAY_ALL 約 13:52–13:54 才換日、
-    MI_INDEX 更晚、三大法人 BFI82U 約 15:10 才公布。因此 13:32 的排程必然經常
+    MI_INDEX 更晚、三大法人 BFI82U 約 15:10 才公布。因此每小時的排程必然經常
     遇到「當日資料還沒出來」。
 
     這必須與真正的錯誤（HTTP 500、壞 JSON、缺欄位、合計不符）區分：
 
     - 真正的錯誤 → ``RuntimeError`` → 程式以非 0 結束、workflow 失敗（要有人知道）。
     - 尚未釋出 → ``NotReadyError`` → 由 ``--allow-not-ready`` 轉為「本次略過、
-      不寫檔、以 0 結束」，等 15:35 的保底排程再更新。
+      不寫檔、以 0 結束」，下一個整點再試。
 
     繼承 ``RuntimeError``，因此既有「任何失敗都不寫檔」的保護完全不變。
     """
@@ -1391,7 +1391,7 @@ def main() -> int:
     ap.add_argument("--allow-not-ready", action="store_true",
                     help="端點尚未釋出當日資料時，視為「本次略過」並以 0 結束"
                          "（不寫檔、輸出 CHANGED=0）；真正的錯誤仍會失敗。"
-                         "供 13:32 的早班排程使用，15:35 的保底排程不帶此旗標。")
+                         "供排程觸發使用；手動觸發刻意不帶此旗標。")
     args = ap.parse_args()
 
     path = args.file
@@ -1436,17 +1436,17 @@ def main() -> int:
         print(f"      資料擷取時間：{cfg['fetched']}（{why}）")
         verify_output(out, regions)
     except NotReadyError as e:
-        # 端點尚未釋出當日資料：這在 13:32 的早班排程是「預期內」的情況，
+        # 端點尚未釋出當日資料：這在每小時的排程是「預期內」的情況，
         # 不是故障。帶 --allow-not-ready 時以 0 結束（不寫檔、CHANGED=0），
-        # 讓 workflow 保持綠燈，等 15:35 的保底排程再更新；
-        # 未帶旗標（15:35 保底排程、手動觸發）則維持失敗，以便及早發現異常。
+        # 讓 workflow 保持綠燈，下一個整點再試；
+        # 未帶旗標（手動觸發）則維持失敗，以便及早發現異常。
         if not args.allow_not_ready:
             print(f"\nERROR: {type(e).__name__}: {e}", file=sys.stderr)
             print("未寫入任何檔案（原檔保留）。", file=sys.stderr)
             return 1
         print(f"\nNOT-READY: {e}", file=sys.stderr)
         print("端點尚未釋出當日資料 → 本次略過，不寫入任何檔案（原檔保留）；"
-              "待 15:35 的保底排程再更新。", file=sys.stderr)
+              "待下一個整點再試。", file=sys.stderr)
         print("CHANGED=0")
         return 0
     except Exception as e:  # noqa: BLE001
