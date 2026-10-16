@@ -2,26 +2,32 @@ name: Update snapshot
 
 # 每個交易日台股收盤後，自動抓取臺灣證券交易所公開資料並更新 index.html 的內建快照。
 #
-# 兩個排程（台北時間 UTC+8，週一至週五）：
-#   1) 13:32 = UTC 05:32 —— 早班。收盤後先跑一次，資料一釋出就盡快更新。
-#      證交所盤後端點並非 13:30 收盤即同步（STOCK_DAY_ALL 約 13:52–13:54 才換日、
-#      MI_INDEX 更晚、三大法人 BFI82U 約 15:10 才公布），因此早班經常遇到
-#      「當日資料還沒出來」。此時帶 --allow-not-ready：視為「本次略過」，
-#      不寫檔、以 0 結束（workflow 保持綠燈），等保底排程再更新。
-#   2) 15:35 = UTC 07:35 —— 保底。三大法人公布弌執行，確保每天都能更新到
-#      最新交易日的完整資料。不帶 --allow-not-ready：資料不齊即失敗，
-#      以便及早發現真正的異常（端點改版、缺欄位、合計不符…）。
+# 排程（台北時間 UTC+8，週一至週五）：每小時執行 1 次。
+#   cron "0 * * * 1-5" 是 UTC 的整點；UTC 週一至週五的整點換算成台北時間，
+#   涵蓋台北週一 08:00 至週六 08:00，因此每個交易日的盤後時段都會被多次涵蓋，
+#   資料一釋出就會自動更新，不必等固定時間。
+#
+# 為什麼要每小時多次：證交所盤後統計端點的釋出時間不一致且常有延遲 ——
+#   STOCK_DAY_ALL 約 13:52–13:54 才換日、MI_INDEX 更晚、三大法人 BFI82U 約 15:10 才公布。
+#   若只跑單一固定時間，一旦剛好落在資料尚未釋出時，當天就完全不會更新；
+#   改成每小時重試可自動吸收這個不確定性，不需要猜時間。
+#
+# 因此所有「排程觸發」一律帶 --allow-not-ready：
+#   端點尚未釋出當日資料時視為「本次略過」—— 不寫檔、以 0 結束（workflow 保持綠燈、
+#   不寄失敗通知），下一個整點再試。
+#   這只涵蓋「尚未釋出」；真正的錯誤（HTTP 500、壞 JSON、缺欄位、合計不符、
+#   缺成交統計表…）在任何情況下都會失敗（見 update step 的說明）。
+#   手動觸發（workflow_dispatch）刻意不帶此旗標：人工跑就是為了嚴格檢查。
 on:
   schedule:
-    - cron: "32 5 * * 1-5"
-    - cron: "35 7 * * 1-5"
+    - cron: "0 * * * 1-5"
   workflow_dispatch:
 
 # 需要寫入權限才能把更新後的 index.html 推回 main。
 permissions:
   contents: write
 
-# 避免排程與手動觸發同時執行而互相覆蓋。
+# 避免多個排程（或排程與手動觸發）同時執行而互相覆蓋。
 concurrency:
   group: update-snapshot
   cancel-in-progress: false
@@ -63,19 +69,19 @@ jobs:
       # 腳本結尾輸出 CHANGED=1 / CHANGED=0，代表「資料本身」是否有變更
       # （時間戳不計入），據以決定是否建立 commit。
       #
-      # 早班（13:32）帶 --allow-not-ready：端點尚未釋出當日資料時視為「本次略過」，
+      # 排程觸發一律帶 --allow-not-ready：端點尚未釋出當日資料時視為「本次略過」，
       # 不寫檔並以 0 結束（CHANGED=0 → 不建立 commit），讓 workflow 保持綠燈；
-      # 保底班（15:35）與手動觸發不帶此旗標，資料不齊即失敗。
+      # 手動觸發不帶此旗標，資料不齊即失敗，方便人工嚴格檢查。
       - name: Update snapshot from TWSE
         id: upd
         run: |
           set -euo pipefail
           extra=""
-          if [ "${{ github.event.schedule }}" = "32 5 * * 1-5" ]; then
+          if [ -n "${{ github.event.schedule }}" ]; then
             extra="--allow-not-ready"
-            echo "早班排程（台北 13:32）：資料尚未釋出時將略過而不失敗。"
+            echo "排程觸發（cron：${{ github.event.schedule }}）：端點尚未釋出當日資料時略過而不失敗。"
           else
-            echo "保底排程／手動觸發：資料不齊即失敗。"
+            echo "手動觸發：資料不齊即失敗（嚴格檢查）。"
           fi
           python3 scripts/update_snapshot.py --file index.html $extra | tee /tmp/snapshot.log
           changed="$(sed -n 's/.*CHANGED=\([01]\).*/\1/p' /tmp/snapshot.log | tail -n1)"
