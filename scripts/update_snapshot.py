@@ -88,6 +88,26 @@ _SSL_LAX.verify_mode = ssl.CERT_NONE
 
 
 # --------------------------------------------------------------------------
+# 例外：端點「尚未釋出當日資料」
+# --------------------------------------------------------------------------
+class NotReadyError(RuntimeError):
+    """TWSE 端點尚未釋出「當日」資料（不是錯誤，只是還沒到公布時間）。
+
+    證交所盤後統計端點並非 13:30 收盤即同步：STOCK_DAY_ALL 約 13:52–13:54 才換日、
+    MI_INDEX 更晚、三大法人 BFI82U 約 15:10 才公布。因此 13:32 的排程必然經常
+    遇到「當日資料還沒出來」。
+
+    這必須與真正的錯誤（HTTP 500、壞 JSON、缺欄位、合計不符）區分：
+
+    - 真正的錯誤 → ``RuntimeError`` → 程式以非 0 結束、workflow 失敗（要有人知道）。
+    - 尚未釋出 → ``NotReadyError`` → 由 ``--allow-not-ready`` 轉為「本次略過、
+      不寫檔、以 0 結束」，等 15:35 的保底排程再更新。
+
+    繼承 ``RuntimeError``，因此既有「任何失敗都不寫檔」的保護完全不變。
+    """
+
+
+# --------------------------------------------------------------------------
 # HTTP
 # --------------------------------------------------------------------------
 def fetch(path: str, params: dict | None = None, *, tries: int = 3) -> str:
@@ -304,8 +324,8 @@ def get_market_stats(ad_date: str) -> dict:
     # 非交易日／端點異常時 TWSE 會回傳 stat != "OK"。此類回應不得沿用舊值，
     # 必須直接失敗（workflow 隨之失敗、原檔保留），以免把非當日數字寫進快照。
     if "stat" in j and j.get("stat") != "OK":
-        raise RuntimeError(f"MI_INDEX stat={j.get('stat')!r}（非 OK，"
-                           f"可能為非交易日或端點異常）")
+        raise NotReadyError(f"MI_INDEX stat={j.get('stat')!r}（非 OK，"
+                            f"可能為非交易日或當日資料尚未釋出）")
     stat = breadth = None
     for t in (j.get("tables") or []):
         if not (t and t.get("data")):
@@ -402,7 +422,7 @@ def get_today_ohlc(ad_date: str) -> dict:
             if None in (o, h, l, c):
                 raise RuntimeError(f"MI_5MINS_HIST {ad_date} OHLC 無法解析：{r}")
             return {"open": o, "high": h, "low": l, "close": c}
-    raise RuntimeError(f"MI_5MINS_HIST 找不到 {ad_date} 的資料")
+    raise NotReadyError(f"MI_5MINS_HIST 找不到 {ad_date} 的資料（當日尚未釋出）")
 
 
 def inst_buy_sell(ad_date: str) -> dict | None:
@@ -460,7 +480,8 @@ def build_inst_snapshot(hist: list[dict]) -> dict:
     for d in days[-INST_WINDOW:]:
         g = inst_buy_sell(d)
         if g is None:
-            raise RuntimeError(f"BFI82U {d} 無資料（該日為 FMTQIK 交易日，應有買賣超統計）")
+            raise NotReadyError(f"BFI82U {d} 無資料（該日為 FMTQIK 交易日，"
+                                f"應有買賣超統計；三大法人約 15:10 才公布）")
         f_yi = round(g["foreign"] / 1e8, 1)
         t_yi = round(g["trust"] / 1e8, 1)
         dl_yi = round(g["dealer"] / 1e8, 1)
@@ -1367,6 +1388,10 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--force-meta", action="store_true",
                     help="也重新寫入「資料擷取時間」（即使資料本身無變化）")
+    ap.add_argument("--allow-not-ready", action="store_true",
+                    help="端點尚未釋出當日資料時，視為「本次略過」並以 0 結束"
+                         "（不寫檔、輸出 CHANGED=0）；真正的錯誤仍會失敗。"
+                         "供 13:32 的早班排程使用，15:35 的保底排程不帶此旗標。")
     args = ap.parse_args()
 
     path = args.file
@@ -1410,6 +1435,20 @@ def main() -> int:
             why = "本次擷取時間（資料已變更）"
         print(f"      資料擷取時間：{cfg['fetched']}（{why}）")
         verify_output(out, regions)
+    except NotReadyError as e:
+        # 端點尚未釋出當日資料：這在 13:32 的早班排程是「預期內」的情況，
+        # 不是故障。帶 --allow-not-ready 時以 0 結束（不寫檔、CHANGED=0），
+        # 讓 workflow 保持綠燈，等 15:35 的保底排程再更新；
+        # 未帶旗標（15:35 保底排程、手動觸發）則維持失敗，以便及早發現異常。
+        if not args.allow_not_ready:
+            print(f"\nERROR: {type(e).__name__}: {e}", file=sys.stderr)
+            print("未寫入任何檔案（原檔保留）。", file=sys.stderr)
+            return 1
+        print(f"\nNOT-READY: {e}", file=sys.stderr)
+        print("端點尚未釋出當日資料 → 本次略過，不寫入任何檔案（原檔保留）；"
+              "待 15:35 的保底排程再更新。", file=sys.stderr)
+        print("CHANGED=0")
+        return 0
     except Exception as e:  # noqa: BLE001
         print(f"\nERROR: {type(e).__name__}: {e}", file=sys.stderr)
         print("未寫入任何檔案（原檔保留）。", file=sys.stderr)
