@@ -1,0 +1,58 @@
+name: Deploy from URL
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL of the bundle to deploy"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Fetch and validate
+        run: |
+          set -euo pipefail
+          curl -fsSL "${{ inputs.url }}" -o /tmp/bundle.tar.gz
+          mkdir -p /tmp/bundle
+          tar -xzf /tmp/bundle.tar.gz -C /tmp/bundle
+          for f in .github/workflows/update-snapshot.yml tests/test_update_snapshot.py scripts/update_snapshot.py README.md; do
+            test -f "/tmp/bundle/$f" || { echo "::error::missing $f"; exit 1; }
+          done
+          # apply into the working tree, then validate the RESULT
+          cp /tmp/bundle/.github/workflows/update-snapshot.yml .github/workflows/update-snapshot.yml
+          cp /tmp/bundle/tests/test_update_snapshot.py tests/test_update_snapshot.py
+          cp /tmp/bundle/scripts/update_snapshot.py scripts/update_snapshot.py
+          cp /tmp/bundle/README.md README.md
+          python3 -c "import yaml;d=yaml.safe_load(open('.github/workflows/update-snapshot.yml'));print('crons:',d[True]['schedule'])"
+          python3 -m py_compile scripts/update_snapshot.py tests/test_update_snapshot.py
+          grep -q 'cron: "0 \* \* \* 1-5"' .github/workflows/update-snapshot.yml || { echo "::error::hourly cron missing"; exit 1; }
+          ! grep -q 'cron: "32 5 \* \* 1-5"' .github/workflows/update-snapshot.yml || { echo "::error::old 13:32 cron still present"; exit 1; }
+          ! grep -q 'cron: "35 7 \* \* 1-5"' .github/workflows/update-snapshot.yml || { echo "::error::old 15:35 cron still present"; exit 1; }
+          echo "validation OK"
+
+      - name: Run unit tests
+        run: python3 -m unittest discover -s tests -t .
+
+      - name: Commit
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo "nothing to commit"; exit 0; }
+          git commit -m "ci(schedule): run snapshot update hourly (Taipei, Mon-Fri)"
+          git push
+          sha256sum .github/workflows/update-snapshot.yml tests/test_update_snapshot.py scripts/update_snapshot.py README.md
