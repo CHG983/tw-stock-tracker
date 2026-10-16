@@ -10,6 +10,9 @@ on:
 
 permissions:
   contents: write
+  # Required: the bundle contains .github/workflows/update-snapshot.yml, and
+  # GitHub refuses a token without `workflows` permission to touch a workflow file.
+  workflows: write
 
 jobs:
   deploy:
@@ -26,7 +29,6 @@ jobs:
         run: |
           set -euo pipefail
           curl -fsSL -A "curl/8" "${{ inputs.url }}" -o /tmp/bundle.tar.gz
-          # must really be gzip, not an HTML error page
           head -c2 /tmp/bundle.tar.gz | od -An -tx1 | tr -d ' \n' | grep -qi '^1f8b' || { echo "::error::not a gzip archive"; exit 1; }
           mkdir -p /tmp/bundle
           tar -xzf /tmp/bundle.tar.gz -C /tmp/bundle
@@ -37,9 +39,7 @@ jobs:
           cp /tmp/bundle/tests/test_update_snapshot.py tests/test_update_snapshot.py
           cp /tmp/bundle/scripts/update_snapshot.py scripts/update_snapshot.py
           cp /tmp/bundle/README.md README.md
-          # syntax checks (stdlib only)
           python3 -m py_compile scripts/update_snapshot.py tests/test_update_snapshot.py
-          # schedule assertions
           grep -qF 'cron: "0 * * * 1-5"' .github/workflows/update-snapshot.yml || { echo "::error::hourly cron missing"; exit 1; }
           if grep -qF 'cron: "32 5 * * 1-5"' .github/workflows/update-snapshot.yml; then echo "::error::old 13:32 cron still present"; exit 1; fi
           if grep -qF 'cron: "35 7 * * 1-5"' .github/workflows/update-snapshot.yml; then echo "::error::old 15:35 cron still present"; exit 1; fi
