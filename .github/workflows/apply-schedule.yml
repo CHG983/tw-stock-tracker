@@ -1,0 +1,63 @@
+name: Apply schedule change
+
+# ONE-OFF: applies the new daily-run time to update-snapshot.yml + README.md, then is deleted.
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL of the tar.gz to deploy"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch and validate
+        run: |
+          set -euo pipefail
+          curl -fsSL "${{ inputs.url }}" -o /tmp/d.tar.gz
+          rm -rf /tmp/d && mkdir -p /tmp/d
+          tar -xzf /tmp/d.tar.gz -C /tmp/d
+          test -f /tmp/d/README.md
+          test -f /tmp/d/.github/workflows/update-snapshot.yml
+          echo '--- sizes ---'
+          wc -c /tmp/d/README.md /tmp/d/.github/workflows/update-snapshot.yml
+          echo '--- schedule assertions ---'
+          grep -q 'cron: "32 5 \* \* 1-5"' /tmp/d/.github/workflows/update-snapshot.yml
+          grep -q '13:32' /tmp/d/.github/workflows/update-snapshot.yml
+          grep -q '13:32' /tmp/d/README.md
+          if grep -q '30 7 \* \* 1-5' /tmp/d/.github/workflows/update-snapshot.yml; then echo '::error::old cron still present'; exit 1; fi
+          if grep -q '15:30' /tmp/d/README.md; then echo '::error::old time still in README'; exit 1; fi
+          echo '--- workflow integrity assertions ---'
+          grep -q 'name: Update snapshot' /tmp/d/.github/workflows/update-snapshot.yml
+          grep -q 'contents: write' /tmp/d/.github/workflows/update-snapshot.yml
+          grep -q 'group: update-snapshot' /tmp/d/.github/workflows/update-snapshot.yml
+          grep -q 'python3 scripts/update_snapshot.py --file index.html' /tmp/d/.github/workflows/update-snapshot.yml
+          grep -q 'python3 -m unittest discover -s tests -t . -v' /tmp/d/.github/workflows/update-snapshot.yml
+          grep -q 'if: steps.upd.outputs.changed' /tmp/d/.github/workflows/update-snapshot.yml
+          grep -q 'workflow_dispatch' /tmp/d/.github/workflows/update-snapshot.yml
+          echo 'VALIDATION PASSED'
+
+      - name: Commit
+        run: |
+          set -euo pipefail
+          cp /tmp/d/README.md README.md
+          cp /tmp/d/.github/workflows/update-snapshot.yml .github/workflows/update-snapshot.yml
+          echo '--- changed paths ---'
+          git --no-pager diff --stat
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md .github/workflows/update-snapshot.yml
+          if git diff --cached --quiet; then echo 'no changes'; exit 0; fi
+          git commit -m "chore(cron): move the daily snapshot run to 13:32 Asia/Taipei"
+          git push
+          echo '--- committed ---'
+          git --no-pager log -1 --stat
+          sha256sum README.md .github/workflows/update-snapshot.yml
