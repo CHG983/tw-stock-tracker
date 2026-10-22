@@ -2832,5 +2832,65 @@ class TestStockSearchAndIndustryFilter(unittest.TestCase):
         self.assertIn("max-height", self.src[self.src.index(".sfr-list{"):self.src.index(".sfr-list{") + 200])
 
 
+# ==========================================================================
+# 13. 頁面不得留下「寫死的過期數字」
+# ==========================================================================
+class TestNoStaleHardcodedFigures(unittest.TestCase):
+    """2026-10-16 的實際故障：排程把 INST_DATA 推進到 10/16，
+    但法人區塊的「解讀」段落、累計圖的 Y 軸刻度與 X 軸標籤都是寫死的靜態 HTML，
+    仍停在 10/15 的 −5488.4 / −4822.5 / 09-30-10/15。
+    使用者看到的文字與圖表因此對不起來。
+
+    修法：這些文字改由前端依 INST_DATA 現算。以下測試把該契約鎖住。
+    """
+
+    def test_inst_note_is_generated_from_data_not_hardcoded(self):
+        src = H.repo_index_html()
+        m = re.search(r'<p class="inst-note"[^>]*>(.*?)</p>', src, re.S)
+        self.assertIsNotNone(m, "找不到 inst-note 段落")
+        body = m.group(1)
+        # 允許少量標示（例如標題），但不得出現具體的累計金額數字
+        for figure in ("5488", "4822", "928.9", "1594", "3691"):
+            self.assertNotIn(figure, body,
+                             f"inst-note 仍寫死金額 {figure}，資料更新後會變成錯的數字")
+        self.assertIn('id="inst-note"', src, "inst-note 必須有 id 供前端改寫")
+        # 前端必須真的在 render 內改寫它
+        self.assertRegex(src, r'byId\("inst-note"\)|getElementById\("inst-note"\)',
+                         "前端未改寫 inst-note，資料更新後文字會過期")
+
+    def test_inst_cum_axis_labels_are_not_hardcoded(self):
+        src = H.repo_index_html()
+        i = src.find('id="inst-cum-svg"')
+        self.assertGreater(i, 0, "找不到累計圖")
+        svg = src[i:src.find("</svg>", i)]
+        # Y 軸刻度必須有 id，讓前端能重算
+        for _id in ("inst-yax-lo", "inst-yax-mid", "inst-yax-hi", "inst-zero-line"):
+            self.assertIn(f'id="{_id}"', svg, f"累計圖缺少 {_id}，前端無法重算刻度")
+        # X 軸標籤必須由前端產生（不再寫死 09/15・09/30・10/15）
+        self.assertRegex(src, r'inst-xlab-cum', "累計圖 X 軸標籤未改為前端產生")
+
+    def test_fg_data_region_uses_canonical_marker(self):
+        """FG_DATA 曾用錯的結束標記 /*/SNAP:FG_DATA*/。
+
+        正確語法是 /*SNAP:/FG_DATA*/（斜線在 SNAP 之後）。
+        錯誤寫法會讓任何想改寫該區域的程式找不到它。
+        """
+        src = H.repo_index_html()
+        self.assertIn("/*SNAP:FG_DATA*/", src, "缺少 FG_DATA 起始標記")
+        self.assertIn("/*SNAP:/FG_DATA*/", src, "FG_DATA 結束標記不是 /*SNAP:/FG_DATA*/")
+        self.assertNotIn("/*/SNAP:FG_DATA*/", src,
+                         "FG_DATA 仍使用錯誤的反向標記寫法")
+
+    def test_every_js_region_marker_is_wellformed(self):
+        """所有 JS 註解 marker 都必須是 /*SNAP:NAME*/ … /*SNAP:/NAME*/ 的配對。"""
+        src = H.repo_index_html()
+        bad = re.findall(r"/\*/SNAP:[A-Z_]+", src)
+        self.assertEqual(bad, [], f"發現格式錯誤的 marker：{bad}")
+        for name in sorted(H.EXPECTED_REGIONS):
+            if name in us.JS_REGIONS:
+                self.assertIn("/*SNAP:" + name + "*/", src, f"{name} 缺起始 marker")
+                self.assertIn("/*SNAP:/" + name + "*/", src, f"{name} 缺結束 marker")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

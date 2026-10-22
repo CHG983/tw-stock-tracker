@@ -1239,14 +1239,14 @@
 
       <div class="inst-chartbox">
         <h3>外資累計買賣超趨勢</h3>
-        <p>自 2026/09/15 起累計外資及陸資買賣超；線向下代表期間累計為賣超。</p>
+        <p id="inst-cum-desc">自資料起始日起累計外資及陸資買賣超；線向下代表期間累計為賣超。</p>
         <svg class="inst-svg" id="inst-cum-svg" viewBox="0 0 1000 200" role="img"
-             aria-label="外資累計買賣超趨勢，區間內累計 −4822.5 億元">
+             aria-label="外資累計買賣超趨勢">
           <title>外資及陸資累計買賣超（2026/09/15 – 2026/10/15，單位：億元）</title>
-          <line class="inst-zero" x1="46.0" y1="64.5" x2="974.0" y2="64.5"/>
-          <text class="inst-ax" x="38.0" y="161.5" text-anchor="end">-5585</text>
-          <text class="inst-ax" x="38.0" y="95.5" text-anchor="end">-1644</text>
-          <text class="inst-ax" x="38.0" y="29.5" text-anchor="end">2297</text>
+          <line class="inst-zero" id="inst-zero-line" x1="46.0" y1="64.5" x2="974.0" y2="64.5"/>
+          <text class="inst-ax" id="inst-yax-lo" x="38.0" y="161.5" text-anchor="end">-5585</text>
+          <text class="inst-ax" id="inst-yax-mid" x="38.0" y="95.5" text-anchor="end">-1644</text>
+          <text class="inst-ax" id="inst-yax-hi" x="38.0" y="29.5" text-anchor="end">2297</text>
           <path class="inst-area" d="M46.0,158.0 L46.0 75.0 L94.8 78.0 L143.7 75.9 L192.5 61.4 L241.4 57.9 L290.2 50.3 L339.1 44.1 L387.9 49.6 L436.7 60.1 L485.6 54.9 L534.4 51.3 L583.3 50.8 L632.1 38.8 L680.9 39.9 L729.8 42.1 L778.6 54.8 L827.5 63.5 L876.3 91.2 L925.2 94.6 L974.0 145.2 L974.0,158.0 Z"/>
           <polyline class="inst-line" id="inst-cum-line" points="46.0,75.0 94.8,78.0 143.7,75.9 192.5,61.4 241.4,57.9 290.2,50.3 339.1,44.1 387.9,49.6 436.7,60.1 485.6,54.9 534.4,51.3 583.3,50.8 632.1,38.8 680.9,39.9 729.8,42.1 778.6,54.8 827.5,63.5 876.3,91.2 925.2,94.6 974.0,145.2"/>
           <circle class="inst-last" cx="974.0" cy="145.2" r="4.2" fill="#0a7d43"/>
@@ -1255,14 +1255,12 @@
       </div>
     </div>
 
+    <!-- 這段由前端 render() 依 INST_DATA 現算覆寫；靜態內容只留來源說明，
+         不放任何金額，否則資料更新後會顯示過期數字（2026-10-16 的實際故障）。 -->
     <p class="inst-note" id="inst-note">
-      <b>解讀：</b>近 20 個交易日三大法人合計<b>−5488.4</b> 億元，其中外資及陸資 <b>−4822.5</b> 億元（買超 9 日／賣超 11 日）、
-      投信 <b>+928.9</b> 億元、自營商 <b>−1594.5</b> 億元；區間內單日最大賣超為 <b>10/15 的 −3691.0 億元</b>。
-      <code>同步訊號</code> 外資與投信 <b>方向相反（外資賣超／投信買超）</b>。
-      <br>
       <b>資料來源與說明：</b>數字取自臺灣證券交易所「三大法人買賣金額統計表」（<code>BFI82U</code>，交易日收盤後公布）與
-      <code>FMTQIK</code>（成交資訊），為<b>買賣超金額</b>（買進金額減賣出金額），不含外資自營商；正值為買超（紅）、負值為賣超（綠）。
-      頁面顯示<b>內建快照</b>（資料日期 2026/10/15），非即時報價；交易所可能更正數據，實際數字以交易所公告為準。本區塊僅為公開資料之整理，不構成投資建議。
+      <code>FMTQIK</code>（成交資訊），乃<b>買賣超金額</b>（買進金額減賣出金額），不含外資自營商；正值為買超（紅）、負值為賣超（綠）。
+      本區塊僅為公開資料之整理，不構成投資建議。
     </p>
   </section>
 
@@ -2865,7 +2863,7 @@
 
   <script>
   /* ================= 恐懼貪婪指數：靜態快照 + TWSE 即時重算 ================= */
-  /*SNAP:FG_DATA*/var FG_DATA={"asOf":"20261015","value":24,"label":"極度恐懼","components":{"momentum":{"s":32.2,"v":-2.2301},"volatility":{"s":28.5,"v":20.2612},"breadth":{"s":19.9,"v":0.199},"turnover":{"s":0.2,"v":1.4984},"leverage":{"s":54,"v":1.0022},"institution":{"s":9.5,"v":-13.4898}},"history":[{"d":"20260901","v":77.3},{"d":"20260902","v":65.9},{"d":"20260903","v":57},{"d":"20260904","v":69},{"d":"20260907","v":66.9},{"d":"20260908","v":59.5},{"d":"20260909","v":62.6},{"d":"20260910","v":54.3},{"d":"20260911","v":55.9},{"d":"20260914","v":56.5},{"d":"20260915","v":52.7},{"d":"20260916","v":64.1},{"d":"20260917","v":59.4},{"d":"20260918","v":66.9},{"d":"20260921","v":57.7},{"d":"20260922","v":59.7},{"d":"20260923","v":58.1},{"d":"20260924","v":54.7},{"d":"20260929","v":51.9},{"d":"20260930","v":60.9},{"d":"20261001","v":56},{"d":"20261002","v":59.6},{"d":"20261005","v":64.1},{"d":"20261006","v":63},{"d":"20261007","v":63.9},{"d":"20261008","v":56.6},{"d":"20261012","v":56.7},{"d":"20261013","v":38.8},{"d":"20261014","v":53},{"d":"20261015","v":24}]};/*/SNAP:FG_DATA*/
+  /*SNAP:FG_DATA*/var FG_DATA={"asOf":"20261015","value":24,"label":"極度恐懼","components":{"momentum":{"s":32.2,"v":-2.2301},"volatility":{"s":28.5,"v":20.2612},"breadth":{"s":19.9,"v":0.199},"turnover":{"s":0.2,"v":1.4984},"leverage":{"s":54,"v":1.0022},"institution":{"s":9.5,"v":-13.4898}},"history":[{"d":"20260901","v":77.3},{"d":"20260902","v":65.9},{"d":"20260903","v":57},{"d":"20260904","v":69},{"d":"20260907","v":66.9},{"d":"20260908","v":59.5},{"d":"20260909","v":62.6},{"d":"20260910","v":54.3},{"d":"20260911","v":55.9},{"d":"20260914","v":56.5},{"d":"20260915","v":52.7},{"d":"20260916","v":64.1},{"d":"20260917","v":59.4},{"d":"20260918","v":66.9},{"d":"20260921","v":57.7},{"d":"20260922","v":59.7},{"d":"20260923","v":58.1},{"d":"20260924","v":54.7},{"d":"20260929","v":51.9},{"d":"20260930","v":60.9},{"d":"20261001","v":56},{"d":"20261002","v":59.6},{"d":"20261005","v":64.1},{"d":"20261006","v":63},{"d":"20261007","v":63.9},{"d":"20261008","v":56.6},{"d":"20261012","v":56.7},{"d":"20261013","v":38.8},{"d":"20261014","v":53},{"d":"20261015","v":24}]};/*SNAP:/FG_DATA*/
 
   (function(){
     "use strict";
@@ -3261,6 +3259,36 @@
       if(ar) ar.setAttribute("d","M"+X0.toFixed(1)+","+CY0.toFixed(1)+" L"+d2.slice(1)+" L"+X1.toFixed(1)+","+CY0.toFixed(1)+" Z");
       var dt=svg.querySelector(".inst-last");
       if(dt){ dt.setAttribute("cx",pts[n-1][0].toFixed(1)); dt.setAttribute("cy",pts[n-1][1].toFixed(1)); }
+
+      /* Y 軸刻度與零軸：原本是寫死的靜態數字，資料一換就全錯（曾顯示 -5585 ~ 2297，
+         實際區間早已不同）。這裡依本次 cum 重新計算，並依 hi/lo 決定零軸是否落在圖內。 */
+      var ylo=byId("inst-yax-lo"), ymid=byId("inst-yax-mid"), yhi=byId("inst-yax-hi");
+      var zl=byId("inst-zero-line");
+      function r1(v){ return (Math.round(v*10)/10).toFixed(0); }
+      if(yhi) yhi.textContent=r1(hi);
+      if(ymid) ymid.textContent=r1((hi+lo)/2);
+      if(ylo) ylo.textContent=r1(lo);
+      if(zl){
+        if(lo<=0 && hi>=0){ zl.setAttribute("y1",cy(0).toFixed(1)); zl.setAttribute("y2",cy(0).toFixed(1)); }
+        else { zl.setAttribute("y1",lo>0?CY0.toFixed(1):CY1.toFixed(1));
+               zl.setAttribute("y2",lo>0?CY0.toFixed(1):CY1.toFixed(1)); }
+      }
+
+      /* X 軸標籤：起／中／迄，跟著實際資料日期走（原本寫死 09/15・09/30・10/15）。 */
+      var lab=svg.querySelector("#inst-xlab-cum");
+      if(!lab){ lab=document.createElementNS("http://www.w3.org/2000/svg","g"); lab.setAttribute("id","inst-xlab-cum"); svg.appendChild(lab); }
+      var mids=rows[Math.floor((n-1)/2)];
+      lab.innerHTML =
+        '<text class="inst-ax" x="'+X0.toFixed(1)+'" y="184.0" text-anchor="start">'+rows[0].d.slice(4,6)+"/"+rows[0].d.slice(6,8)+'</text>'+
+        '<text class="inst-ax" x="'+((X0+X1)/2).toFixed(1)+'" y="184.0" text-anchor="middle">'+mids.d.slice(4,6)+"/"+mids.d.slice(6,8)+'</text>'+
+        '<text class="inst-ax" x="'+X1.toFixed(1)+'" y="184.0" text-anchor="end">'+rows[n-1].d.slice(4,6)+"/"+rows[n-1].d.slice(6,8)+'</text>';
+
+      var cumTitle=svg.querySelector("title");
+      if(cumTitle) cumTitle.textContent="外資及陸資累計買賣超（"+fmtD(rows[0].d)+" – "+fmtD(rows[n-1].d)+"，單位：億元）";
+      var cd=byId("inst-cum-desc");
+      if(cd) cd.textContent="自 "+fmtD(rows[0].d)+" 起累計外資及陸資買賣超；線向下代表期間累計為賣超。";
+      var cvs=byId("inst-cum-svg");
+      if(cvs) cvs.setAttribute("aria-label","外資累計買賣超趨勢，"+fmtD(rows[0].d)+" 至 "+fmtD(rows[n-1].d)+"，區間內累計 "+sgn(cum[n-1])+" 億元");
     }
 
     function render(d){
@@ -3285,6 +3313,29 @@
       var sb=byId("inst-sub");
       if(sb) sb.textContent="近 "+rows.length+" 個交易日（"+fmtD(rows[0].d)+" – "+fmtD(rows[rows.length-1].d)+"）·三大法人買賣超金額，單位：億元";
       var bd=byId("inst-mode-text"); if(bd) bd.textContent="內建快照 · "+fmtD(d.asOf);
+
+      /* 解讀段落：原本是手寫的靜態文字，資料一更新就變成錯的數字
+         （曾長期停在 10/15 的 −5488.4 億，而實際已推進到別的交易日）。
+         改為在這裡依 rows 現算，永遠與圖表一致。 */
+      var nt=byId("inst-note");
+      if(nt){
+        var cumF=0,cumT=0,cumD=0,cumA=0,buyF=0,sellF=0,worst=null,i2;
+        for(i2=0;i2<rows.length;i2++){
+          cumF+=rows[i2].f; cumT+=rows[i2].t; cumD+=rows[i2].dl; cumA+=rows[i2].tot;
+          if(rows[i2].f>0) buyF++; else if(rows[i2].f<0) sellF++;
+          if(rows[i2].tot<0 && (!worst || rows[i2].tot<worst.tot)) worst=rows[i2];
+        }
+        var same=(cumF>0&&cumT>0)||(cumF<0&&cumT<0);
+        var sig = same ? "方向相同（同為"+(cumF>0?"買超":"賣超")+"）"
+                       : "方向相反（外資"+(cumF<0?"賣超":"買超")+"／投信"+(cumT<0?"賣超":"買超")+"）";
+        nt.innerHTML="<b>解讀：</b>近 "+rows.length+" 個交易日三大法人合計<b>"+sgn(cumA)+"</b> 億元，其中外資及陸資 <b>"+sgn(cumF)+"</b> 億元（買超 "+buyF+" 日／賣超 "+sellF+" 日）、"+
+          "投信 <b>"+sgn(cumT)+"</b> 億元、自營商 <b>"+sgn(cumD)+"</b> 億元；"+
+          (worst ? "區間內單日最大賣超為 <b>"+worst.d.slice(4,6)+"/"+worst.d.slice(6,8)+" 的 "+sgn(worst.tot)+" 億元</b>。" : "區間內無單日合計賣超。")+
+          "<code>同步訊號</code> 外資與投信 <b>"+sig+"</b>。"+
+          "<br><b>資料來源與說明：</b>數字取自臺灣證券交易所「三大法人買賣金額統計表」（<code>BFI82U</code>，交易日收盤後公布）與 "+
+          "<code>FMTQIK</code>（成交資訊），乃<b>買賣超金額</b>（買進金額減賣出金額），不含外資自營商；正值為買超（紅）、負值為賣超（綠）。"+
+          "頁面顯示<b>內建快照</b>（資料日期 "+fmtD(d.asOf)+"），非即時報價；交易所可能更正數據，實際數字以交易所公告為準。本區塊僅為公開資料之整理，不構成投資建議。";
+      }
     }
     function fmtD(x){ return x.slice(0,4)+"/"+x.slice(4,6)+"/"+x.slice(6,8); }
 

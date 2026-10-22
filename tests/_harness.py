@@ -630,14 +630,30 @@ def run_cli(argv: list[str]) -> RunResult:
 # --------------------------------------------------------------------------
 # HTML 測試檔
 # --------------------------------------------------------------------------
+def baseline_index_html() -> str:
+    """凍結基準：已由 fixtures 完整渲染過的 index.html。
+
+    測試一律以此為「執行前」狀態，絕不直接讀 ROOT/index.html。
+    理由：ROOT/index.html 是「線上頁面」，會被 GitHub Actions 的排程更新，
+    一旦它比 fixtures 新一天，任何「資料沒變就不該改寫」的斷言都會失敗
+    → CI 紅燈 → update job 被 needs 擋住 → 排程永久停擺
+    （2026/10/16 之後十二次排程全滅，就是這個迴圈造成的）。
+    基準只隨 fixtures 變動，與線上資料日期無關。重建見 tests/make_baseline.py。
+    """
+    with open(os.path.join(FIXTURES, "baseline_index.html"), encoding="utf-8") as f:
+        return f.read()
+
+
 def repo_index_html() -> str:
+    """repo 根目錄 index.html（線上頁面）。僅用於「檢查線上檔案本身」的測試，
+    例如 marker 齊備性；不得用作 update_snapshot 執行前的狀態。"""
     with open(os.path.join(ROOT, "index.html"), encoding="utf-8") as f:
         return f.read()
 
 
 def write_html(path: str, text: str | None = None) -> str:
     with open(path, "w", encoding="utf-8") as f:
-        f.write(repo_index_html() if text is None else text)
+        f.write(baseline_index_html() if text is None else text)
     return path
 
 
