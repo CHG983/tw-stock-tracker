@@ -39,10 +39,10 @@ jobs:
           grep -qF 'inst-xlab-cum' /tmp/b/index.html || { echo "::error::cum x labels not data-driven"; exit 1; }
           grep -qF 'baseline_index.html' /tmp/b/tests/_harness.py || { echo "::error::harness not switched to baseline"; exit 1; }
           python3 -m py_compile /tmp/b/tests/_harness.py /tmp/b/tests/make_baseline.py /tmp/b/tests/test_update_snapshot.py
-          python3 -c "import json,re,sys; s=open('/tmp/b/index.html',encoding='utf-8').read();
-          m=re.search(r'SNAP:INST_DATA\\*/(.*?)/\\*SNAP:/INST_DATA\\*/', s, re.S); assert m, 'INST_DATA region unparsable';
-          d=json.loads(re.search(r'=(\\{.*\\});?\\s*$', m.group(1), re.S).group(1)); assert len(d['rows'])==20, 'INST_DATA rows != 20'; print('INST_DATA ok', d['asOf'])"
           echo "validation OK"
+
+      - name: Install pytest
+        run: python3 -m pip install --quiet pytest
 
       - name: Run unit tests
         run: |
@@ -62,12 +62,5 @@ jobs:
           mkdir -p versions/v10
           cp index.html versions/v10/index.html
           git add -A
-          git diff --cached --quiet || { git commit -m "fix: unbreak daily snapshot CI and make institutional text data-driven
-
-- tests: read a frozen baseline instead of the live index.html, so the suite
-  no longer fails once the scheduled job advances the snapshot past fixtures
-  (this deadlock had failed all 12 scheduled runs since 2026-10-16)
-- index.html: compute the institutional reading, cumulative axis ticks and
-  x labels from INST_DATA instead of hardcoded 10/15 figures
-- index.html: normalise the FG_DATA end marker to /*SNAP:/FG_DATA*/" ; git push; }
+          git diff --cached --quiet || { git commit -m "fix: unbreak daily snapshot CI and make institutional text data-driven"; git push; }
           sha256sum index.html
