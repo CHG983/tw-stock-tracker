@@ -2706,10 +2706,7 @@
       return 'up';
     }
 
-    /* 全市場比對：代號、名稱、產業別三者任一命中即算符合。
-       排序（由前而後）：代號完全相同 > 代號前綴 > 名稱完全相同 > 名稱前綴 > 其他子字串。
-       若只按資料順序輸出，輸入「009」會先列出 2009 第一銅（代號子字串命中）而把真正的
-       009xx ETF 擠到後面，看起來像搜錯。rank 越小越前面，同 rank 保持原資料順序。 */
+    /* 全市場比對：代號、名稱、產業別三者任一命中即算符合。 */
     function search(term, want){
       var data = (typeof UNIVERSE_DATA !== 'undefined' && UNIVERSE_DATA) ? UNIVERSE_DATA : null;
       if(!data || !data.s) return [];
@@ -2724,6 +2721,8 @@
           var lcode = code.toLowerCase(), lname = name.toLowerCase();
           var hay = (code + ' ' + name + ' ' + industry).toLowerCase();
           if(hay.indexOf(term) === -1) continue;
+          /* 排序：代號完全相同 > 代號前綴 > 名稱完全相同 > 名稱前綴 > 其他子字串。
+             否則輸入「009」會先列出 2009 第一銅（子字串命中），把 009xx 前綴命中擠到後面。 */
           if(lcode === term) rank = 0;
           else if(lcode.indexOf(term) === 0) rank = 1;
           else if(lname === term) rank = 2;
