@@ -42,8 +42,8 @@ import _harness as H  # noqa: E402
 import analyst  # noqa: E402
 import update_snapshot as us  # noqa: E402
 
-PATH_STOCK, PATH_MI, PATH_FMT, PATH_5MIN, PATH_BFI = (
-    H.PATH_STOCK, H.PATH_MI, H.PATH_FMT, H.PATH_5MIN, H.PATH_BFI)
+PATH_STOCK, PATH_MI, PATH_FMT, PATH_5MIN, PATH_BFI, PATH_MARGN = (
+    H.PATH_STOCK, H.PATH_MI, H.PATH_FMT, H.PATH_5MIN, H.PATH_BFI, H.PATH_MARGN)
 TZ = H.TZ_TAIPEI
 
 
@@ -579,6 +579,9 @@ FAILURE_CASES = [
     ("mi_bad_json", PATH_MI, "bad_json"),
     ("mi_empty_body", PATH_MI, "empty_body"),
     ("mi_html_error", PATH_MI, "html_error"),
+    ("margn_http500", PATH_MARGN, "http_500"),
+    ("margn_empty_body", PATH_MARGN, "empty_body"),
+    ("margn_bad_json", PATH_MARGN, "bad_json"),
     ("mi_http500", PATH_MI, "http_500"),
     ("mi_timeout", PATH_MI, "timeout"),
     ("fmt_empty", PATH_FMT, "fmt_empty"),
@@ -882,10 +885,11 @@ class TestNormalTradingDay(unittest.TestCase):
         self.assertEqual(survivors, [], f"以下區塊未被更新：{survivors}")
         self.assertNotIn(sentinel, out)
 
-    def test_expected_region_set_is_29(self):
-        self.assertEqual(len(H.EXPECTED_REGIONS), 29)
+    def test_expected_region_set_is_30(self):
+        # 30 = 29 + FG_DATA（恐懼貪婪指數快照，納入每日排程）
+        self.assertEqual(len(H.EXPECTED_REGIONS), 30)
 
-    def test_source_has_all_29_markers(self):
+    def test_source_has_all_30_markers(self):
         src = H.repo_index_html()
         for name in sorted(H.EXPECTED_REGIONS):
             self.assertIsNotNone(us._region_body(src, name), f"index.html 缺 marker {name}")
@@ -908,7 +912,11 @@ class TestNormalTradingDay(unittest.TestCase):
         self.assertEqual(strip_regions(src), strip_regions(self.out))
 
     def test_no_leftover_placeholders(self):
-        blob = "".join(region_body(self.out, n) for n in sorted(H.EXPECTED_REGIONS))
+        # JS 資料區塊是 JSON，巢狀物件結尾本來就會出現 `}}`，因此排除在
+        # 「模板佔位符殘留」掃描之外；其餘區塊仍必須乾淨。
+        JSON_REGIONS = {"FG_DATA", "INST_DATA", "UNIVERSE_DATA", "AI_CHAT_DATA"}
+        blob = "".join(region_body(self.out, n) for n in sorted(H.EXPECTED_REGIONS)
+                       if n not in JSON_REGIONS)
         for bad in ("None", "nan", "NaN", "undefined", "{{", "}}"):
             self.assertNotIn(bad, blob, f"輸出含異常字串 {bad}")
 
@@ -1608,6 +1616,7 @@ class TestNoNetwork(unittest.TestCase):
             us.fetch(PATH_5MIN)
             us.fetch(PATH_FMT, {"date": "20260901"})
             us.fetch(PATH_BFI, {"dayDate": H.inst_days()[-1]})
+            us.fetch(PATH_MARGN, {"date": H.inst_days()[-1], "selectType": "MS"})
         self.assertEqual({api.parse(u)[0] for u in api.calls}, set(H.ALL_PATHS))
 
     def test_fetch_touches_only_the_twse_base(self):
@@ -3114,6 +3123,114 @@ class TestNoStaleHardcodedFigures(unittest.TestCase):
         self.assertIsNotNone(m, "找不到 .copy 樣式")
         self.assertIn("var(--ink-2)", m.group(1),
                       ".copy 仍用 --ink-3，11.5px 小字對比未達 WCAG AA 4.5")
+
+
+# ==========================================================================
+# 恐懼貪婪指數快照（FG_DATA）
+# ==========================================================================
+class TestFearGreedSnapshot(unittest.TestCase):
+    """FG_DATA 必須是資料的純函式，且與前端即時重算使用同一組公式。"""
+
+    @classmethod
+    def setUpClass(cls):
+        # 原始資料只抓一次（35 日 × 2 端點），之後所有計算都走純函式 _fg_compute。
+        with H.FakeAPI():
+            cls.cfg = us.collect()
+            cls.data = us.fetch_fg_data([r["date"] for r in cls.cfg["hist"]])
+        r, path, _b, _a = clean_run()
+        cls.out = open(path, encoding="utf-8").read()
+
+    def _compute(self):
+        return us._fg_compute(self.cfg["hist"], self.data)
+
+    def _fg(self):
+        return self.cfg["fg"]
+
+    def test_snapshot_is_pure_function_of_data(self):
+        a = self._compute()
+        b = self._compute()
+        self.assertEqual(json.dumps(a, sort_keys=True), json.dumps(b, sort_keys=True))
+
+    def test_snapshot_ignores_wall_clock(self):
+        before = json.dumps(self._compute(), sort_keys=True)
+        with H.freeze_now(H.ref_dt(23, 4, 5)):
+            after = json.dumps(self._compute(), sort_keys=True)
+        self.assertEqual(before, after, "FG 快照不得依賴系統時間")
+
+    def test_snapshot_changes_when_data_changes(self):
+        """換掉輸入資料就必須換出不同分數（證明不是寫死的數字）。
+
+        擾動「漲跌家數」而不是收盤價：收盤價同時驅動動能與波動兩個分項，
+        大幅擾動會讓兩者各自撞到 0/100 的天花板而互相抵消，分數反而不動。
+        """
+        base = self._compute()
+        last = max(self.data["breadth"])
+        data2 = dict(self.data)
+        data2["breadth"] = dict(self.data["breadth"])
+        data2["breadth"][last] = (data2["breadth"][last][1],
+                                  data2["breadth"][last][0])
+        self.assertNotEqual(base["value"], self._compute_data(data2)["value"])
+
+    def _compute_data(self, data):
+        return us._fg_compute(self.cfg["hist"], data)
+
+    def test_components_and_score_are_consistent(self):
+        fg = self._fg()
+        self.assertEqual(set(fg["components"]), set(us.FG_KEYS))
+        vals = [c["s"] for c in fg["components"].values() if c["s"] is not None]
+        self.assertAlmostEqual(fg["value"], round(sum(vals) / len(vals), 1), places=1)
+        for c in fg["components"].values():
+            if c["s"] is not None:
+                self.assertGreaterEqual(c["s"], 0.0)
+                self.assertLessEqual(c["s"], 100.0)
+
+    def test_label_matches_value(self):
+        fg = self._fg()
+        self.assertEqual(fg["label"], us.fg_label(fg["value"]))
+
+    def test_history_is_ordered_and_ends_at_asof(self):
+        fg = self._fg()
+        days = [h["d"] for h in fg["history"]]
+        self.assertEqual(days, sorted(days))
+        self.assertEqual(days[-1], fg["asOf"])
+        self.assertEqual(len(days), us.FG_WINDOW)
+
+    def test_asof_never_exceeds_available_margin_data(self):
+        """資料日必須是「融資餘額已公布」的交易日，不可假裝是最後交易日。"""
+        fg = self._fg()
+        ad = f"{fg['asOf'][:4]}/{fg['asOf'][4:6]}/{fg['asOf'][6:]}"
+        with H.FakeAPI():
+            self.assertIsNotNone(us.get_margin_amount(ad))
+
+    def test_payload_is_valid_js_json(self):
+        payload = us.build_fg_payload(self.cfg)
+        self.assertTrue(payload.startswith("var FG_DATA="))
+        self.assertTrue(payload.endswith(";"))
+        data = json.loads(payload[len("var FG_DATA="):-1])
+        self.assertEqual(data["asOf"], self._fg()["asOf"])
+
+    def test_region_is_emitted_and_marked(self):
+        self.assertIn("/*SNAP:FG_DATA*/", self.out)
+        self.assertIn("/*SNAP:/FG_DATA*/", self.out)
+        self.assertIn("var FG_DATA=", region_body(self.out, "FG_DATA"))
+
+    def test_frontend_fetches_four_months(self):
+        """3 個月在月初只有約 41 個交易日，會低於 45 日門檻 → 必須取 4 個月。"""
+        src = H.repo_index_html()
+        self.assertIn("monthsBack(3)", src)
+        self.assertNotIn("monthsBack(2)", src)
+
+    def test_fallback_label_is_honest(self):
+        src = H.repo_index_html()
+        self.assertIn("即時連線失敗，顯示內建快照（資料日 ", src)
+        self.assertNotIn("內建快照（連線失敗）", src)
+
+    def test_role_label_and_disclaimer_preserved(self):
+        src = H.repo_index_html()
+        self.assertIn("韭經考驗的台股戰士-宇程君", src)
+        self.assertIn("韭齡多年的虛擬分析失", src)
+        self.assertIn("AI 生成虛擬角色", src)
+        self.assertIn("不構成任何投資建議", src)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,142 @@
 {
-  "captured_at_taipei": "2026/11/02 20:05:36",
-  "data_date": "2026/11/02",
+  "captured_at_taipei": "2026/11/03 18:51:18",
+  "data_date": "2026/11/03",
   "files": {
+    "bfi82u/20260908.json": {
+      "bytes": 1570,
+      "params": {
+        "dayDate": "20260908",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260909.json": {
+      "bytes": 1564,
+      "params": {
+        "dayDate": "20260909",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260910.json": {
+      "bytes": 1570,
+      "params": {
+        "dayDate": "20260910",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260911.json": {
+      "bytes": 1571,
+      "params": {
+        "dayDate": "20260911",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260914.json": {
+      "bytes": 1569,
+      "params": {
+        "dayDate": "20260914",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260915.json": {
+      "bytes": 1569,
+      "params": {
+        "dayDate": "20260915",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260916.json": {
+      "bytes": 1570,
+      "params": {
+        "dayDate": "20260916",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260917.json": {
+      "bytes": 1567,
+      "params": {
+        "dayDate": "20260917",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260918.json": {
+      "bytes": 1568,
+      "params": {
+        "dayDate": "20260918",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260921.json": {
+      "bytes": 1567,
+      "params": {
+        "dayDate": "20260921",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260922.json": {
+      "bytes": 1565,
+      "params": {
+        "dayDate": "20260922",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260923.json": {
+      "bytes": 1565,
+      "params": {
+        "dayDate": "20260923",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260924.json": {
+      "bytes": 1569,
+      "params": {
+        "dayDate": "20260924",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260929.json": {
+      "bytes": 1565,
+      "params": {
+        "dayDate": "20260929",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
+    "bfi82u/20260930.json": {
+      "bytes": 1563,
+      "params": {
+        "dayDate": "20260930",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
     "bfi82u/20261001.json": {
       "bytes": 1566,
       "params": {
@@ -182,6 +317,15 @@
       },
       "path": "/rwd/zh/fund/BFI82U"
     },
+    "bfi82u/20261103.json": {
+      "bytes": 1468,
+      "params": {
+        "dayDate": "20261103",
+        "response": "json",
+        "type": "day"
+      },
+      "path": "/rwd/zh/fund/BFI82U"
+    },
     "fmtqik/202506.json": {
       "bytes": 2242,
       "params": {
@@ -319,22 +463,652 @@
       "path": "/rwd/zh/afterTrading/FMTQIK"
     },
     "fmtqik/202611.json": {
-      "bytes": 622,
+      "bytes": 709,
       "params": {
         "date": "20261101",
         "response": "json"
       },
       "path": "/rwd/zh/afterTrading/FMTQIK"
     },
+    "margn/20260908.json": {
+      "bytes": 1848,
+      "params": {
+        "date": "20260908",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20260909.json": {
+      "bytes": 1850,
+      "params": {
+        "date": "20260909",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20260910.json": {
+      "bytes": 1848,
+      "params": {
+        "date": "20260910",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20260911.json": {
+      "bytes": 1850,
+      "params": {
+        "date": "20260911",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20260914.json": {
+      "bytes": 1848,
+      "params": {
+        "date": "20260914",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20260915.json": {
+      "bytes": 1850,
+      "params": {
+        "date": "20260915",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20260916.json": {
+      "bytes": 1850,
+      "params": {
+        "date": "20260916",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20260917.json": {
+      "bytes": 1848,
+      "params": {
+        "date": "20260917",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20260918.json": {
+      "bytes": 1851,
+      "params": {
+        "date": "20260918",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20260921.json": {
+      "bytes": 1850,
+      "params": {
+        "date": "20260921",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20260922.json": {
+      "bytes": 1851,
+      "params": {
+        "date": "20260922",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20260923.json": {
+      "bytes": 1851,
+      "params": {
+        "date": "20260923",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20260924.json": {
+      "bytes": 1851,
+      "params": {
+        "date": "20260924",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20260929.json": {
+      "bytes": 1849,
+      "params": {
+        "date": "20260929",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20260930.json": {
+      "bytes": 1848,
+      "params": {
+        "date": "20260930",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261001.json": {
+      "bytes": 1848,
+      "params": {
+        "date": "20261001",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261002.json": {
+      "bytes": 1850,
+      "params": {
+        "date": "20261002",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261005.json": {
+      "bytes": 1851,
+      "params": {
+        "date": "20261005",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261006.json": {
+      "bytes": 1850,
+      "params": {
+        "date": "20261006",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261007.json": {
+      "bytes": 1851,
+      "params": {
+        "date": "20261007",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261008.json": {
+      "bytes": 1851,
+      "params": {
+        "date": "20261008",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261012.json": {
+      "bytes": 1848,
+      "params": {
+        "date": "20261012",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261013.json": {
+      "bytes": 1850,
+      "params": {
+        "date": "20261013",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261014.json": {
+      "bytes": 1850,
+      "params": {
+        "date": "20261014",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261015.json": {
+      "bytes": 1850,
+      "params": {
+        "date": "20261015",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261016.json": {
+      "bytes": 1850,
+      "params": {
+        "date": "20261016",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261019.json": {
+      "bytes": 1851,
+      "params": {
+        "date": "20261019",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261020.json": {
+      "bytes": 1851,
+      "params": {
+        "date": "20261020",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261021.json": {
+      "bytes": 1848,
+      "params": {
+        "date": "20261021",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261022.json": {
+      "bytes": 1851,
+      "params": {
+        "date": "20261022",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261027.json": {
+      "bytes": 1850,
+      "params": {
+        "date": "20261027",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261028.json": {
+      "bytes": 1852,
+      "params": {
+        "date": "20261028",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261029.json": {
+      "bytes": 1850,
+      "params": {
+        "date": "20261029",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261030.json": {
+      "bytes": 1852,
+      "params": {
+        "date": "20261030",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261102.json": {
+      "bytes": 1848,
+      "params": {
+        "date": "20261102",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
+    "margn/20261103.json": {
+      "bytes": 50,
+      "params": {
+        "date": "20261103",
+        "response": "json",
+        "selectType": "MS"
+      },
+      "path": "/rwd/zh/marginTrading/MI_MARGN"
+    },
     "mi_5mins_hist.json": {
-      "bytes": 1280,
+      "bytes": 1342,
       "params": {
         "date": "20261101",
         "response": "json"
       },
       "path": "/rwd/zh/TAIEX/MI_5MINS_HIST"
     },
-    "mi_index_ms.json": {
+    "mi_index/20260908.json": {
+      "bytes": 1721,
+      "params": {
+        "date": "20260908",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20260909.json": {
+      "bytes": 1724,
+      "params": {
+        "date": "20260909",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20260910.json": {
+      "bytes": 1723,
+      "params": {
+        "date": "20260910",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20260911.json": {
+      "bytes": 1724,
+      "params": {
+        "date": "20260911",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20260914.json": {
+      "bytes": 1721,
+      "params": {
+        "date": "20260914",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20260915.json": {
+      "bytes": 1720,
+      "params": {
+        "date": "20260915",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20260916.json": {
+      "bytes": 1723,
+      "params": {
+        "date": "20260916",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20260917.json": {
+      "bytes": 1720,
+      "params": {
+        "date": "20260917",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20260918.json": {
+      "bytes": 1730,
+      "params": {
+        "date": "20260918",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20260921.json": {
+      "bytes": 1724,
+      "params": {
+        "date": "20260921",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20260922.json": {
+      "bytes": 1729,
+      "params": {
+        "date": "20260922",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20260923.json": {
+      "bytes": 1726,
+      "params": {
+        "date": "20260923",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20260924.json": {
+      "bytes": 1726,
+      "params": {
+        "date": "20260924",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20260929.json": {
+      "bytes": 1724,
+      "params": {
+        "date": "20260929",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20260930.json": {
+      "bytes": 1725,
+      "params": {
+        "date": "20260930",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261001.json": {
+      "bytes": 1726,
+      "params": {
+        "date": "20261001",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261002.json": {
+      "bytes": 1732,
+      "params": {
+        "date": "20261002",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261005.json": {
+      "bytes": 1735,
+      "params": {
+        "date": "20261005",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261006.json": {
+      "bytes": 1727,
+      "params": {
+        "date": "20261006",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261007.json": {
+      "bytes": 1727,
+      "params": {
+        "date": "20261007",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261008.json": {
+      "bytes": 1728,
+      "params": {
+        "date": "20261008",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261012.json": {
+      "bytes": 1727,
+      "params": {
+        "date": "20261012",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261013.json": {
+      "bytes": 1735,
+      "params": {
+        "date": "20261013",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261014.json": {
+      "bytes": 1724,
+      "params": {
+        "date": "20261014",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261015.json": {
+      "bytes": 1738,
+      "params": {
+        "date": "20261015",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261016.json": {
+      "bytes": 1725,
+      "params": {
+        "date": "20261016",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261019.json": {
+      "bytes": 1724,
+      "params": {
+        "date": "20261019",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261020.json": {
+      "bytes": 1725,
+      "params": {
+        "date": "20261020",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261021.json": {
+      "bytes": 1727,
+      "params": {
+        "date": "20261021",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261022.json": {
+      "bytes": 1725,
+      "params": {
+        "date": "20261022",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261027.json": {
+      "bytes": 1725,
+      "params": {
+        "date": "20261027",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261028.json": {
+      "bytes": 1718,
+      "params": {
+        "date": "20261028",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261029.json": {
+      "bytes": 1722,
+      "params": {
+        "date": "20261029",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261030.json": {
+      "bytes": 1723,
+      "params": {
+        "date": "20261030",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index/20261102.json": {
       "bytes": 1724,
       "params": {
         "date": "20261102",
@@ -343,8 +1117,26 @@
       },
       "path": "/rwd/zh/afterTrading/MI_INDEX"
     },
+    "mi_index/20261103.json": {
+      "bytes": 1729,
+      "params": {
+        "date": "20261103",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
+    "mi_index_ms.json": {
+      "bytes": 1729,
+      "params": {
+        "date": "20261103",
+        "response": "json",
+        "type": "MS"
+      },
+      "path": "/rwd/zh/afterTrading/MI_INDEX"
+    },
     "stock_day_all.csv": {
-      "bytes": 137578,
+      "bytes": 139141,
       "params": {
         "response": "json"
       },
@@ -372,5 +1164,5 @@
     "202611"
   ],
   "source_base": "https://www.twse.com.tw",
-  "stock_day_all_rows": 1389
+  "stock_day_all_rows": 1390
 }

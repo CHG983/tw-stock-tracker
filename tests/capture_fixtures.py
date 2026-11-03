@@ -192,7 +192,11 @@ def main() -> int:
         j = json.loads(read_fix(os.path.join("fmtqik", f"{m}.json")))
         for r in (j.get("data") or []):
             days.append(us.roc_to_ad(r[0]))
-    days = sorted(set(days))[-us.INST_WINDOW:]
+    days_all = sorted(set(days))
+    # BFI82U 樣本需同時滿足兩個用途：法人區塊（INST_WINDOW 日）與恐懼貪婪指數的
+    # 法人分項（FG_WINDOW + FG_EXTRA + 1 日），因此取兩者的較大者。
+    _need = max(us.INST_WINDOW, us.FG_WINDOW + us.FG_EXTRA + 1)
+    days = days_all[-_need:]
     if len(days) < us.INST_WINDOW:
         print(f"      !! FMTQIK 樣本交易日不足 {us.INST_WINDOW} 日（僅 {len(days)} 日）", file=sys.stderr)
         return 1
@@ -204,6 +208,30 @@ def main() -> int:
             return 1
         save(os.path.join("bfi82u", f"{p['dayDate']}.json"), t,
              "/rwd/zh/fund/BFI82U", p)
+
+    # 恐懼貪婪指數需要「逐日」漲跌家數（MI_INDEX）與融資餘額（MI_MARGN）。
+    # 視窗＝FG_WINDOW 個交易日，另加 FG_EXTRA 日供槓桿分項回看 5 日。
+    print(f"[6/6] MI_INDEX／MI_MARGN（恐懼貪婪指數逐日樣本，"
+          f"{us.FG_WINDOW + us.FG_EXTRA} 個交易日）")
+    # 多抓 1 日：最新交易日可能尚未公布融資餘額，快照會以「資料齊備的最後一日」
+    # 為錨往回取 FG_WINDOW + FG_EXTRA 日，因此樣本必須比該視窗多涵蓋 1 日。
+    fg_days = days_all[-us.FG_WINDOW - us.FG_EXTRA - 1:]
+    for d in fg_days:
+        p1 = {"date": d.replace("/", ""), "type": "MS", "response": "json"}
+        t1 = us.fetch("/rwd/zh/afterTrading/MI_INDEX", p1)
+        if "stat" in json.loads(t1) and json.loads(t1).get("stat") != "OK":
+            print(f"      !! MI_INDEX {p1['date']} stat 非 OK", file=sys.stderr)
+            return 1
+        save(os.path.join("mi_index", f"{p1['date']}.json"), t1,
+             "/rwd/zh/afterTrading/MI_INDEX", p1)
+        p2 = {"date": d.replace("/", ""), "selectType": "MS", "response": "json"}
+        t2 = us.fetch(us.PATH_MARGN, p2)
+        # 融資餘額比收盤行情晚公布。最新交易日尚未公布時，TWSE 回傳的是
+        # stat='很抱歉，沒有符合條件的資料' —— 這是「真實回應」，照樣存成樣本，
+        # 讓離線重播能重現「該日尚未公布」的情境（快照會以資料齊備的最後一日為錨）。
+        if json.loads(t2).get("stat") != "OK":
+            print(f"      ! MI_MARGN {p2['date']} 尚未公布（保留真實回應作為樣本）")
+        save(os.path.join("margn", f"{p2['date']}.json"), t2, us.PATH_MARGN, p2)
 
     with open(os.path.join(FIX, "meta.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=2, sort_keys=True)

@@ -57,7 +57,7 @@ EXPECTED_REGIONS = {
     "TITLE", "HEROTAG", "IDXROW", "KPIS", "BREADTH", "BRDATE", "SVG", "CHARTSUB",
     "MASTRIP", "CXLIST", "CXMKEY", "CXNOTE", "LISTGAIN", "LISTLOSE", "LISTTSMC",
     "RANKBAR", "RANKNOTE", "AIANALYST", "AI_CHAT", "AI_CHAT_DATA", "UNIVERSE_DATA",
-    "INST_DATA",
+    "INST_DATA", "FG_DATA",
     "FOOTA", "FOOTB", "FOOTCOPY", "HTML_STATUS",
     "HTML_LASTUPD", "JS_SNAPAT", "JS_STATINIT",
 }
@@ -68,7 +68,8 @@ PATH_MI = "/rwd/zh/afterTrading/MI_INDEX"
 PATH_FMT = "/rwd/zh/afterTrading/FMTQIK"
 PATH_5MIN = "/rwd/zh/TAIEX/MI_5MINS_HIST"
 PATH_BFI = "/rwd/zh/fund/BFI82U"
-ALL_PATHS = (PATH_STOCK, PATH_MI, PATH_FMT, PATH_5MIN, PATH_BFI)
+PATH_MARGN = "/rwd/zh/marginTrading/MI_MARGN"
+ALL_PATHS = (PATH_STOCK, PATH_MI, PATH_FMT, PATH_5MIN, PATH_BFI, PATH_MARGN)
 
 
 def fixture_path(rel: str) -> str:
@@ -544,7 +545,19 @@ class FakeAPI:
         if path == PATH_STOCK:
             return read_fixture("stock_day_all.csv")
         if path == PATH_MI:
+            # 恐懼貪婪指數需要「逐日」漲跌家數，因此 FG 視窗內的日期各有樣本；
+            # 其他日期（例如主快照當日）沿用單一樣本。
+            day = str(params.get("date", "")).strip()
+            rel = os.path.join("mi_index", f"{day}.json")
+            if day and os.path.exists(fixture_path(rel)):
+                return read_fixture(rel)
             return read_fixture("mi_index_ms.json")
+        if path == PATH_MARGN:
+            day = str(params.get("date", "")).strip()
+            rel = os.path.join("margn", f"{day}.json")
+            if not os.path.exists(fixture_path(rel)):
+                raise AssertionError(f"樣本缺少 MI_MARGN {day}；請重跑 capture_fixtures.py")
+            return read_fixture(rel)
         if path == PATH_5MIN:
             return read_fixture("mi_5mins_hist.json")
         if path == PATH_FMT:

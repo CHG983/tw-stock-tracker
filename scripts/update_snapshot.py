@@ -40,6 +40,7 @@ import analyst
 # 常數：座標系統完全沿用 v5（viewBox 0 0 1000 420，60 點等距）
 # --------------------------------------------------------------------------
 BASE = "https://www.twse.com.tw"
+PATH_MARGN = "/rwd/zh/marginTrading/MI_MARGN"
 UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
@@ -62,6 +63,10 @@ HISTORY_MONTHS = 18
 # 「法人資金動向」快照要重算幾個交易日。前端圖表固定以 20 個交易日為一組
 # （長條圖 60 根、外資累計線 20 點），故此值必須與頁面前端契約一致。
 INST_WINDOW = 20
+# 「恐懼貪婪指數」快照要保留幾個交易日的歷史走勢（與頁面圖表一致）。
+FG_WINDOW = 30
+# 恐懼貪婪指數的槓桿分項需要「近 6 個交易日」的融資餘額，因此額外多抓 5 日。
+FG_EXTRA = 5
 PRICE_LO_Y, PRICE_HI_Y = 240.8, 57.7    # 主圖最下／最上格線
 AREA_FLOOR_Y = 250.0
 VOL_BASE_Y = 380.0
@@ -77,7 +82,7 @@ MINUS = "\u2212"                        # U+2212，頁面統一使用的負號
 # 位於 <script> 內的區塊必須用 JS 區塊註解標記：HTML 註解（<!-- -->）在
 # <script> 內會被瀏覽器視為「單行註解」，會把整個 JS 敘述註解掉而使頁面失效。
 JS_REGIONS = {"JS_SNAPAT", "JS_STATINIT", "AI_CHAT_DATA", "UNIVERSE_DATA",
-              "INST_DATA"}
+              "INST_DATA", "FG_DATA"}
 
 TZ_TAIPEI = timezone(timedelta(hours=8))
 
@@ -857,6 +862,207 @@ def rank_bar(records: list[dict]) -> str:
 # --------------------------------------------------------------------------
 # 組裝 marker 內容
 # --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# 恐懼貪婪指數（FG_DATA）
+# --------------------------------------------------------------------------
+# 本區塊的公式必須與 index.html 內前端 `live()` 的實作「逐項一致」：
+# 同一份 TWSE 資料，前端即時重算與後端快照必須得到相同分數，否則使用者按
+# 「更新」會看到數字跳動，卻分不清是資料更新還是公式不同。
+#
+# 純函式契約：只依 cfg（已抓好的 TWSE 資料）計算，不讀系統時間、不用隨機數。
+FG_KEYS = ("momentum", "volatility", "breadth", "turnover", "leverage", "institution")
+
+
+def fg_clamp(x: float) -> float:
+    return max(0.0, min(100.0, x))
+
+
+def fg_label(v: float) -> str:
+    return ("極度恐懼" if v <= 24 else "恐懼" if v <= 44 else "中性"
+            if v <= 55 else "貪婪" if v <= 75 else "極度貪婪")
+
+
+def get_breadth(ad_date: str) -> tuple[int, int]:
+    """MI_INDEX type=MS：當日上漲／下跌家數（股票，非整體市場）。"""
+    j = fetch_json("/rwd/zh/afterTrading/MI_INDEX",
+                   {"date": ad_date.replace("/", ""), "type": "MS", "response": "json"})
+    if "stat" in j and j.get("stat") != "OK":
+        raise NotReadyError(f"MI_INDEX {ad_date} stat={j.get('stat')!r}")
+    for t in (j.get("tables") or []):
+        if not (t and t.get("data")):
+            continue
+        cols = [str(c) for c in (t.get("fields") or []) if c is not None]
+        first = [str(c) for c in t["data"][0] if c is not None]
+        sig = "|".join([str(t.get("title") or "")] + cols + first)
+        if "漲跌證券數合計" in sig or "漲跌證券數" in sig or "整體市場" in sig:
+            up = down = None
+            for r in t["data"]:
+                if len(r) < 3:
+                    continue
+                key = str(r[0])
+                if key.startswith("上漲"):
+                    up = _parse_cnt(r[2])[0]
+                elif key.startswith("下跌"):
+                    down = _parse_cnt(r[2])[0]
+            if up is None or down is None:
+                raise RuntimeError(f"MI_INDEX {ad_date} 漲跌家數表缺少上漲／下跌列")
+            return up, down
+    raise RuntimeError(f"MI_INDEX {ad_date} 找不到漲跌證券數合計表")
+
+
+def get_margin_amount(ad_date: str) -> float | None:
+    """MI_MARGN：融資金額（仟元）當日餘額。非交易日回 None。"""
+    j = fetch_json(PATH_MARGN, {"date": ad_date.replace("/", ""),
+                                "selectType": "MS", "response": "json"})
+    if j.get("stat") != "OK":
+        return None
+    for t in (j.get("tables") or []):
+        for r in (t.get("data") or []):
+            if str(r[0]).startswith("融資金額") and len(r) > 5:
+                return n2(r[5])
+    return None
+
+
+def _fg_vol(closes: list[float], i: int) -> float:
+    """以 i 為最後一日的 20 日年化波動度（母體標準差，與前端一致）。"""
+    rets = [(closes[k] - closes[k - 1]) / closes[k - 1] for k in range(i - 19, i + 1)]
+    mu = sum(rets) / 20
+    sd = (sum((r - mu) ** 2 for r in rets) / 20) ** 0.5
+    return sd * (252 ** 0.5) * 100
+
+
+def build_fg_snapshot(hist: list[dict], data: dict | None = None) -> dict:
+    """外層薄包裝：需要時才抓資料，讓計算本身（`_fg_compute`）可單獨測試。"""
+    days = [r["date"] for r in hist]
+    if data is None:
+        data = fetch_fg_data(days)
+    return _fg_compute(hist, data)
+
+
+def fetch_fg_data(days: list[str]) -> dict:
+    """抓 FG 所需的逐日原始資料（融資餘額、三大法人、漲跌家數）。
+
+    唯一會碰網路的地方；`_fg_compute` 只吃這份 dict，因此測試可快取一次。
+    """
+    # 多抓 1 日：最新交易日可能尚未公布融資餘額，錨定後仍需完整 FG_WINDOW + FG_EXTRA。
+    scan = days[-(FG_WINDOW + FG_EXTRA + 1):]
+    margin: dict[str, float] = {}
+    inst: dict[str, float] = {}
+    breadth: dict[str, tuple[int, int]] = {}
+    for d in scan:
+        m = get_margin_amount(d)
+        if m is None:
+            # 融資餘額比收盤行情晚公布。尚未公布就略過該日（由 _fg_compute 往回錨定），
+            # 但若連歷史日期都缺，代表端點真的壞了 —— 這種情況才 raise。
+            continue
+        g = inst_buy_sell(d)
+        if g is None:
+            continue
+        margin[d] = m
+        # BFI82U 單位為「元」，amt 為「億元」；分項是「5 日買賣超 ÷ 5 日成交金額」，
+        # 兩者必須同單位，否則會差 8 個數量級。
+        inst[d] = g["total"] / 1e8
+        breadth[d] = get_breadth(d)
+    if len(margin) < FG_WINDOW + FG_EXTRA:
+        raise NotReadyError(
+            f"可用融資餘額僅 {len(margin)} 日，不足 {FG_WINDOW + FG_EXTRA} 日")
+    return {"margin": margin, "inst": inst, "breadth": breadth}
+
+
+def _fg_compute(hist: list[dict], data: dict) -> dict:
+    """由 FMTQIK 交易日序列 + 逐日 MI_INDEX／MI_MARGN／BFI82U 計算 FG_DATA。
+
+    - 交易日清單一律取自 FMTQIK（與頁面走勢圖同一來源），日期不會錯位。
+    - 任一必要端點缺資料即 raise，絕不以 0 或前一日數字代替。
+    - 歷史走勢逐日重算（非沿用舊快照），因此排程中斷後也能自我修復。
+    """
+    days = [r["date"] for r in hist]
+    need = FG_WINDOW + FG_EXTRA + 20
+    if len(days) < need:
+        raise RuntimeError(f"FMTQIK 交易日不足 {need} 日（僅 {len(days)} 日）")
+
+    # 錨定「所有必要資料都已公布」的最後一個交易日。
+    # 收盤行情（STOCK_DAY_ALL／FMTQIK）約 13:5x 換日，但融資餘額（MI_MARGN）與
+    # 三大法人（BFI82U）要更晚才公布；若直接以 FMTQIK 最後一日為錨，盤後執行
+    # 排程時會因為「當日融資尚未公布」而整支程式失敗。此處改為往回找第一個
+    # 資料齊備的交易日，並在輸出中明確標示該資料日（不假裝是最後交易日）。
+    anchor = None
+    for d in reversed(days):
+        if d in data["margin"] and d in data["inst"]:
+            anchor = d
+            break
+    if anchor is None:
+        raise NotReadyError("找不到融資餘額與三大法人資料皆齊備的交易日")
+    if anchor != days[-1]:
+        print(f"      ! 融資／法人資料尚未公布至 {days[-1]}，恐懼貪婪指數以 {anchor} 為資料日")
+    days = days[:days.index(anchor) + 1]
+
+    closes = [r["close"] for r in hist]
+    amts = [r["amt"] for r in hist]
+    idx = {d: i for i, d in enumerate(days)}
+
+    win = days[-FG_WINDOW:]
+    # 先抓齊所需日期的原始資料（每日一次，避免重複請求）
+    margin = data["margin"]
+    inst = data["inst"]
+    breadth = data["breadth"]
+
+    rows: list[dict] = []
+    for d in win:
+        i = idx[d]
+        ma20 = sum(closes[i - 19:i + 1]) / 20
+        dev = (closes[i] - ma20) / ma20 * 100
+
+        vol = _fg_vol(closes, i)
+        vma = sum(_fg_vol(closes, k) for k in range(i - 19, i + 1)) / 20
+
+        up, down = breadth[d]
+        br = up / (up + down) if (up + down) > 0 else None
+
+        aw = amts[i - 19:i + 1]
+        vr = amts[i] / (sum(aw) / len(aw)) if all(a is not None for a in aw) else None
+        dirn = 1 if closes[i] >= closes[i - 5] else -1
+
+        d5 = days[i - 5]
+        lev = (margin[d] - margin[d5]) / margin[d5] * 100 if margin[d5] else None
+
+        ins5 = [inst[days[k]] for k in range(i - 4, i + 1)]
+        amt5 = [amts[k] for k in range(i - 4, i + 1)]
+        n5 = (sum(ins5) / sum(amt5) * 100) if all(a is not None for a in amt5) and sum(amt5) else None
+
+        comp = {
+            "momentum": {"s": fg_clamp(50 + dev * 8), "v": dev},
+            "volatility": {"s": fg_clamp(50 + (vma - vol) / vma * 100), "v": vol},
+            "breadth": {"s": None if br is None else fg_clamp(br * 100), "v": br},
+            "turnover": {"s": None if vr is None else fg_clamp(50 + dirn * (vr - 1) * 100), "v": vr},
+            "leverage": {"s": None if lev is None else fg_clamp(50 + lev * 4), "v": lev},
+            "institution": {"s": None if n5 is None else fg_clamp(50 + n5 * 3), "v": n5},
+        }
+        vals = [comp[k]["s"] for k in FG_KEYS if comp[k]["s"] is not None]
+        if not vals:
+            raise RuntimeError(f"FG {d} 所有分項皆無值")
+        score = round(sum(vals) / len(vals), 1)
+        rows.append({"d": d.replace("/", ""), "v": score, "c": comp})
+
+    last = rows[-1]
+    return {"asOf": last["d"], "value": last["v"], "label": fg_label(last["v"]),
+            "components": last["c"],
+            "history": [{"d": r["d"], "v": r["v"]} for r in rows]}
+
+
+def build_fg_payload(cfg: dict) -> str:
+    """FG_DATA 的內建快照，供前端儀表板與走勢圖直接繪製。
+
+    前端契約（與 index.html 內 `render()` 完全一致）：
+        {"asOf":"YYYYMMDD","value":24.0,"label":"極度恐懼",
+         "components":{"momentum":{"s","v"},…},
+         "history":[{"d":"YYYYMMDD","v":24.0},…]}
+    """
+    return ("var FG_DATA="
+            + json.dumps(cfg["fg"], ensure_ascii=False,
+                         separators=(",", ":")) + ";")
+
+
 def build_regions(cfg: dict) -> dict[str, str]:
     rows, ad = cfg["rows"], cfg["date"]
     dt = ad_to_dt(ad)
@@ -1162,6 +1368,9 @@ def build_regions(cfg: dict) -> dict[str, str]:
     R["UNIVERSE_DATA"] = build_universe_payload(cfg)
     # 法人資金動向：由 BFI82U（三大法人買賣超）＋ FMTQIK（成交金額／指數）重算。
     R["INST_DATA"] = build_inst_payload(cfg)
+    # 恐懼貪婪指數：由 FMTQIK／MI_INDEX／MI_MARGN／BFI82U 逐日重算，
+    # 與前端即時重算使用同一組公式，因此快照與即時值不會互相矛盾。
+    R["FG_DATA"] = build_fg_payload(cfg)
     return R
 
 
@@ -1373,6 +1582,11 @@ def collect() -> dict:
           f"自營商 {last_inst['dl']:+,.1f}、合計 {last_inst['tot']:+,.1f} 億元；"
           f"區間外資累計 {inst['cumF'][-1]:+,.1f} 億元")
 
+    print(f"[7/7] 計算恐懼貪婪指數快照（近 {FG_WINDOW} 個交易日，逐日重算）…")
+    fg = build_fg_snapshot(hist)
+    print(f"      → 資料日 {fg['asOf']}：{fg['value']:.1f}（{fg['label']}）；"
+          f"歷史 {len(fg['history'])} 日（{fg['history'][0]['d']} – {fg['history'][-1]['d']}）")
+
     print(f"      → 母體 {len(uni):,d} 檔；漲幅首 {gain[0]['code']} "
           f"{gain[0]['pct']:+.2f}%；跌幅首 {lose[0]['code']} {lose[0]['pct']:+.2f}%；"
           f"2330 收 {tsmc['close']:,.2f}（{tsmc['pct']:+.2f}%）")
@@ -1387,7 +1601,7 @@ def collect() -> dict:
             "win_ma20": win_ma20, "win_prev": win_prev, "crosses_all": c_all,
             "crosses_in_win": c_win, "label_rows": lrows, "uni_n": len(uni),
             "gain": gain, "lose": lose, "tsmc": tsmc, "ax": ax, "vl": vl,
-            "inst": inst}
+            "inst": inst, "fg": fg}
 
 
 def main() -> int:
