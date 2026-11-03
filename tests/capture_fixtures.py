@@ -153,8 +153,32 @@ def main() -> int:
              "/rwd/zh/afterTrading/FMTQIK", p)
 
     print("[4/5] MI_5MINS_HIST（當月逐日開高低收）")
-    params = {"response": "json"}
-    save("mi_5mins_hist.json", us.fetch("/rwd/zh/TAIEX/MI_5MINS_HIST", params),
+    # 這個端點「不帶 date=」時只回當天 1 筆；帶 date=YYYYMM01 才會回整個月。
+    # 本專案資料日經常是「上一個月的最後一個交易日」（例如 11/02 的資料日是 10/30），
+    # 若只抓當月，樣本永遠湊不到 279 筆歷史，建置會直接失敗。
+    # 因此以資料日所屬月份去抓，並在必要時併入前一個月。
+    _dy, _dm = int(ad.split("/")[0]), int(ad.split("/")[1])
+    hist: list[list] = []
+    for back in (1, 0):
+        m2 = _dm - back
+        y2 = _dy
+        while m2 <= 0:
+            m2 += 12
+            y2 -= 1
+        p = {"date": f"{y2}{m2:02d}01", "response": "json"}
+        j = json.loads(us.fetch("/rwd/zh/TAIEX/MI_5MINS_HIST", p))
+        rows = j.get("data") or []
+        print(f"      {y2}{m2:02d}01 → {len(rows)} 筆")
+        for r in rows:
+            if r not in hist:
+                hist.append(r)
+    hist.sort(key=lambda r: us.roc_to_ad(r[0]))
+    # 只保留到資料日為止，避免把資料日之後的交易日寫進樣本。
+    hist = [r for r in hist if us.roc_to_ad(r[0]) <= ad]
+    params = {"date": f"{_dy}{_dm:02d}01", "response": "json"}
+    save("mi_5mins_hist.json",
+         json.dumps({"stat": "OK", "date": f"{_dy}{_dm:02d}01", "data": hist},
+                    ensure_ascii=False, separators=(",", ":"), sort_keys=True),
          "/rwd/zh/TAIEX/MI_5MINS_HIST", params)
 
     # BFI82U：三大法人買賣超（逐日查詢，每天一份樣本）。
@@ -162,7 +186,10 @@ def main() -> int:
     print(f"[5/5] BFI82U（近 {us.INST_WINDOW} 個交易日三大法人買賣超）")
     days: list[str] = []
     for m in meta["months"]:
-        j = json.loads(read_fix(m))
+        # 樣本檔在 fixtures/fmtqik/{YYYYMM}.json；先前這裡直接傳月份字串給 read_fix，
+        # 開啟 fixtures/202506 必定 FileNotFoundError，導致第 5 步永遠跑不完、
+        # meta.json 永遠停在舊值——fixtures 只被更新一半。
+        j = json.loads(read_fix(os.path.join("fmtqik", f"{m}.json")))
         for r in (j.get("data") or []):
             days.append(us.roc_to_ad(r[0]))
     days = sorted(set(days))[-us.INST_WINDOW:]

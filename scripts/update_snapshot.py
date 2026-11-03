@@ -393,6 +393,14 @@ def get_index_history() -> list[dict]:
         j = fetch_json("/rwd/zh/afterTrading/FMTQIK",
                        {"date": f"{y}{m:02d}01", "response": "json"})
         if j.get("stat") != "OK":
+            # 當月的 FMTQIK 在「該月第一個交易日的盤後統計釋出前」一律回
+            # stat='很抱歉，沒有符合條件的資料!'。這是「當月尚無資料」，不是端點故障；
+            # 先前一律 raise RuntimeError，於是每月 1 日（或當月首個交易日）的排程必定失敗
+            # ——2026-11-02 的 run 41384425500 就是這樣掛掉的，連帶讓頁面停在 10/30。
+            # 只有「最新月份」允許整月空；歷史月份仍必須有資料，否則就是真的異常。
+            if (y, m) == (today.year, today.month) and not (j.get("data") or []):
+                print(f"      ! FMTQIK {y}-{m:02d} 當月尚無資料（月初統計未釋出），先跳過")
+                continue
             raise RuntimeError(f"FMTQIK {y}-{m:02d} stat={j.get('stat')!r}")
         for r in (j.get("data") or []):
             close = n2(r[4])

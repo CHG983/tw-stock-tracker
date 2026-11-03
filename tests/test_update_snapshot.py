@@ -335,6 +335,58 @@ class TestFixtures(unittest.TestCase):
 
 
 # ==========================================================================
+# 1b. 月初邊界：當月 FMTQIK 尚無資料不得讓整支排程失敗
+# ==========================================================================
+class TestMonthStartEmptyFmtqik(unittest.TestCase):
+    """2026-11-02 的排程（run 41384425500）死在 FMTQIK 的「沒有符合條件的資料!」。
+
+    該回應代表「當月第一個交易日的盤後統計還沒釋出」，不是端點故障。
+    只有最新月份可以整月空；歷史月份空掉仍必須視為異常。
+    """
+
+    ROW = ["115/06/01", "1,000.00", "1.00", "1.10", "1.20", "0.10",
+           "20,000", "1,000,000"]
+
+    def _run(self, empty_month: str, now: datetime):
+        def fake(path, params=None):
+            if "FMTQIK" in path and (params or {}).get("date") == empty_month:
+                return {"stat": "很抱歉，沒有符合條件的資料!", "data": []}
+            return {"stat": "OK", "data": [self.ROW]}
+
+        class Frozen(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return now
+
+        with mock.patch.object(us, "datetime", Frozen), \
+             mock.patch.object(us, "fetch_json", fake):
+            return us.get_index_history()
+
+    def test_current_month_empty_is_tolerated(self):
+        """當月尚無資料 → 跳過該月，不因 FMTQIK 的 stat 而拋錯。
+
+        先前會 raise「FMTQIK 2026-11 stat='很抱歉，沒有符合條件的資料!'」，
+        讓每月首個交易日的排程必定失敗。修正後不得再出現該錯誤字串。
+        """
+        now = datetime(2026, 11, 2, 15, 35, tzinfo=H.TZ_TAIPEI)
+        # 樣本只有 1 筆，仍會撞上「歷史資料不足」——那是另一回事；
+        # 這裡要證明的是「不再因當月 FMTQIK 沒有資料而失敗」。
+        with self.assertRaises(RuntimeError) as cm:
+            self._run("20261101", now)
+        msg = str(cm.exception)
+        self.assertIn("歷史資料不足", msg)
+        self.assertNotIn("沒有符合條件的資料", msg)
+        self.assertNotIn("FMTQIK 2026-11 stat", msg)
+
+    def test_historical_month_empty_still_fails(self):
+        """歷史月份空掉是真的異常，必須仍然失敗（不能為了月初把檢查放寬）。"""
+        now = datetime(2026, 11, 2, 15, 35, tzinfo=H.TZ_TAIPEI)
+        with self.assertRaises(RuntimeError) as cm:
+            self._run("20261001", now)
+        self.assertIn("FMTQIK 2026-10", str(cm.exception))
+
+
+# ==========================================================================
 # 2. HTTP 層：重試、錯誤路徑
 # ==========================================================================
 class TestFetch(unittest.TestCase):
@@ -2797,6 +2849,69 @@ class TestStockSearchAndIndustryFilter(unittest.TestCase):
         block = self.src[i:i + 7000]
         self.assertIn("code + ' ' + name + ' ' + industry", block)
 
+    def test_search_ranks_exact_and_prefix_code_matches_first(self):
+        """搜尋「009」必須把 009xx 代號前綴命中排在 2009 第一銅（子字串命中）之前。
+
+        以真實 UNIVERSE_DATA 在 node 內執行頁面自己的 search()，不是只比對原始碼字串。
+        """
+        import shutil
+        import subprocess
+        import tempfile
+        node = shutil.which("node")
+        if not node:
+            self.skipTest("node 不可用，略過行為測試")
+        i = self.src.index("function search(term, want){")
+        j = self.src.index("function quoteHtml(", i)
+        fn = self.src[i:j]
+        # 用「合成」資料驗排序契約：真實 universe 只含 4 碼上市普通股（ETF 不列入），
+        # 因此沒有任何 009xx 代號，無法用它證明「前綴優先於子字串」。
+        # 合成資料刻意把 2009（子字串命中）排在 0091（前綴命中）之前，模擬原始順序。
+        synthetic = {
+            "date": "2026/11/02",
+            "inds": ["鋼鐵工業", "金融保險業"],
+            "s": [
+                ["2009", "第一銅", 0, "37.10", "+0.15", "+0.41%", "682", "0.25"],
+                ["0091", "測試ETF甲", 1, "20.00", "+0.10", "+0.50%", "100", "0.02"],
+                ["0092", "測試ETF乙", 1, "21.00", "+0.20", "+0.96%", "200", "0.04"],
+                ["2330", "台積電", 1, "2,330.00", "−40.00", "−1.69%", "41,165", "959.51"],
+            ],
+        }
+        script = (
+            "var UNIVERSE_DATA=" + json.dumps(synthetic, ensure_ascii=False) + ";\n" + fn + "\n"
+            "function codes(t){ return search(t, '').map(function(x){return x.code;}); }\n"
+            "var out={};\n"
+            "['009','2330','台積','zzz_no_such_stock'].forEach(function(t){\n"
+            "  out[t]=codes(t);\n"
+            "});\n"
+            "console.log(JSON.stringify(out));\n"
+        )
+        with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False,
+                                         encoding="utf-8") as fh:
+            fh.write(script)
+            path = fh.name
+        try:
+            r = subprocess.run([node, path], capture_output=True, text=True, timeout=60)
+        finally:
+            import os
+            os.unlink(path)
+        self.assertEqual(r.returncode, 0, f"node 執行失敗：{r.stderr[:500]}")
+        res = json.loads(r.stdout)
+
+        # 「009」：所有 009xx 前綴命中必須全部排在 2009 之前
+        hits = res["009"]
+        self.assertIn("2009", hits, "「009」應仍以子字串命中 2009 第一銅")
+        first_2009 = hits.index("2009")
+        prefix_hits = [c for c in hits if c.startswith("009")]
+        self.assertTrue(prefix_hits, "「009」應命中 009xx 代號前綴")
+        for c in prefix_hits:
+            self.assertLess(hits.index(c), first_2009,
+                            f"代號前綴命中 {c} 未排在子字串命中 2009 之前：{hits[:12]}")
+        # 完全相符優先：搜 2330 時第一筆必須是 2330
+        self.assertEqual(res["2330"][0], "2330", f"2330 未排第一：{res['2330'][:5]}")
+        # 名稱關鍵字仍要能找到（合成資料內）
+        self.assertIn("2330", res["台積"])
+        self.assertEqual(res["zzz_no_such_stock"], [], "不存在的字串必須零命中")
+
     def test_search_result_quote_has_no_double_percent(self):
         """payload 的 pct 已含 %；前端若再補一次會出現 '−2.01%%'（實測踩到的缺陷）。"""
         i = self.src.index("var FILTER = (function()")
@@ -2890,6 +3005,115 @@ class TestNoStaleHardcodedFigures(unittest.TestCase):
             if name in us.JS_REGIONS:
                 self.assertIn("/*SNAP:" + name + "*/", src, f"{name} 缺起始 marker")
                 self.assertIn("/*SNAP:/" + name + "*/", src, f"{name} 缺結束 marker")
+
+    # ---- 2026-11-02：X 軸標籤疊字 ----
+    def test_inst_bar_static_axis_labels_are_grouped_for_replacement(self):
+        """長條圖的靜態 X 軸日期標籤必須包在 <g id="inst-xlab"> 內。
+
+        2026-11-02 的實測：`drawBars()` 用 `svg.querySelector("#inst-xlab")`
+        移除舊標籤，但靜態佔位標籤是沒有群組的裸 `<text class="inst-ax">`，
+        querySelector 找不到 → 從不移除 → JS 每次再畫一組。
+        真實瀏覽器量到同一座標上疊了兩組（09/15,09/21,09/30,10/07,10/15
+        與 10/01,10/07,10/15,10/22,11/02），畫面糊成一片且日期互相矛盾。
+        """
+        src = H.repo_index_html()
+        i = src.find('id="inst-bar-svg"')
+        self.assertGreater(i, 0, "找不到長條圖")
+        svg = src[i:src.find("</svg>", i)]
+        self.assertIn('<g id="inst-xlab">', svg,
+                      "長條圖靜態 X 軸標籤未包進 #inst-xlab，JS 無法整組替換")
+        self.assertRegex(svg, r'<g id="inst-xlab">\s*<text class="inst-ax"',
+                         "群組未正確收合或未含日期標籤")
+        # 群組內才可出現日期標籤；群組外不得有裸的 inst-ax 日期標籤
+        outside = re.sub(r'<g id="inst-xlab">.*?</g>', "", svg, flags=re.S)
+        self.assertNotRegex(outside, r'>\d{2}/\d{2}<',
+                            "群組外仍有裸的日期標籤，重繪後會與動態標籤疊字")
+
+    def test_inst_cum_static_axis_labels_are_grouped_for_replacement(self):
+        """累計圖的靜態 X 軸標籤同樣必須包在 <g id="inst-xlab-cum"> 內。"""
+        src = H.repo_index_html()
+        i = src.find('id="inst-cum-svg"')
+        self.assertGreater(i, 0, "找不到累計圖")
+        svg = src[i:src.find("</svg>", i)]
+        self.assertIn('<g id="inst-xlab-cum">', svg,
+                      "累計圖靜態 X 軸標籤未包進 #inst-xlab-cum")
+        outside = re.sub(r'<g id="inst-xlab-cum">.*?</g>', "", svg, flags=re.S)
+        self.assertNotRegex(outside, r'>\d{2}/\d{2}<',
+                            "群組外仍有裸的日期標籤，重繪後會與動態標籤疊字")
+
+    def test_inst_bar_axis_label_y_is_inside_viewbox(self):
+        """長條圖 X 軸標籤的 y 必須落在 viewBox 高度內（0 0 1000 200）。
+
+        原本寫 `Y0+MID+26`（150+62+26=238），把標籤推到 200 高的畫布下方，
+        靜態佔位與動態標籤因此都不在畫面上應有的位置。
+        """
+        src = H.repo_index_html()
+        i = src.find('id="inst-bar-svg"')
+        svg = src[i:src.find("</svg>", i)]
+        vb = re.search(r'viewBox="0 0 (\d+) (\d+)"', svg)
+        self.assertIsNotNone(vb, "長條圖缺少 viewBox")
+        vb_h = int(vb.group(2))
+
+        # 1) 先從 JS 取出「真正會被畫出來」的 X 軸標籤 y（XLAB_Y），這是唯一的權威值。
+        j = src.find("function drawBars(")
+        self.assertGreater(j, 0, "找不到 drawBars")
+        body = src[j:src.find("function drawCum(", j)]
+        # 只檢查「可執行的程式碼」：註解裡保留了舊公式的歷史說明（Y0+MID+26＝238），
+        # 那是文件而非行為，不能讓它把斷言弄紅。
+        code_only = re.sub(r'/\*.*?\*/', '', body, flags=re.S)
+        code_only = re.sub(r'//[^\n]*', '', code_only)
+        self.assertNotIn("Y0+MID+26", code_only,
+                         "drawBars 仍把 X 軸標籤推到 viewBox 外（Y0+MID+26）")
+        self.assertIn("XLAB_Y", code_only, "drawBars 未把 X 軸標籤對齊到 viewBox 內")
+        m_xlab = re.search(r'XLAB_Y\s*=\s*([\d.]+)', src)
+        self.assertIsNotNone(m_xlab, "找不到 XLAB_Y 的定義")
+        xlab_y = float(m_xlab.group(1))
+        self.assertLessEqual(xlab_y, vb_h,
+                             f"動態 X 軸標籤 y={xlab_y} 超出 viewBox 高度 {vb_h}")
+
+        # 2) 靜態佔位標籤必須與動態值一致 —— 否則首屏（JS 尚未重繪前）會畫在錯誤位置，
+        #    而舊測試只掃到「任何」日期標籤，會把殘留的舊值當成新值而誤判。
+        static_dates = re.findall(
+            r'<text class="inst-ax"[^>]*y="([\d.]+)"[^>]*>[^<]*\d{2}/\d{2}</text>', svg)
+        self.assertTrue(static_dates, "長條圖靜態 X 軸缺少日期標籤")
+        for y in static_dates:
+            self.assertEqual(float(y), xlab_y,
+                             f"靜態日期標籤 y={y} 與動態 XLAB_Y={xlab_y} 不一致（殘留舊值）")
+            self.assertLessEqual(float(y), vb_h,
+                                 f"日期標籤 y={y} 超出 viewBox 高度 {vb_h}")
+
+        # 3) Y 軸刻度同樣必須留在 viewBox 內（原本 −3026 畫在 215.5，被 overflow:hidden 切掉）
+        for m in re.finditer(r'<text class="inst-ax"[^>]*y="([\d.]+)"[^>]*>[^<]*</text>', svg):
+            self.assertLessEqual(float(m.group(1)), vb_h,
+                                 f"Y 軸刻度 y={m.group(1)} 超出 viewBox 高度 {vb_h}")
+        # 雙向長條必須留在 viewBox 內：幅度不可用固定的 MID 硬撐
+        self.assertIn("geoFor(maxabs)", body,
+                      "drawBars 未依 maxabs 反推零線，負值長條會溢出並被裁切")
+
+    def test_industry_table_covers_entire_universe(self):
+        """產業對照表必須覆蓋當日全市場母體。
+
+        2026-11-02 新上市 7 檔（1516/4155/6142/6467/7710/7867/8908）不在表內，
+        `build_universe()` 取不到產業別 → 3 個測試失敗、搜尋也篩不到新股票。
+        """
+        _, _, _, out = clean_run()
+        m = re.search(r'var UNIVERSE_DATA=(\{.*?\});?/\*SNAP:/UNIVERSE_DATA\*/',
+                      out.decode(), re.S)
+        self.assertIsNotNone(m, "輸出缺少 UNIVERSE_DATA")
+        payload = json.loads(m.group(1))
+        missing = sorted({r[0] for r in payload["s"]} - set(us.STOCK_INDUSTRY))
+        self.assertEqual(missing, [], f"以下個股沒有產業別：{missing}")
+
+    def test_small_print_copy_meets_wcag_aa(self):
+        """.copy 用 11.5px 小字，--ink-3 在白底量到 4.40（差 0.1 未達 4.5）。
+
+        2026-11-02 實測對比失敗 1 筆，改 --ink-2 後通過。
+        """
+        src = H.repo_index_html()
+        m = re.search(r"\.copy\{([^}]*)\}", src)
+        self.assertIsNotNone(m, "找不到 .copy 樣式")
+        self.assertIn("var(--ink-2)", m.group(1),
+                      ".copy 仍用 --ink-3，11.5px 小字對比未達 WCAG AA 4.5")
 
 
 if __name__ == "__main__":
